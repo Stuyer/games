@@ -254,13 +254,21 @@ body:not(.dark) .page-title {
 /* Модальное окно */
 #game-modal {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  display: none;
+  inset: 0;
+  display: none;            /* изначально скрыт */
   align-items: center;
   justify-content: center;
   z-index: 2000;
+}
+
+#game-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  will-change: opacity;     /* даём GPU подсказку */
 }
 
 #modal-review {
@@ -277,10 +285,14 @@ body:not(.dark) .page-title {
 }
 
 #game-modal.show {
-  animation: fadeInBg 0.2s ease forwards;
+  display: flex;
+}
+#game-modal.show::before {
+  opacity: 1;
 }
 
 #game-modal .modal-content {
+  position: relative;       /* чтобы не попасть под ::before */
   background: var(--bg);
   color: var(--text);
   padding: 30px;
@@ -290,12 +302,15 @@ body:not(.dark) .page-title {
   box-shadow: 0 12px 35px rgba(0,0,0,0.4);
   transition: background 0.3s, color 0.3s;
   font-size: 1.25rem;
-  transform: scale(0.8);
+
+  transform: scale(0.9);
   opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 #game-modal.show .modal-content {
-  animation: popIn 0.35s ease forwards;
+  transform: scale(1);
+  opacity: 1;
 }
 
 #game-modal h2 {
@@ -372,7 +387,7 @@ body.dark .controls input[type="text"] {
     background-color: #222; /* чуть светлее, чем #000 */
     color: white;
     border: 1px solid rgba(255,255,255,0.2);
-}
+  }
 .controls input[type="text"]:focus {
     outline: 2px solid dodgerblue;
     outline-offset: 1px;
@@ -469,6 +484,9 @@ body.dark .controls input[type="text"] {
 }
 .card-wrap[data-id="drg"] .card {
     background-position: 0% 80%;
+}
+.card-wrap[data-id="cp"] .card {
+    background-position: 0% 30%;
 }
 
   /* responsive tweaks */
@@ -579,6 +597,9 @@ const GAMES = [
 { id: "hk", title: "Hollow Knight", image: "hk.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":8,"characters":9,"atmosphere":9,"music":10,"rating":8.9} },
 { id: "drg", title: "DREDGE", image: "drg.png", ratings: {"story":8,"graphics":7,"gameplay":7,"main_character":6,"characters":7,"atmosphere":10,"music":8,"rating":7.6} },
 { id: "kht", title: "Kholat", image: "kht.png", ratings: {"story":7,"graphics":7,"gameplay":7,"main_character":6,"characters":6,"atmosphere":10,"music":9,"rating":7.4} },
+{ id: "aw", title: "Alan Wake", image: "aw.jpg", ratings: {"story":9,"graphics":8,"gameplay":7,"main_character":8,"characters":7,"atmosphere":10,"music":8,"rating":8.1} },
+{ id: "cp", title: "The Callisto Protocol", image: "cp.jpg", ratings: {"story":8,"graphics":10,"gameplay":9,"main_character":9,"characters":7,"atmosphere":9,"music":8,"rating":8.6} },
+{ id: "gow", title: "God of War", image: "gow.jpg", ratings: {"story":8,"graphics":8,"gameplay":9,"main_character":8,"characters":9,"atmosphere":8,"music":8,"rating":8.3} },
 ];
 
 const REVIEWS = {
@@ -812,12 +833,11 @@ function openGameModal(game) {
 function closeGameModal() {
   const modal = document.getElementById('game-modal');
   modal.classList.remove('show');
-  modal.classList.add('fade-out');
   setTimeout(() => {
     modal.style.display = 'none';
-    modal.classList.remove('fade-out');
-  }, 100);
+  }, 300);
 }
+
 
 // Обработчики
 
@@ -840,7 +860,7 @@ document.getElementById('game-modal').addEventListener('click', e => {
   if (e.target.id === 'game-modal') closeGameModal();
 });
 
-// Тема переключение (оставил без изменений)
+// Тема переключение
 const themeToggle = document.getElementById('theme-toggle');
 themeToggle.addEventListener('change', () => {
   document.body.classList.toggle('dark', themeToggle.checked);
@@ -888,7 +908,6 @@ let selectedGames = [];
 const compareBtn = document.getElementById('compare-btn');
 const grid = document.getElementById('grid');
 
-// Создадим две кнопки вместо compareBtn
 const confirmBtn = document.createElement('button');
 confirmBtn.id = "compare-confirm";
 confirmBtn.textContent = "✓";
