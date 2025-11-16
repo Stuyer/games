@@ -393,11 +393,33 @@ body.dark .controls input[type="text"] {
     outline-offset: 1px;
 }
 .rank {
-    font-size: 14px;
-    font-weight: bold;
-    margin-top: 4px;
     color: #ffd700;
-    text-align: center;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+body:not(.grid-view) .badge {
+  top: 16px;
+  right: 16px;
+  font-size: 1.3rem;          /* крупнее рейтинг */
+  background: rgba(0, 0, 0, 0.6);
+  padding: 10px 14px;
+  border-radius: 14px;
+}
+body.grid-view .badge {
+  top: 8px;
+  right: 8px;
+  font-size: 1rem;
+  padding: 6px 10px;
+  background: rgba(15, 15, 15, 0.75);
+  border-radius: 10px;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+body.grid-view .card:hover .badge {
+  opacity: 1;
+  transform: translateY(0);
 }
 #compare-btn, #compare-confirm, #compare-cancel {
   font-size: 1rem;
@@ -441,6 +463,72 @@ body.dark .controls input[type="text"] {
 
 .card.selected {
   box-shadow: 0 6px 18px rgba(0,0,0,0.18), 0 0 0 4px dodgerblue;
+}
+
+.badge {
+  display: flex;
+  align-items: center;        /* выравнивает rank и place по вертикали */
+  gap: 6px;                   /* расстояние между рейтингом и номером */
+  line-height: 1;             /* убирает "прыжки" текста */
+}
+/* === БЕЙДЖ РЕЙТИНГА И МЕСТА В СЕТКЕ === */
+body.grid-view .card .badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(15, 15, 15, 0.75);
+  color: #ffd700;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity 0.3s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+#toggle-view {
+  font-size: 1rem;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #444;
+  color: white;
+  transition: 0.25s ease;
+  background: dodgerblue;
+  color: white;
+  width: 90px;
+  text-align: center;
+}
+
+#toggle-view:hover {
+  background: royalblue;
+}
+
+
+/* при наведении — появляется */
+body.grid-view .card:hover .badge {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* звезда + место */
+body.grid-view .card .badge::before {
+  color: #ffd700;
+  font-size: 1rem;
+  margin-right: 4px;
+}
+
+body.grid-view .card .badge .place {
+  color: #fff;
+  font-size: 0.85rem;
+  margin-left: 4px;
 }
 
 .card-wrap[data-id="cyb"] .card {
@@ -498,6 +586,85 @@ body.dark .controls input[type="text"] {
     .card .title{ font-size:1.1rem; }
   }
 
+/* ===== ВИД "СЕТКА" ===== */
+body.grid-view #grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+body.grid-view .card {
+  width: 100%;
+  height: 220px;
+  border-radius: 14px;
+  background-size: cover;
+  background-position: center;
+  padding: 0;
+  justify-content: flex-end;
+  align-items: flex-end;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+body.grid-view .card .title {
+  opacity: 0;
+  background: rgba(0,0,0,0.6);
+  text-align: center;
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 6px;
+  transition: opacity 0.3s ease;
+}
+
+body.grid-view .card:hover .title {
+  opacity: 1;
+}
+
+body.grid-view .card .popup{
+  display: none;
+}
+
+body.grid-view .card-wrap[data-id="cyb"] .card {
+  background-size: 250%;
+}
+body.grid-view .card-wrap[data-id="hk"] .card {
+  background-position: 50%;
+}
+body.grid-view .card-wrap[data-id="gtaV"] .card {
+  background-position: 80%;
+}
+body.grid-view .card-wrap[data-id="rdr2"] .card {
+  background-position: 20%;
+}
+body.grid-view .card-wrap[data-id="tlou"] .card {
+  background-position: 20%;
+}
+body.grid-view .card-wrap[data-id="ex33"] .card {
+  background-size: 250%;
+  background-position: 50% 60%;
+}
+body.grid-view .card-wrap[data-id="alw2"] .card {
+  background-position: 50%;
+}
+body.grid-view .card-wrap[data-id="hev"] .card {
+  background-position: 100%;
+}
+body.grid-view .card-wrap[data-id="bak"] .card {
+  background-position: 90%;
+}
+body.grid-view .card-wrap[data-id="lit2"] .card {
+  background-position: 40%;
+}
+body.grid-view .card-wrap[data-id="atm"] .card {
+  background-position: 102%;
+}
+body.grid-view .card-wrap[data-id="out"] .card {
+  background-position: 100%;
+}
+body.grid-view .card-wrap[data-id="jc3"] .card {
+  background-position: 80%;
+}
+
+
 </style>
 </head>
 <body>
@@ -534,6 +701,7 @@ body.dark .controls input[type="text"] {
     <span id="clear-search" title="Очистить">×</span>
   </div>
     <button id="compare-btn">Сравнить</button>
+    <button id="toggle-view" class="sort-btn"></button>
 </label>
     </div>
   </div>
@@ -685,8 +853,8 @@ const REVIEWS = {
   вписывается в игру. Прохождение здесь будет интересным из-за неочевидных путей и врагов, которые напугают.`,
   "lit2": `Little Nightmares 2 это вторая часть превосходных "Маленьких кошмаров", здесь улучшенная графика, приятный плавный 
   геймплей и уже 2 главных героя, включая Шестую(ГГ первой части), всё те же интересные головоломки и более опасные враги.`,
-  "ex33": `Clair Obscur: Expedition 33 это самая настоящая сказка, золото в мире игр, тут добродушные персонажи, неотразимые виды, 
-  множество локаций и врагов, интересные схватки и огромное количество атак и способностей. Музыка в игре это настоящая услада 
+  "ex33": `Clair Obscur: Expedition 33 — редкая, почти во всём идеальная игра, тут добродушные персонажи, неотразимые виды, 
+  множество локаций и врагов, интересные схватки и огромное количество атак и способностей. Музыка в игре это услада 
   для ушей, а сюжет понравится большинству.`,
   "ef": `What Remains of Edith Finch это трогательная история, где субтитры ведут игрока по пути, игра сделана креативно и 
   предлагает необычный игровой процесс за своё небольшое время прохождения.`,
@@ -706,6 +874,12 @@ const REVIEWS = {
   успеет испугать и увлечь.`,
   "re2": `Resident Evil 2 Remake — неплохой ремейк, где Леон и Клэр пытаются сбежать из города Раккун-Сити, избегая заражённых. 
   Игра наполнена головоломками и узкими коридорами. Здесь придётся экономить ресурсы и больше прятаться от преследующих мутантов.`,
+  "aw": `Alan Wake это история о писателе, который решил сделать себе отпуск и отправился на остров Брайт-Фоллс, но там встретился со 
+  своими собственно написанными кошмарами. Очень атмосферная игра, но однообразный геймплей.`,
+  "cp": `The Callisto Protocol это похожая на Dead Space игра с динамичной боёвкой и фотореалистичной графикой. Хоррор, который держит 
+  в напряжении.`,
+  "gow": `God of War преподносит историю бога Кратоса и его сына Атрея, вместе они сражаются с сильными противниками в разных мирах, 
+  в игре хороший сюжет и красивые пейзажи.`,
 };
 
 function escapeHtml(str) {
@@ -771,15 +945,16 @@ function flipSortByCriterion(criterion) {
 
   // Reorder DOM
   sortedCards.forEach((card, index) => {
-    container.appendChild(card);
-    const badge = card.querySelector('.badge');
-    if (badge) {
-      badge.innerHTML = `
-        <div>${card.dataset.rating}</div>
-        <div class="rank">#${index + 1}</div>
-      `;
-    }
-  });
+  container.appendChild(card);
+
+  const badge = card.querySelector('.badge');
+  if (badge) {
+    const rating = parseFloat(card.dataset.rating) || 0;
+    badge.innerHTML = `<span class="rank"> ${rating.toFixed(1)}</span> <span class="place">#${index + 1}</span>`;
+  }
+});
+
+
 
   // Last — новые позиции
   const lastRects = new Map();
@@ -1003,6 +1178,31 @@ confirmBtn.addEventListener('click', () => {
   requestAnimationFrame(() => modal.classList.add('show'));
 
   exitCompareMode();
+});
+
+const toggleViewBtn = document.getElementById('toggle-view');
+
+// при загрузке восстанавливаем выбранный вид
+const savedView = localStorage.getItem('view');
+if (savedView === 'grid') {
+  document.body.classList.add('grid-view');
+  toggleViewBtn.textContent = "Сетка";
+} else {
+  toggleViewBtn.textContent = "Список";
+}
+
+
+toggleViewBtn.addEventListener('click', () => {
+  document.body.classList.toggle('grid-view');
+  
+  // текст на кнопке
+  if (document.body.classList.contains('grid-view')) {
+    toggleViewBtn.textContent = "Сетка";
+    localStorage.setItem('view', 'grid');
+  } else {
+    toggleViewBtn.textContent = "Список";
+    localStorage.setItem('view', 'list');
+  }
 });
 
 </script>
