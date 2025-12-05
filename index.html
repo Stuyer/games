@@ -3,672 +3,272 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Тир-лист</title>
+<title>Тир-лист видеоигр</title>
 <style>
-  :root{
-    --bg: blanchedalmond;
-    --text: #000;
+  /* --- 1. VARIABLES & RESET --- */
+  :root {
+    --bg-light: blanchedalmond;
+    --text-light: #000;
+    --bg-dark: #28292c;
+    --text-dark: #fff;
+    
     --card-w: 1000px;
     --card-h: 280px;
-  }
-  body{ background:var(--bg); color:var(--text); font-family: Inter, system-ui, sans-serif; transition: background .3s, color .3s; margin:0; padding:30px 20px;}
-  body.dark{ --bg:#28292c; --text:#fff; }
-
-  .header{ text-align:center; margin-bottom:18px; }
-
-  .controls{ display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
-
-  select{ font-size:20px; padding:10px; border-radius:10px; }
-
-  /* Grid / layout */
-  #grid{ display:flex; flex-wrap:wrap; gap:20px; justify-content:center; align-items:flex-start; }
-
-  /* wrapper which will be transformed during FLIP */
-  .card-wrap{
-    display:inline-block;
-    /* make transform not affect layout for siblings during animation */
-    will-change: transform;
-    margin:8px;
+    --card-radius: 18px;
+    
+    --primary-color: dodgerblue;
+    --primary-hover: royalblue;
+    --gold: #ffd700;
+    
+    --bg: var(--bg-light);
+    --text: var(--text-light);
   }
 
+  body.dark { --bg: var(--bg-dark); --text: var(--text-dark); }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+    transition: background 0.3s, color 0.3s;
+    margin: 0;
+    padding: 30px 20px;
+  }
+
+  /* --- 2. LAYOUT & HEADER --- */
+  .header { text-align: center; margin-bottom: 18px; }
+  .controls { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+  
+  #grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; }
+  
+  /* Анимированный заголовок */
   .page-title {
-  font-size: 2.8rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-  display: inline-block;
-  user-select: none;
-
-  /* базовый цвет текста */
-  color: #b5b5b5a4;
-
-  /* shimmer */
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0) 40%,
-    rgba(255, 255, 255, 0.8) 50%,
-    rgba(255, 255, 255, 0) 60%
-  );
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-
-  animation: shine 5s linear infinite;
-  transition: background 0.5s ease;
-}
-
-@keyframes shine {
-  0% {
-    background-position: 100%;
-  }
-  100% {
-    background-position: -100%;
-  }
-}
-
-/* Светлая тема — мягкий бежево-золотой shimmer */
-body:not(.dark) .page-title {
-  color: rgba(140, 140, 130, 0.9);
-  background: linear-gradient(
-    120deg,
-    rgba(210, 180, 140, 0) 40%,
-    rgba(33, 26, 26, 0.9) 50%,
-    rgba(210, 180, 140, 0) 60%
-  );
-  -webkit-background-clip: text;
-  background-size: 200% 100%;
-}
-
-  .card{
-    width: min(var(--card-w), 95vw);
-    max-width: var(--card-w);
-    height: var(--card-h);
-    border-radius: 18px;
-    overflow: hidden;
-    position: relative;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.18); /* обычная тень */
-    cursor: pointer;
-    background-size: cover;
-    background-position: center;
-    transition: transform .16s ease, box-shadow .3s ease;
-    display: flex;
-    align-items: flex-end;
-    padding: 18px;
-    color: #fff;
-  }
-  .card:hover{
-    transform: scale(1.03);
-    box-shadow: 0 14px 30px rgba(0,0,0,0.28);
-  }
-  .card .title{
-    font-size:2rem;
-    text-shadow: none;
-    padding:6px 10px; border-radius:8px;
-    background: rgba(0, 0, 0, 0.45);
-    font-weight: bold;
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: inline-block;
     user-select: none;
+    color: #b5b5b5a4;
+    background: linear-gradient(120deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 60%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shine 5s linear infinite;
+    transition: background 0.5s ease;
+  }
+  
+  body:not(.dark) .page-title {
+    color: rgba(140, 140, 130, 0.9);
+    background: linear-gradient(120deg, rgba(210,180,140,0) 40%, rgba(33,26,26,0.9) 50%, rgba(210,180,140,0) 60%);
+    -webkit-background-clip: text;
+    background-size: 200% 100%;
   }
 
-  .popup {
-    position:absolute;
-    left:12px;
-    top:12px;
-    background: rgba(0,0,0,0.6);
-    color:#fff;
-    padding:16px 20px;
-    border-radius:12px;
-    font-size:1.1rem;
-    display:block;
-    pointer-events:none;
-    user-select:none;
-    max-width: 300px;
-    opacity: 0;
-    transition: opacity 0.4s ease 0.06s;
-  }
-  .card:hover .popup { opacity: 1; }
-
-  .badge{
-    position:absolute;
-    right:12px;
-    top:12px;
-    background: rgba(0,0,0,0.6);
-    padding:8px 12px;
-    border-radius:12px;
-    font-weight:700;
-    font-size:18px;
-    user-select:none;
-  }
-
-.toggle-switch {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 100px;
-    height: 50px;
-    --light: #d8dbe0;
-    --dark: #28292c;
-    z-index: 1000;
-}
-.switch-label {
-    position: absolute;
-    width: 100%;
-    height: 45px;
-    background-color: var(--dark);
-    border-radius: 25px;
-    cursor: pointer;
-    border: 3px solid var(--dark);
-}
-.controls label {
-    font-size: 1.2rem;
-    font-weight: bold;
-    user-select:none;
-}
-.controls select {
-    font-size: 1.1rem;
-    padding: 10px;
-}
-.checkbox {
-    position: absolute;
-    display: none;
-}
-.slider {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 25px;
-    transition: 0.3s;
-}
-.checkbox:checked ~ .slider {
-    background-color: var(--light);
-}
-.slider::before {
-    content: "";
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
-    box-shadow: inset 12px -4px 0px 0px var(--light);
-    background-color: var(--dark);
-    transition: 0.3s;
-}
-.checkbox:checked ~ .slider::before {
-    transform: translateX(50px);
-    background-color: var(--dark);
-    box-shadow: none;
-}
-.search-wrapper {
-  position: relative;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-#search {
-  padding-right: 28px; /* место для крестика */
-}
-
-#clear-search {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 18px;
-  cursor: pointer;
-  color: #888;
-  display: none;
-  user-select: none;
-  background: transparent;
-}
-
-#clear-search:hover {
-  color: red;
-}
-
-/* Кнопка наверх */
-#scroll-to-top {
-    position: fixed;
-    bottom: -60px;
-    right: 20px;
-    z-index: 1000;
-    width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: 50%;
-    background-color: #333;
-    color: white;
-    font-size: 22px;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.5s ease, bottom 0.5s ease, background-color 0.5s ease;
-}
-#scroll-to-top.visible {
-    opacity: 0.7;
-    bottom: 20px;
-}
-#scroll-to-top:active {
-  transform: scale(0.9);
-}
-#scroll-to-top:hover {
-    opacity: 1;
-}
-/* Модальное окно */
-#game-modal {
-  position: fixed;
-  inset: 0;
-  display: none;            /* изначально скрыт */
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-#game-modal::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  will-change: opacity;     /* даём GPU подсказку */
-}
-
-#modal-review {
-  text-align: justify; /* выравнивание по ширине */
-  text-justify: inter-word; /* равномерные пробелы */
-  line-height: 1.5; /* удобочитаемость */
-  word-wrap: break-word;
-  overflow-wrap: anywhere; /* принудительный перенос */
-}
-
-#game-modal p {
-  font-size: 1.5rem;
-  line-height: 1.6;
-}
-
-#game-modal.show {
-  display: flex;
-}
-#game-modal.show::before {
-  opacity: 1;
-}
-
-#game-modal .modal-content {
-  position: relative;       /* чтобы не попасть под ::before */
-  background: var(--bg);
-  color: var(--text);
-  padding: 30px;
-  border-radius: 20px;
-  max-width: 900px;
-  width: 95%;
-  box-shadow: 0 12px 35px rgba(0,0,0,0.4);
-  transition: background 0.3s, color 0.3s;
-  font-size: 1.25rem;
-
-  transform: scale(0.9);
-  opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-#game-modal.show .modal-content {
-  transform: scale(1);
-  opacity: 1;
-}
-
-#game-modal h2 {
-  margin-top: 0;
-  font-size: 2rem;
-}
-
-#game-modal .criteria {
-  font-size: 1.3rem;
-  margin-top: 15px;
-}
-
-#game-modal .close-btn {
-  position: absolute;
-  top: 20px;
-  right: 28px;
-  font-size: 30px;
-  font-weight: bold;
-  color: var(--text);
-  cursor: pointer;
-}
-
-#game-modal.fade-out {
-  animation: fadeOutBg 0.2s ease forwards;
-}
-
-@keyframes fadeOutBg {
-  from { background: rgba(0,0,0,0.6); }
-  to { background: rgba(0,0,0,0); }
-}
-
-
-@keyframes fadeInBg {
-  from { background: rgba(0,0,0,0); }
-  to { background: rgba(0,0,0,0.6); }
-}
-
-@keyframes popIn {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.card .title {
-  backdrop-filter: blur(3px);
-}
-
-body.dark #scroll-to-top {
-    background-color: #d8dbe0;
-    color: #28292c;
-}
-.popup div {
-  margin: 2px 0;
-}
-.popup div span {
-  font-weight: bold;
-}
-
-.controls input[type="text"] {
-    padding: 8px 10px;
+  /* --- 3. CONTROLS --- */
+  
+  select { font-size: 1rem; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
+  .controls label { font-size: 1.2rem; font-weight: bold; user-select: none; }
+  
+  .search-wrapper { position: relative; display: inline-block; vertical-align: middle; }
+  
+  #search {
+    padding: 8px 10px 8px 10px;
+    padding-right: 28px;
     font-size: 1rem;
     border-radius: 8px;
     border: 1px solid rgba(0,0,0,0.6);
-    background-color: #fff !important; /* всегда белый фон */
-    color: #000 !important;            /* всегда чёрный текст */
+    background-color: #fff;
+    color: #000;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-body.dark .controls input[type="text"] {
-    background-color: #222; /* чуть светлее, чем #000 */
+  }
+  
+  #search:focus { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+
+  #clear-search {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 18px; cursor: pointer; color: #888; display: none; user-select: none;
+  }
+  #clear-search:hover { color: red; }
+
+  /* Кнопки */
+  #compare-btn, #compare-confirm, #compare-cancel, #toggle-view {
+    font-size: 1rem; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; transition: background 0.3s;
     color: white;
-    border: 1px solid rgba(255,255,255,0.2);
   }
-.controls input[type="text"]:focus {
-    outline: 2px solid dodgerblue;
-    outline-offset: 1px;
-}
-.rank {
-    color: #ffd700;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-}
-body:not(.grid-view) .badge {
-  top: 16px;
-  right: 16px;
-  font-size: 1.3rem;          /* крупнее рейтинг */
-  background: rgba(0, 0, 0, 0.6);
-  padding: 10px 14px;
-  border-radius: 14px;
-}
-body.grid-view .badge {
-  top: 8px;
-  right: 8px;
-  font-size: 1rem;
-  padding: 6px 10px;
-  background: rgba(15, 15, 15, 0.75);
-  border-radius: 10px;
-  opacity: 0;
-  transform: translateY(-5px);
-  transition: opacity 0.3s ease, transform 0.2s ease;
-}
-body.grid-view .card:hover .badge {
-  opacity: 1;
-  transform: translateY(0);
-}
-#compare-btn, #compare-confirm, #compare-cancel {
-  font-size: 1rem;
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-#compare-btn { background: dodgerblue; color: white; }
-#compare-btn:hover { background: royalblue; }
+  #compare-btn, #toggle-view { background: var(--primary-color); }
+  #compare-btn:hover, #toggle-view:hover { background: var(--primary-hover); }
+  #compare-confirm { background: seagreen; display: none; }
+  #compare-cancel { background: crimson; display: none; }
+  #toggle-view { width: 90px; text-align: center; }
 
-#compare-confirm { background: seagreen; color: white; display: none; }
-#compare-cancel { background: crimson; color: white; display: none; }
-
-.compare-table-wrapper {
-  overflow-x: auto;
-  max-width: 90vw; /* ограничение, но можно расширить */
-}
-
-.compare-table {
-  border-collapse: collapse;
-  width: max-content;
-  min-width: 100%;
-}
-
-.compare-table th,
-.compare-table td {
-  border: 1px solid #ccc;
-  padding: 8px 12px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.compare-table th {
-  background: var(--bg);
-  color: var(--text);
-  position: sticky;
-  top: 0;
-}
-
-.card.selected {
-  box-shadow: 0 6px 18px rgba(0,0,0,0.18), 0 0 0 4px dodgerblue;
-}
-
-.badge {
-  display: flex;
-  align-items: center;        /* выравнивает rank и place по вертикали */
-  gap: 6px;                   /* расстояние между рейтингом и номером */
-  line-height: 1;             /* убирает "прыжки" текста */
-}
-/* === БЕЙДЖ РЕЙТИНГА И МЕСТА В СЕТКЕ === */
-body.grid-view .card .badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(15, 15, 15, 0.75);
-  color: #ffd700;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 6px 10px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  opacity: 0;
-  transform: translateY(-5px);
-  transition: opacity 0.3s ease, transform 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  pointer-events: none;
-}
-
-#toggle-view {
-  font-size: 1rem;
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background: #444;
-  color: white;
-  transition: 0.25s ease;
-  background: dodgerblue;
-  color: white;
-  width: 90px;
-  text-align: center;
-}
-
-#toggle-view:hover {
-  background: royalblue;
-}
-
-
-/* при наведении — появляется */
-body.grid-view .card:hover .badge {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* звезда + место */
-body.grid-view .card .badge::before {
-  color: #ffd700;
-  font-size: 1rem;
-  margin-right: 4px;
-}
-
-body.grid-view .card .badge .place {
-  color: #fff;
-  font-size: 0.85rem;
-  margin-left: 4px;
-}
-
-.card-wrap[data-id="cyb"] .card {
-    background-size: 110%;
-}
-.card-wrap[data-id="hev"] .card {
-    background-position: 0% 80%;
-}
-.card-wrap[data-id="out"] .card {
-    background-position: 0% 10%;
-}
-.card-wrap[data-id="jc3"] .card {
-    background-position: 0% 10%;
-}
-.card-wrap[data-id="alw2"] .card {
-    background-position: 0% 30%;
-}
-.card-wrap[data-id="tlou"] .card {
-    background-position: 0% 25%;
-}
-.card-wrap[data-id="re4"] .card {
-    background-position: 0% 85%;
-}
-.card-wrap[data-id="lit1"] .card {
-    background-position: 0% 85%;
-}
-.card-wrap[data-id="lit2"] .card {
-    background-position: 0% 90%;
-}
-.card-wrap[data-id="ex33"] .card {
-    background-position: 0% 70%;
-}
-.card-wrap[data-id="fc3"] .card {
-    background-position: 0% 70%;
-}
-.card-wrap[data-id="str"] .card {
-    background-position: 0% 85%;
-}
-.card-wrap[data-id="hk"] .card {
-    background-position: 0% 95%;
-}
-.card-wrap[data-id="drg"] .card {
-    background-position: 0% 80%;
-}
-.card-wrap[data-id="cp"] .card {
-    background-position: 0% 30%;
-}
-
-  /* responsive tweaks */
-  @media (max-width:1100px){
-    :root{ --card-w: 820px; --card-h: 240px; }
+  /* Переключатель темы */
+  .toggle-switch { position: fixed; top: 20px; right: 20px; width: 100px; height: 50px; z-index: 1000; }
+  .switch-label { position: absolute; width: 100%; height: 45px; background-color: var(--bg-dark); border-radius: 25px; cursor: pointer; border: 3px solid var(--bg-dark); }
+  .checkbox { display: none; }
+  .slider { position: absolute; width: 100%; height: 100%; border-radius: 25px; transition: 0.3s; }
+  .checkbox:checked ~ .slider { background-color: #d8dbe0; }
+  .slider::before {
+    content: ""; position: absolute; top: 10px; left: 10px; width: 25px; height: 25px;
+    border-radius: 50%; box-shadow: inset 12px -4px 0px 0px #d8dbe0; background-color: var(--bg-dark); transition: 0.3s;
   }
-  @media (max-width:700px){
-    :root{ --card-w: 92vw; --card-h: 180px; }
-    .card .title{ font-size:1.1rem; }
+  .checkbox:checked ~ .slider::before { transform: translateX(50px); background-color: var(--bg-dark); box-shadow: none; }
+
+  /* Кнопка наверх */
+  #scroll-to-top {
+    position: fixed; bottom: -60px; right: 20px; z-index: 900;
+    width: 40px; height: 40px; border: none; border-radius: 50%;
+    background-color: #333; color: white; font-size: 22px; cursor: pointer;
+    opacity: 0; transition: opacity 0.5s ease, bottom 0.5s ease, background-color 0.5s ease;
+  }
+  #scroll-to-top.visible { opacity: 0.7; bottom: 20px; }
+  #scroll-to-top:hover { opacity: 1; }
+  #scroll-to-top:active { transform: scale(0.9); }
+  body.dark #scroll-to-top { background-color: #d8dbe0; color: #28292c; }
+
+  /* --- 4. CARDS & GRID --- */
+  .card-wrap {
+    display: inline-block;
+    will-change: transform; /* Важно для FLIP */
+    margin: 8px;
   }
 
-/* ===== ВИД "СЕТКА" ===== */
-body.grid-view #grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
-}
+  .card {
+    width: min(var(--card-w), 95vw); max-width: var(--card-w); height: var(--card-h);
+    border-radius: 18px; overflow: hidden; position: relative;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18); cursor: pointer;
+    background-size: cover; background-position: center;
+    transition: transform .16s ease, box-shadow .3s ease;
+    display: flex; align-items: flex-end; padding: 18px; color: #fff;
+  }
+  .card:hover { transform: scale(1.03); box-shadow: 0 14px 30px rgba(0,0,0,0.28); }
+  .card.selected { box-shadow: 0 6px 18px rgba(0,0,0,0.18), 0 0 0 4px var(--primary-color); }
 
-body.grid-view .card {
-  width: 100%;
-  height: 220px;
-  border-radius: 14px;
-  background-size: cover;
-  background-position: center;
-  padding: 0;
-  justify-content: flex-end;
-  align-items: flex-end;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-}
+  .card .title {
+    font-size: 2rem; text-shadow: none; padding: 6px 10px; border-radius: 8px;
+    background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px);
+    font-weight: bold; user-select: none;
+  }
 
-body.grid-view .card .title {
-  opacity: 0;
-  background: rgba(0,0,0,0.6);
-  text-align: center;
-  width: 100%;
-  font-size: 1.1rem;
-  padding: 6px;
-  transition: opacity 0.3s ease;
-}
+  /* Popup */
+  .popup {
+    position: absolute; left: 12px; top: 12px;
+    background: rgba(0,0,0,0.6); color: #fff; padding: 16px 20px;
+    border-radius: 12px; font-size: 1.1rem; max-width: 300px;
+    opacity: 0; transition: opacity 0.4s ease 0.06s; pointer-events: none; user-select: none;
+  }
+  .card:hover .popup { opacity: 1; }
+  .popup div { margin: 2px 0; }
+  .highlight-criterion { color: var(--gold) !important; font-weight: 700; text-shadow: 0 0 6px rgba(255,215,0,0.9); }
 
-body.grid-view .card:hover .title {
-  opacity: 1;
-}
+  /* Badge */
+  .badge {
+    position: absolute; right: 12px; top: 12px;
+    display: flex; align-items: center; gap: 6px; line-height: 1;
+    background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 12px;
+    font-weight: 700; font-size: 18px; user-select: none;
+  }
+  .rank { color: var(--gold); font-weight: 700; }
+  
+  /* Responsive */
+  @media (max-width: 1100px) { :root { --card-w: 820px; --card-h: 240px; } }
+  @media (max-width: 700px) {
+    :root { --card-w: 92vw; --card-h: 180px; }
+    .card .title { font-size: 1.1rem; }
+  }
 
-body.grid-view .card .popup{
-  display: none;
-}
+  /* --- 5. GRID VIEW MODE --- */
+  body.grid-view #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+  body.grid-view .card {
+    width: 100%; height: 220px; padding: 0;
+    justify-content: flex-end; align-items: flex-end;
+  }
+  body.grid-view .card .title {
+    opacity: 0; background: rgba(0,0,0,0.6); text-align: center;
+    width: 100%; font-size: 1.1rem; padding: 6px; transition: opacity 0.3s ease;
+  }
+  body.grid-view .card:hover .title { opacity: 1; }
+  body.grid-view .card .popup { display: none; }
+  
+  body.grid-view .badge {
+    top: 8px; right: 8px; font-size: 0.95rem; padding: 6px 10px;
+    background: rgba(15, 15, 15, 0.75); border-radius: 10px;
+    opacity: 0; transform: translateY(-5px); transition: opacity 0.3s ease, transform 0.2s ease;
+  }
+  body.grid-view .card:hover .badge { opacity: 1; transform: translateY(0); }
+  body.grid-view .badge::before { color: var(--gold); margin-right: 4px; }
 
-body.grid-view .card-wrap[data-id="cyb"] .card {
-  background-size: 250%;
-}
-body.grid-view .card-wrap[data-id="hk"] .card {
-  background-position: 50%;
-}
-body.grid-view .card-wrap[data-id="gtaV"] .card {
-  background-position: 80%;
-}
-body.grid-view .card-wrap[data-id="rdr2"] .card {
-  background-position: 20%;
-}
-body.grid-view .card-wrap[data-id="tlou"] .card {
-  background-position: 20%;
-}
-body.grid-view .card-wrap[data-id="ex33"] .card {
-  background-size: 250%;
-  background-position: 50% 60%;
-}
-body.grid-view .card-wrap[data-id="alw2"] .card {
-  background-position: 50%;
-}
-body.grid-view .card-wrap[data-id="hev"] .card {
-  background-position: 100%;
-}
-body.grid-view .card-wrap[data-id="bak"] .card {
-  background-position: 90%;
-}
-body.grid-view .card-wrap[data-id="lit2"] .card {
-  background-position: 40%;
-}
-body.grid-view .card-wrap[data-id="atm"] .card {
-  background-position: 102%;
-}
-body.grid-view .card-wrap[data-id="out"] .card {
-  background-position: 100%;
-}
-body.grid-view .card-wrap[data-id="jc3"] .card {
-  background-position: 80%;
-}
+  /* --- 6. MODAL --- */
+  #game-modal {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 2000;
+  }
+  #game-modal::before {
+    content: ""; position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.3s ease; will-change: opacity;
+  }
+  #game-modal.show { display: flex; }
+  #game-modal.show::before { opacity: 1; }
+  
+  #game-modal .modal-content {
+    position: relative; background: var(--bg); color: var(--text);
+    padding: 30px; border-radius: 20px; max-width: 900px; width: 95%;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.4); font-size: 1.25rem;
+    transform: scale(0.9); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease, background 0.3s, color 0.3s;
+  }
+  #game-modal.show .modal-content { transform: scale(1); opacity: 1; }
+  
+  #game-modal h2 { margin-top: 0; font-size: 2rem; }
+  #game-modal .criteria { font-size: 1.3rem; margin-top: 15px; }
+  #game-modal .close-btn { position: absolute; top: 20px; right: 28px; font-size: 30px; font-weight: bold; cursor: pointer; }
+  
+  #modal-review { text-align: justify; line-height: 1.5; overflow-wrap: anywhere; font-size: 1.4rem;}
 
+  /* Compare Table */
+  .compare-table-wrapper { overflow-x: auto; max-width: 90vw; }
+  .compare-table { border-collapse: collapse; width: max-content; min-width: 100%; }
+  .compare-table th, .compare-table td { border: 1px solid #ccc; padding: 8px 12px; text-align: center; white-space: nowrap; }
+  .compare-table th { background: var(--bg); color: var(--text); position: sticky; top: 0; }
 
+  /* --- 7. ANIMATIONS --- */
+  @keyframes shine {
+    0% { background-position: 100%; }
+    100% { background-position: -100%; }
+  }
+
+  /* --- 8. GAME SPECIFIC TWEAKS (Backgrounds) --- */
+  /* List View */
+  .card-wrap[data-id="cyb"] .card { background-size: 110%; }
+  .card-wrap[data-id="hev"] .card { background-position: 0% 80%; }
+  .card-wrap[data-id="out"] .card { background-position: 0% 10%; }
+  .card-wrap[data-id="jc3"] .card { background-position: 0% 10%; }
+  .card-wrap[data-id="alw2"] .card { background-position: 0% 30%; }
+  .card-wrap[data-id="tlou"] .card { background-position: 0% 25%; }
+  .card-wrap[data-id="re4"] .card { background-position: 0% 85%; }
+  .card-wrap[data-id="lit1"] .card { background-position: 0% 85%; }
+  .card-wrap[data-id="lit2"] .card { background-position: 0% 90%; }
+  .card-wrap[data-id="ex33"] .card { background-position: 0% 70%; }
+  .card-wrap[data-id="fc3"] .card { background-position: 0% 70%; }
+  .card-wrap[data-id="str"] .card { background-position: 0% 85%; }
+  .card-wrap[data-id="hk"] .card { background-position: 0% 95%; }
+  .card-wrap[data-id="drg"] .card { background-position: 0% 80%; }
+  .card-wrap[data-id="cp"] .card { background-position: 0% 30%; }
+
+  /* Grid View */
+  body.grid-view .card-wrap[data-id="cyb"] .card { background-size: 250%; }
+  body.grid-view .card-wrap[data-id="hk"] .card { background-position: 50%; }
+  body.grid-view .card-wrap[data-id="gtaV"] .card { background-position: 80%; }
+  body.grid-view .card-wrap[data-id="rdr2"] .card { background-position: 20%; }
+  body.grid-view .card-wrap[data-id="tlou"] .card { background-position: 20%; }
+  body.grid-view .card-wrap[data-id="ex33"] .card { background-size: 250%; background-position: 50% 60%; }
+  body.grid-view .card-wrap[data-id="alw2"] .card { background-position: 50%; }
+  body.grid-view .card-wrap[data-id="hev"] .card { background-position: 100%; }
+  body.grid-view .card-wrap[data-id="bak"] .card { background-position: 90%; }
+  body.grid-view .card-wrap[data-id="lit2"] .card { background-position: 40%; }
+  body.grid-view .card-wrap[data-id="atm"] .card { background-position: 102%; }
+  body.grid-view .card-wrap[data-id="out"] .card { background-position: 100%; }
+  body.grid-view .card-wrap[data-id="jc3"] .card { background-position: 80%; }
 </style>
 </head>
 <body>
-    <!-- Переключатель темы -->
+
 <div class="toggle-switch">
   <label class="switch-label">
     <input type="checkbox" class="checkbox" id="theme-toggle">
@@ -676,100 +276,102 @@ body.grid-view .card-wrap[data-id="jc3"] .card {
   </label>
 </div>
 
-<!-- Кнопка "Наверх" -->
 <button id="scroll-to-top" title="Наверх">↑</button>
 
-  <div class="header">
-    <div class="page-title">Тир-лист видеоигр</div>
-    <div class="controls">
-  <label>Сортировать по:
-    <select id="criterion">
-      <option value="rating">Общий рейтинг</option>
-      <option value="story">Сюжет</option>
-      <option value="graphics">Графика</option>
-      <option value="gameplay">Геймплей</option>
-      <option value="main_character">Главный герой</option>
-      <option value="characters">Персонажи</option>
-      <option value="atmosphere">Атмосфера</option>
-      <option value="music">Музыка</option>
-    </select>
-  </label>
+<div class="header">
+  <div class="page-title">Тир-лист видеоигр</div>
   
-  <label>Поиск:
-  <div class="search-wrapper">
-    <input type="text" id="search" placeholder="Введите название игры">
-    <span id="clear-search" title="Очистить">×</span>
-  </div>
+  <div class="controls">
+    <label>Сортировать по:
+      <select id="criterion">
+        <option value="rating">Общий рейтинг</option>
+        <option value="story">Сюжет</option>
+        <option value="graphics">Графика</option>
+        <option value="gameplay">Геймплей</option>
+        <option value="main_character">Главный герой</option>
+        <option value="characters">Персонажи</option>
+        <option value="atmosphere">Атмосфера</option>
+        <option value="music">Музыка</option>
+      </select>
+    </label>
+    
+    <label>Поиск:
+      <div class="search-wrapper">
+        <input type="text" id="search" placeholder="Введите название игры">
+        <span id="clear-search" title="Очистить">×</span>
+      </div>
+    </label>
+
     <button id="compare-btn">Сравнить</button>
-    <button id="toggle-view" class="sort-btn"></button>
-</label>
-    </div>
-  </div>
-
-  <main>
-    <div id="grid" aria-live="polite"></div>
-  </main>
-
-  <div id="game-modal">
-  <div class="modal-content">
-    <span class="close-btn">&times;</span>
-    <h2 id="modal-title"></h2>
-    <div id="modal-ratings"></div>
-    <p id="modal-review"></p>
+    <button id="compare-confirm">✓</button>
+    <button id="compare-cancel">✕</button>
+    <button id="toggle-view">Список</button>
   </div>
 </div>
 
-<script>
+<main>
+  <div id="grid" aria-live="polite"></div>
+</main>
 
+<div id="game-modal">
+  <div class="modal-content"></div>
+</div>
+
+<script>
+// --- 1. DATA CONFIGURATION ---
+
+// Игры (основные данные)
 const GAMES = [
-{ id: "w3", title: "Witcher 3: Wild Hunt", image: "w3.jpg", ratings: {"story":10,"graphics":9,"gameplay":9,"main_character":10,"characters":10,"atmosphere":10,"music":10,"rating":9.7} },
-{ id: "rdr2", title: "Red Dead Redemption 2", image: "rdr2.jpg", ratings: {"story":9,"graphics":10,"gameplay":10,"main_character":10,"characters":10,"atmosphere":9,"music":8,"rating":9.4} },
-{ id: "cyb", title: "Cyberpunk 2077", image: "cyb.jpg", ratings: {"story":10,"graphics":10,"gameplay":10,"main_character":8,"characters":9,"atmosphere":9,"music":8,"rating":9.1} },
-{ id: "gtaV", title: "Grand Theft Auto V", image: "gtaV.jpg", ratings: {"story":9,"graphics":8,"gameplay":9,"main_character":9,"characters":9,"atmosphere":9,"music":9,"rating":8.9} },
-{ id: "alw2", title: "Alan Wake 2", image: "alw2.jpg", ratings: {"story":10,"graphics":10,"gameplay":8,"main_character":9,"characters":9,"atmosphere":9,"music":8,"rating":9.0} },
-{ id: "tlou", title: "The Last of Us Part I", image: "tlou.jpg", ratings: {"story":9,"graphics":9,"gameplay":10,"main_character":9,"characters":8,"atmosphere":9,"music":10,"rating":9.1} },
-{ id: "det", title: "Detroit: Become Human", image: "det.jpg", ratings: {"story":9,"graphics":8,"gameplay":8,"main_character":8,"characters":8,"atmosphere":8,"music":10,"rating":8.4} },
-{ id: "eld", title: "Elden Ring", image: "eld.jpg", ratings: {"story":8,"graphics":9,"gameplay":8,"main_character":7,"characters":8,"atmosphere":9,"music":10,"rating":8.4} },
-{ id: "dsr", title: "Dead Space Remake", image: "dsr.jpg", ratings: {"story":8,"graphics":10,"gameplay":9,"main_character":8,"characters":7,"atmosphere":9,"music":7,"rating":8.3} },
-{ id: "bmw", title: "Black Myth: Wukong", image: "bmw.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":8,"characters":8,"atmosphere":7,"music":8,"rating":8.1} },
-{ id: "bak", title: "Batman: Arkham Knight", image: "bak.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":9,"characters":7,"atmosphere":10,"music":7,"rating":8.1} },
-{ id: "hev", title: "Heavy Rain", image: "hev.jpg", ratings: {"story":10,"graphics":8,"gameplay":7,"main_character":8,"characters":8,"atmosphere":9,"music":8,"rating":8.3} },
-{ id: "re4", title: "Resident Evil 4 Remake", image: "re4.jpeg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":9,"atmosphere":8,"music":8,"rating":8.1} },
-{ id: "d16", title: "Doom (2016)", image: "d16.jpg", ratings: {"story":7,"graphics":7,"gameplay":9,"main_character":8,"characters":7,"atmosphere":8,"music":9,"rating":7.9} },
-{ id: "dete", title: "Doom Eternal", image: "dete.jpg", ratings: {"story":7,"graphics":8,"gameplay":9,"main_character":8,"characters":7,"atmosphere":8,"music":9,"rating":8.0} },
-{ id: "lim", title: "Limbo", image: "lim.jpg", ratings: {"story":6,"graphics":7,"gameplay":9,"main_character":7,"characters":6,"atmosphere":10,"music":9,"rating":7.7} },
-{ id: "ins", title: "Inside", image: "ins.jpg", ratings: {"story":7,"graphics":7,"gameplay":9,"main_character":7,"characters":6,"atmosphere":9,"music":7,"rating":7.4} },
-{ id: "crw", title: "Thronebreaker: The Witcher Tales", image: "crw.jpg", ratings: {"story":8,"graphics":7,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":9,"rating":8.0} },
-{ id: "fir", title: "Firewatch", image: "fir.png", ratings: {"story":7,"graphics":7,"gameplay":8,"main_character":7,"characters":7,"atmosphere":8,"music":9,"rating":7.6} },
-{ id: "swd", title: "Still Wakes the Deep", image: "swd.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":7,"characters":7,"atmosphere":9,"music":7,"rating":7.7} },
-{ id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", image: "fhr.jpg", ratings: {"story":8,"graphics":6,"gameplay":7,"main_character":7,"characters":7,"atmosphere":8,"music":7,"rating":7.1} },
-{ id: "inc", title: "Inscryption", image: "inc.jpg", ratings: {"story":8,"graphics":6,"gameplay":9,"main_character":6,"characters":7,"atmosphere":7,"music":7,"rating":7.1} },
-{ id: "mf2", title: "Mafia II", image: "mf2.png", ratings: {"story":8,"graphics":7,"gameplay":7,"main_character":8,"characters":7,"atmosphere":8,"music":7,"rating":7.4} },
-{ id: "hss", title: "Hellblade: Senua's Sacrifice", image: "hss.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":7,"characters":7,"atmosphere":9,"music":7,"rating":7.7} },
-{ id: "tlou2", title: "The Last of Us Part II", image: "tlou2.jpg", ratings: {"story":8,"graphics":9,"gameplay":10,"main_character":8,"characters":8,"atmosphere":9,"music":9,"rating":8.7} },
-{ id: "PTI", title: "A Plague Tale: Innocence", image: "PTI.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":8,"atmosphere":8,"music":7,"rating":7.9} },
-{ id: "atm", title: "Atomic Heart", image: "atm.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":7,"characters":7,"atmosphere":7,"music":7,"rating":7.7} },
-{ id: "jc3", title: "Just Cause 3", image: "jc3.jpg", ratings: {"story":7,"graphics":8,"gameplay":8,"main_character":8,"characters":7,"atmosphere":7,"music":8,"rating":7.6} },
-{ id: "out", title: "Outlast", image: "out.jpg", ratings: {"story":8,"graphics":7,"gameplay":8,"main_character":7,"characters":8,"atmosphere":9,"music":7,"rating":7.7} },
-{ id: "out2", title: "Outlast 2", image: "out2.jpg", ratings: {"story":7,"graphics":8,"gameplay":8,"main_character":7,"characters":8,"atmosphere":10,"music":8,"rating":8.0} },
-{ id: "re2", title: "Resident Evil 2 Remake", image: "re2.png", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":7,"atmosphere":9,"music":8,"rating":8.0} },
-{ id: "rev", title: "Resident Evil Village", image: "rev.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":9,"atmosphere":9,"music":8,"rating":8.3} },
-{ id: "reb", title: "Resident Evil 7: Biohazard", image: "reb.jpg", ratings: {"story":8,"graphics":7,"gameplay":8,"main_character":8,"characters":7,"atmosphere":10,"music":8,"rating":8.0} },
-{ id: "lit1", title: "Little Nightmares", image: "lit1.jpg", ratings: {"story":8,"graphics":7,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":9,"rating":8.0} },
-{ id: "lit2", title: "Little Nightmares 2", image: "lit2.png", ratings: {"story":8,"graphics":8,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":9,"rating":8.1} },
-{ id: "ex33", title: "Clair Obscur: Expedition 33", image: "ex33.png", ratings: {"story":9,"graphics":10,"gameplay":9,"main_character":9,"characters":9,"atmosphere":8,"music":10,"rating":9.1} },
-{ id: "ef", title: "What Remains of Edith Finch", image: "ef.jpg", ratings: {"story":8,"graphics":8,"gameplay":9,"main_character":8,"characters":8,"atmosphere":8,"music":8,"rating":8.1} },
-{ id: "p2", title: "Portal 2", image: "p2.jpg", ratings: {"story":8,"graphics":7,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":8,"rating":7.9} },
-{ id: "fc3", title: "Far Cry 3", image: "fc3.jpg", ratings: {"story":7,"graphics":7,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":8,"rating":7.7} },
-{ id: "str", title: "Stray", image: "str.jpg", ratings: {"story":7,"graphics":8,"gameplay":8,"main_character":7,"characters":7,"atmosphere":9,"music":8,"rating":7.7} },
-{ id: "hk", title: "Hollow Knight", image: "hk.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":8,"characters":9,"atmosphere":9,"music":10,"rating":8.9} },
-{ id: "drg", title: "DREDGE", image: "drg.png", ratings: {"story":8,"graphics":7,"gameplay":7,"main_character":6,"characters":7,"atmosphere":10,"music":8,"rating":7.6} },
-{ id: "kht", title: "Kholat", image: "kht.png", ratings: {"story":7,"graphics":7,"gameplay":7,"main_character":6,"characters":6,"atmosphere":10,"music":9,"rating":7.4} },
-{ id: "aw", title: "Alan Wake", image: "aw.jpg", ratings: {"story":9,"graphics":8,"gameplay":7,"main_character":8,"characters":7,"atmosphere":10,"music":8,"rating":8.1} },
-{ id: "cp", title: "The Callisto Protocol", image: "cp.jpg", ratings: {"story":8,"graphics":10,"gameplay":9,"main_character":9,"characters":7,"atmosphere":9,"music":8,"rating":8.6} },
-{ id: "gow", title: "God of War", image: "gow.jpg", ratings: {"story":8,"graphics":8,"gameplay":9,"main_character":8,"characters":9,"atmosphere":8,"music":8,"rating":8.3} },
+  { id: "w3", title: "Witcher 3: Wild Hunt", image: "w3.jpg", ratings: {"story":10,"graphics":9,"gameplay":9,"main_character":10,"characters":10,"atmosphere":10,"music":10,"rating":9.7} },
+  { id: "rdr2", title: "Red Dead Redemption 2", image: "rdr2.jpg", ratings: {"story":9,"graphics":10,"gameplay":10,"main_character":10,"characters":10,"atmosphere":9,"music":8,"rating":9.4} },
+  { id: "cyb", title: "Cyberpunk 2077", image: "cyb.jpg", ratings: {"story":10,"graphics":10,"gameplay":10,"main_character":8,"characters":9,"atmosphere":9,"music":8,"rating":9.1} },
+  { id: "gtaV", title: "Grand Theft Auto V", image: "gtaV.jpg", ratings: {"story":9,"graphics":8,"gameplay":9,"main_character":9,"characters":9,"atmosphere":9,"music":9,"rating":8.9} },
+  { id: "alw2", title: "Alan Wake 2", image: "alw2.jpg", ratings: {"story":10,"graphics":10,"gameplay":8,"main_character":9,"characters":9,"atmosphere":9,"music":8,"rating":9.0} },
+  { id: "tlou", title: "The Last of Us Part I", image: "tlou.jpg", ratings: {"story":9,"graphics":9,"gameplay":10,"main_character":9,"characters":8,"atmosphere":9,"music":10,"rating":9.1} },
+  { id: "det", title: "Detroit: Become Human", image: "det.jpg", ratings: {"story":9,"graphics":8,"gameplay":8,"main_character":8,"characters":8,"atmosphere":8,"music":10,"rating":8.4} },
+  { id: "eld", title: "Elden Ring", image: "eld.jpg", ratings: {"story":8,"graphics":9,"gameplay":8,"main_character":7,"characters":8,"atmosphere":9,"music":10,"rating":8.4} },
+  { id: "dsr", title: "Dead Space Remake", image: "dsr.jpg", ratings: {"story":8,"graphics":10,"gameplay":9,"main_character":8,"characters":7,"atmosphere":9,"music":7,"rating":8.3} },
+  { id: "bmw", title: "Black Myth: Wukong", image: "bmw.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":8,"characters":8,"atmosphere":7,"music":8,"rating":8.1} },
+  { id: "bak", title: "Batman: Arkham Knight", image: "bak.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":9,"characters":7,"atmosphere":10,"music":7,"rating":8.1} },
+  { id: "hev", title: "Heavy Rain", image: "hev.jpg", ratings: {"story":10,"graphics":8,"gameplay":7,"main_character":8,"characters":8,"atmosphere":9,"music":8,"rating":8.3} },
+  { id: "re4", title: "Resident Evil 4 Remake", image: "re4.jpeg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":9,"atmosphere":8,"music":8,"rating":8.1} },
+  { id: "d16", title: "Doom (2016)", image: "d16.jpg", ratings: {"story":7,"graphics":7,"gameplay":9,"main_character":8,"characters":7,"atmosphere":8,"music":9,"rating":7.9} },
+  { id: "dete", title: "Doom Eternal", image: "dete.jpg", ratings: {"story":7,"graphics":8,"gameplay":9,"main_character":8,"characters":7,"atmosphere":8,"music":9,"rating":8.0} },
+  { id: "lim", title: "Limbo", image: "lim.jpg", ratings: {"story":6,"graphics":7,"gameplay":9,"main_character":7,"characters":6,"atmosphere":10,"music":9,"rating":7.7} },
+  { id: "ins", title: "Inside", image: "ins.jpg", ratings: {"story":7,"graphics":7,"gameplay":9,"main_character":7,"characters":6,"atmosphere":9,"music":7,"rating":7.4} },
+  { id: "crw", title: "Thronebreaker: The Witcher Tales", image: "crw.jpg", ratings: {"story":8,"graphics":7,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":9,"rating":8.0} },
+  { id: "fir", title: "Firewatch", image: "fir.png", ratings: {"story":7,"graphics":7,"gameplay":8,"main_character":7,"characters":7,"atmosphere":8,"music":9,"rating":7.6} },
+  { id: "swd", title: "Still Wakes the Deep", image: "swd.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":7,"characters":7,"atmosphere":9,"music":7,"rating":7.7} },
+  { id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", image: "fhr.jpg", ratings: {"story":8,"graphics":6,"gameplay":7,"main_character":7,"characters":7,"atmosphere":8,"music":7,"rating":7.1} },
+  { id: "inc", title: "Inscryption", image: "inc.jpg", ratings: {"story":8,"graphics":6,"gameplay":9,"main_character":6,"characters":7,"atmosphere":7,"music":7,"rating":7.1} },
+  { id: "mf2", title: "Mafia II", image: "mf2.png", ratings: {"story":8,"graphics":7,"gameplay":7,"main_character":8,"characters":7,"atmosphere":8,"music":7,"rating":7.4} },
+  { id: "hss", title: "Hellblade: Senua's Sacrifice", image: "hss.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":7,"characters":7,"atmosphere":9,"music":7,"rating":7.7} },
+  { id: "tlou2", title: "The Last of Us Part II", image: "tlou2.jpg", ratings: {"story":8,"graphics":9,"gameplay":10,"main_character":8,"characters":8,"atmosphere":9,"music":9,"rating":8.7} },
+  { id: "PTI", title: "A Plague Tale: Innocence", image: "PTI.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":8,"atmosphere":8,"music":7,"rating":7.9} },
+  { id: "atm", title: "Atomic Heart", image: "atm.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":7,"characters":7,"atmosphere":7,"music":7,"rating":7.7} },
+  { id: "jc3", title: "Just Cause 3", image: "jc3.jpg", ratings: {"story":7,"graphics":8,"gameplay":8,"main_character":8,"characters":7,"atmosphere":7,"music":8,"rating":7.6} },
+  { id: "out", title: "Outlast", image: "out.jpg", ratings: {"story":8,"graphics":7,"gameplay":8,"main_character":7,"characters":8,"atmosphere":9,"music":7,"rating":7.7} },
+  { id: "out2", title: "Outlast 2", image: "out2.jpg", ratings: {"story":7,"graphics":8,"gameplay":8,"main_character":7,"characters":8,"atmosphere":10,"music":8,"rating":8.0} },
+  { id: "re2", title: "Resident Evil 2 Remake", image: "re2.png", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":7,"atmosphere":9,"music":8,"rating":8.0} },
+  { id: "rev", title: "Resident Evil Village", image: "rev.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":9,"atmosphere":9,"music":8,"rating":8.3} },
+  { id: "reb", title: "Resident Evil 7: Biohazard", image: "reb.jpg", ratings: {"story":8,"graphics":7,"gameplay":8,"main_character":8,"characters":7,"atmosphere":10,"music":8,"rating":8.0} },
+  { id: "lit1", title: "Little Nightmares", image: "lit1.jpg", ratings: {"story":8,"graphics":7,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":9,"rating":8.0} },
+  { id: "lit2", title: "Little Nightmares 2", image: "lit2.png", ratings: {"story":8,"graphics":8,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":9,"rating":8.1} },
+  { id: "ex33", title: "Clair Obscur: Expedition 33", image: "ex33.png", ratings: {"story":9,"graphics":10,"gameplay":9,"main_character":9,"characters":9,"atmosphere":8,"music":10,"rating":9.1} },
+  { id: "ef", title: "What Remains of Edith Finch", image: "ef.jpg", ratings: {"story":8,"graphics":8,"gameplay":9,"main_character":8,"characters":8,"atmosphere":8,"music":8,"rating":8.1} },
+  { id: "p2", title: "Portal 2", image: "p2.jpg", ratings: {"story":8,"graphics":7,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":8,"rating":7.9} },
+  { id: "fc3", title: "Far Cry 3", image: "fc3.jpg", ratings: {"story":7,"graphics":7,"gameplay":9,"main_character":7,"characters":8,"atmosphere":8,"music":8,"rating":7.7} },
+  { id: "str", title: "Stray", image: "str.jpg", ratings: {"story":7,"graphics":8,"gameplay":8,"main_character":7,"characters":7,"atmosphere":9,"music":8,"rating":7.7} },
+  { id: "hk", title: "Hollow Knight", image: "hk.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":8,"characters":9,"atmosphere":9,"music":10,"rating":8.9} },
+  { id: "drg", title: "DREDGE", image: "drg.png", ratings: {"story":8,"graphics":7,"gameplay":7,"main_character":6,"characters":7,"atmosphere":10,"music":8,"rating":7.6} },
+  { id: "kht", title: "Kholat", image: "kht.png", ratings: {"story":7,"graphics":7,"gameplay":7,"main_character":6,"characters":6,"atmosphere":10,"music":9,"rating":7.4} },
+  { id: "aw", title: "Alan Wake", image: "aw.jpg", ratings: {"story":9,"graphics":8,"gameplay":7,"main_character":8,"characters":7,"atmosphere":10,"music":8,"rating":8.1} },
+  { id: "cp", title: "The Callisto Protocol", image: "cp.jpg", ratings: {"story":8,"graphics":10,"gameplay":9,"main_character":9,"characters":7,"atmosphere":9,"music":8,"rating":8.6} },
+  { id: "gow", title: "God of War", image: "gow.jpg", ratings: {"story":8,"graphics":8,"gameplay":9,"main_character":8,"characters":9,"atmosphere":8,"music":8,"rating":8.3} },
+  { id: "hl2", title: "Half Life 2", image: "hl2.jpg", ratings: {"story":9,"graphics":7,"gameplay":8,"main_character":7,"characters":9,"atmosphere":9,"music":9,"rating":8.3} },
 ];
 
+// Отдельный объект с обзорами (так проще управлять длинным текстом)
 const REVIEWS = {
   "w3": `Ведьмак 3 — это потрясающая RPG с огромным впечатляющим лором, красивым миром, 
   качественно прописанными персонажами, игра отличается сильной атмосферой и грамотно 
@@ -882,328 +484,293 @@ const REVIEWS = {
   в игре хороший сюжет и красивые пейзажи.`,
 };
 
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, m => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  })[m]);
-}
+const LABELS = {
+  story: "Сюжет", graphics: "Графика", gameplay: "Геймплей",
+  main_character: "Герой", characters: "Персонажи",
+  atmosphere: "Атмосфера", music: "Музыка", rating: "Общий рейтинг"
+};
 
-function createCard(game) {
+const LABELS_FULL = { ...LABELS, main_character: "Главный герой" };
+
+// --- 2. UTILITIES & STATE ---
+const escapeHtml = str => String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;' })[m]);
+
+let state = {
+  compareMode: false,
+  selectedGames: [],
+  currentView: localStorage.getItem('view') || 'list'
+};
+
+const dom = {
+  grid: document.getElementById('grid'),
+  modal: document.getElementById('game-modal'),
+  modalContent: document.querySelector('.modal-content'),
+  search: document.getElementById('search'),
+  clearSearch: document.getElementById('clear-search'),
+  criterion: document.getElementById('criterion'),
+  toggleView: document.getElementById('toggle-view'),
+  buttons: {
+    compare: document.getElementById('compare-btn'),
+    confirm: document.getElementById('compare-confirm'),
+    cancel: document.getElementById('compare-cancel')
+  }
+};
+
+// --- 3. RENDERING ---
+function createCardElement(game) {
   const wrap = document.createElement('div');
   wrap.className = 'card-wrap';
   wrap.dataset.id = game.id;
-
-  for (const k in game.ratings) {
-    wrap.dataset[k] = game.ratings[k];
-  }
+  for (const k in game.ratings) wrap.dataset[k] = game.ratings[k];
 
   const card = document.createElement('div');
   card.className = 'card';
   card.style.backgroundImage = `url(imgs/${game.image})`;
+  
   card.innerHTML = `
     <div class="popup">
-      <div>Сюжет: ${game.ratings.story}</div>
-      <div>Графика: ${game.ratings.graphics}</div>
-      <div>Геймплей: ${game.ratings.gameplay}</div>
-      <div>Герой: ${game.ratings.main_character}</div>
-      <div>Персонажи: ${game.ratings.characters}</div>
-      <div>Атмосфера: ${game.ratings.atmosphere}</div>
-      <div>Музыка: ${game.ratings.music}</div>
+      ${Object.entries(game.ratings).filter(([k]) => k !== 'rating').map(([k, v]) => `<div>${LABELS[k]}: ${v}</div>`).join('')}
     </div>
     <div class="badge">${game.ratings.rating}</div>
     <div class="title">${escapeHtml(game.title)}</div>
   `;
+  
   wrap.appendChild(card);
   return wrap;
 }
 
 function buildGrid() {
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  for (const game of GAMES) {
-    grid.appendChild(createCard(game));
-  }
+  dom.grid.innerHTML = '';
+  GAMES.forEach(game => dom.grid.appendChild(createCardElement(game)));
   document.querySelector('.page-title').textContent = `Тир-лист видеоигр (${GAMES.length} игр)`;
+  applyViewMode();
 }
 
+// --- 4. IMPROVED FLIP ANIMATION (Smooth Opacity) ---
 function flipSortByCriterion(criterion) {
-  const container = document.getElementById('grid');
-  const cards = Array.from(container.children);
+    const container = document.getElementById('grid');
+    const items = Array.from(container.children);
+    
+    // Подсветка полей в popup
+items.forEach(item => {
+    const popup = item.querySelector('.popup');
+    if (!popup) return;
 
-  // First — запоминаем начальные позиции
-  const firstRects = new Map();
-  cards.forEach(card => {
-    firstRects.set(card, card.getBoundingClientRect());
-  });
+    // убрать старую подсветку
+    popup.querySelectorAll('div').forEach(div => div.classList.remove('highlight-criterion'));
 
-  // Sort
-  const sortedCards = cards.slice().sort((a, b) => {
-    const va = parseFloat(a.dataset[criterion] ?? 0);
-    const vb = parseFloat(b.dataset[criterion] ?? 0);
-    return vb - va;
-  });
+    // найти нужное поле и выделить
+    const map = {
+        story: "Сюжет",
+        graphics: "Графика",
+        gameplay: "Геймплей",
+        main_character: "Герой",
+        characters: "Персонажи",
+        atmosphere: "Атмосфера",
+        music: "Музыка",
+        rating: null // рейтинг не в popup
+    };
 
-  // Reorder DOM
-  sortedCards.forEach((card, index) => {
-  container.appendChild(card);
-
-  const badge = card.querySelector('.badge');
-  if (badge) {
-    const rating = parseFloat(card.dataset.rating) || 0;
-    badge.innerHTML = `<span class="rank"> ${rating.toFixed(1)}</span> <span class="place">#${index + 1}</span>`;
-  }
+    if (map[criterion]) {
+        const target = Array.from(popup.children)
+            .find(div => div.textContent.startsWith(map[criterion]));
+        if (target) target.classList.add('highlight-criterion');
+    }
 });
 
+    // 1. FIRST (Запоминаем начальные позиции)
+    const firstRects = new Map(items.map(item => [item, item.getBoundingClientRect()]));
 
+    // 2. Сортируем (меняем порядок в массиве)
+    const sortedItems = items.slice().sort((a, b) => {
+        const va = parseFloat(a.dataset[criterion] ?? 0);
+        const vb = parseFloat(b.dataset[criterion] ?? 0);
+        return vb - va; // Сортировка по убыванию
+    });
 
-  // Last — новые позиции
-  const lastRects = new Map();
-  sortedCards.forEach(card => {
-    lastRects.set(card, card.getBoundingClientRect());
-  });
+    // 3. REORDER DOM (Меняем порядок в DOM и обновляем бейджи)
+    sortedItems.forEach((item, index) => {
+        container.appendChild(item);
+        // Обновление бейджа с местом (index + 1)
+        const badge = item.querySelector('.badge');
+        if (badge) {
+            // Предполагаем, что рейтинг хранится в dataset.rating
+            const rating = parseFloat(item.dataset.rating) || 0;
+            // Обновляем бейдж, добавляя место в списке
+            badge.innerHTML = `<span class="rank"> ${rating.toFixed(1)}</span> <span class="place">#${index + 1}</span>`;
+        }
+    });
 
-  // Invert — смещаем в старую позицию
-  sortedCards.forEach(card => {
-    const first = firstRects.get(card);
-    const last = lastRects.get(card);
-    const dx = first.left - last.left;
-    const dy = first.top - last.top;
-    card.style.transform = `translate(${dx}px, ${dy}px)`;
-    card.style.transition = 'transform 0s';
-  });
+    // 4. LAST & INVERT (Вычисляем смещение и мгновенно сдвигаем)
+    sortedItems.forEach(item => {
+        const first = firstRects.get(item);
+        const last = item.getBoundingClientRect();
+        const dx = first.left - last.left;
+        const dy = first.top - last.top;
 
-  // 6. Play — плавно возвращаем на место + fade-in
-requestAnimationFrame(() => {
-  sortedCards.forEach(card => {
-    card.style.transition = 'transform 520ms cubic-bezier(.2,.8,.2,1), opacity 300ms ease';
-    card.style.transform = '';
-    card.style.opacity = '1';
-  });
-});
+        if (dx || dy) {
+            item.style.transition = 'transform 0s, opacity 150ms ease-out, box-shadow 150ms ease'; 
+            
+            item.style.transform = `translate(${dx}px, ${dy}px)`;
+            
+            item.style.opacity = 0.5;
+            item.style.boxShadow = '0 0 0 rgba(0,0,0,0.0)'; // Убираем тень при перемещении
+        }
+    });
+
+    // 5. PLAY (Плавно возвращаем на место)
+    requestAnimationFrame(() => {
+        sortedItems.forEach(item => {
+            // ВАЖНО: box-shadow и opacity также включаются в этот долгий переход для возврата к норме
+            item.style.transition = 'transform 500ms cubic-bezier(0.4, 0.05, 0.45, 1.1), opacity 300ms ease-out, box-shadow 300ms ease-out';
+            
+            item.style.transform = ''; // Сброс смещения
+            item.style.opacity = 1;     // Возврат к полной прозрачности
+            item.style.boxShadow = '';  // Возврат к стандартной тени (через CSS)
+        });
+    });
 }
 
-function openGameModal(game) {
-  const modal = document.getElementById('game-modal');
-  const content = modal.querySelector('.modal-content');
+// --- 5. MODAL LOGIC (Fix: Check both REVIEWS and game object) ---
+function openModal(contentHTML) {
+  dom.modalContent.innerHTML = `<span class="close-btn" onclick="closeModal()">×</span>` + contentHTML;
+  dom.modal.style.display = 'flex';
+  requestAnimationFrame(() => dom.modal.classList.add('show'));
+}
 
-  content.innerHTML = `
-    <span class="close-btn" onclick="closeGameModal()">×</span>
+function closeModal() {
+  dom.modal.classList.remove('show');
+  setTimeout(() => dom.modal.style.display = 'none', 300);
+}
+
+function showGameDetails(game) {
+  const criteriaHTML = Object.entries(game.ratings)
+    .filter(([k]) => k !== 'rating')
+    .map(([k, v]) => `${LABELS_FULL[k]}: ${v}`)
+    .join('<br>');
+
+  // ИЩЕМ ОПИСАНИЕ: Сначала в объекте REVIEWS, потом внутри game, потом дефолт
+  const description = REVIEWS[game.id] || game.review || "Описание скоро появится...";
+
+  const html = `
     <h2>${escapeHtml(game.title)}</h2>
-    <div class="criteria">
-      Сюжет: ${game.ratings.story}<br>
-      Графика: ${game.ratings.graphics}<br>
-      Геймплей: ${game.ratings.gameplay}<br>
-      Главный герой: ${game.ratings.main_character}<br>
-      Персонажи: ${game.ratings.characters}<br>
-      Атмосфера: ${game.ratings.atmosphere}<br>
-      Музыка: ${game.ratings.music}
-    </div>
-    <p>${REVIEWS[game.id] || "Описание скоро появится..."}</p>
+    <div class="criteria">${criteriaHTML}</div>
+    <p id="modal-review">${description}</p>
   `;
-
-  modal.style.display = 'flex';
-  requestAnimationFrame(() => modal.classList.add('show'));
+  openModal(html);
 }
 
-function closeGameModal() {
-  const modal = document.getElementById('game-modal');
-  modal.classList.remove('show');
-  setTimeout(() => {
-    modal.style.display = 'none';
-  }, 300);
+function showCompareModal() {
+  if (state.selectedGames.length < 2) return alert("Выберите хотя бы 2 игры.");
+  
+  const keys = Object.keys(LABELS_FULL);
+  const headerRow = state.selectedGames.map(g => `<th>${escapeHtml(g.title)}</th>`).join('');
+  const tableRows = keys.map(k => {
+    const tds = state.selectedGames.map(g => `<td style="text-align:center">${g.ratings[k] || '-'}</td>`).join('');
+    return `<tr><td><b>${LABELS_FULL[k]}</b></td>${tds}</tr>`;
+  }).join('');
+  
+  const html = `
+    <h2>Сравнение игр</h2>
+    <div class="compare-table-wrapper">
+      <table class="compare-table">
+        <tr><th>Критерий</th>${headerRow}</tr>
+        ${tableRows}
+      </table>
+    </div>
+  `;
+  openModal(html);
+  setCompareMode(false);
 }
 
+// --- 6. COMPARE & VIEW STATE ---
+function setCompareMode(active) {
+  state.compareMode = active;
+  state.selectedGames = [];
+  document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+  
+  dom.buttons.compare.style.display = active ? 'none' : 'inline-block';
+  dom.buttons.confirm.style.display = active ? 'inline-block' : 'none';
+  dom.buttons.cancel.style.display = active ? 'inline-block' : 'none';
+}
 
-// Обработчики
+function handleCardClick(wrap) {
+  const game = GAMES.find(g => g.id === wrap.dataset.id);
+  if (!game) return;
 
-document.getElementById('criterion').addEventListener('change', e => {
-  flipSortByCriterion(e.target.value);
+  if (state.compareMode) {
+    const card = wrap.querySelector('.card');
+    const idx = state.selectedGames.findIndex(g => g.id === game.id);
+    if (idx >= 0) {
+      state.selectedGames.splice(idx, 1);
+      card.classList.remove('selected');
+    } else {
+      state.selectedGames.push(game);
+      card.classList.add('selected');
+    }
+  } else {
+    showGameDetails(game);
+  }
+}
+
+function applyViewMode() {
+  const isGrid = state.currentView === 'grid';
+  document.body.classList.toggle('grid-view', isGrid);
+  dom.toggleView.textContent = isGrid ? "Сетка" : "Список";
+  localStorage.setItem('view', state.currentView);
+}
+
+// --- 7. LISTENERS ---
+dom.grid.addEventListener('click', e => {
+  const wrap = e.target.closest('.card-wrap');
+  if (wrap) handleCardClick(wrap);
 });
 
-document.getElementById('search').addEventListener('input', function() {
+dom.criterion.addEventListener('change', e => flipSortByCriterion(e.target.value));
+
+dom.search.addEventListener('input', function() {
   const query = this.value.trim().toLowerCase();
-  const cards = document.querySelectorAll('#grid .card-wrap');
-  cards.forEach(card => {
-    const title = card.querySelector('.title').textContent.toLowerCase();
-    card.style.display = title.includes(query) ? '' : 'none';
+  dom.clearSearch.style.display = query ? 'block' : 'none';
+  Array.from(dom.grid.children).forEach(wrap => {
+    const title = wrap.querySelector('.title').textContent.toLowerCase();
+    wrap.style.display = title.includes(query) ? '' : 'none';
   });
 });
 
-
-document.querySelector('#game-modal .close-btn').addEventListener('click', closeGameModal);
-document.getElementById('game-modal').addEventListener('click', e => {
-  if (e.target.id === 'game-modal') closeGameModal();
+dom.clearSearch.addEventListener('click', () => {
+  dom.search.value = '';
+  dom.search.dispatchEvent(new Event('input'));
 });
 
-// Тема переключение
+dom.buttons.compare.addEventListener('click', () => setCompareMode(true));
+dom.buttons.cancel.addEventListener('click', () => setCompareMode(false));
+dom.buttons.confirm.addEventListener('click', showCompareModal);
+
+dom.toggleView.addEventListener('click', () => {
+  state.currentView = state.currentView === 'grid' ? 'list' : 'grid';
+  applyViewMode();
+});
+
+dom.modal.addEventListener('click', e => { if (e.target === dom.modal) closeModal(); });
+
 const themeToggle = document.getElementById('theme-toggle');
-themeToggle.addEventListener('change', () => {
-  document.body.classList.toggle('dark', themeToggle.checked);
-  localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-});
 if (localStorage.getItem('theme') === 'dark') {
   document.body.classList.add('dark');
   themeToggle.checked = true;
 }
+themeToggle.addEventListener('change', () => {
+  document.body.classList.toggle('dark', themeToggle.checked);
+  localStorage.setItem('theme', themeToggle.checked ? 'dark' : 'light');
+});
 
-// Кнопка "Наверх"
 const scrollBtn = document.getElementById('scroll-to-top');
-scrollBtn.addEventListener('click', () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-window.addEventListener('scroll', () => {
-  if (window.scrollY > 300) {
-    scrollBtn.classList.add('visible');
-  } else {
-    scrollBtn.classList.remove('visible');
-  }
-});
+window.addEventListener('scroll', () => scrollBtn.classList.toggle('visible', window.scrollY > 300));
+scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-// Запускаем сразу
+// Init
 buildGrid();
-document.getElementById('criterion').value = 'rating';
+dom.criterion.value = 'rating';
 flipSortByCriterion('rating');
-
-const searchInput = document.getElementById('search');
-const clearSearch = document.getElementById('clear-search');
-
-searchInput.addEventListener('input', () => {
-    clearSearch.style.display = searchInput.value ? 'block' : 'none';
-});
-
-clearSearch.addEventListener('click', () => {
-    searchInput.value = '';
-    clearSearch.style.display = 'none';
-    searchInput.dispatchEvent(new Event('input')); // чтобы обновить фильтрацию
-});
-
-let compareMode = false;
-let selectedGames = [];
-
-const compareBtn = document.getElementById('compare-btn');
-const grid = document.getElementById('grid');
-
-const confirmBtn = document.createElement('button');
-confirmBtn.id = "compare-confirm";
-confirmBtn.textContent = "✓";
-document.querySelector('.controls').appendChild(confirmBtn);
-
-const cancelBtn = document.createElement('button');
-cancelBtn.id = "compare-cancel";
-cancelBtn.textContent = "✕";
-document.querySelector('.controls').appendChild(cancelBtn);
-
-function enterCompareMode() {
-  compareMode = true;
-  selectedGames = [];
-  compareBtn.style.display = "none";
-  confirmBtn.style.display = "inline-block";
-  cancelBtn.style.display = "inline-block";
-}
-
-function exitCompareMode() {
-  compareMode = false;
-  selectedGames = [];
-  document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
-  compareBtn.style.display = "inline-block";
-  confirmBtn.style.display = "none";
-  cancelBtn.style.display = "none";
-}
-
-compareBtn.addEventListener('click', enterCompareMode);
-cancelBtn.addEventListener('click', exitCompareMode);
-
-grid.addEventListener('click', e => {
-  const wrap = e.target.closest('.card-wrap');
-  if (!wrap) return;
-
-  const gameId = wrap.dataset.id;
-  const game = GAMES.find(g => g.id === gameId);
-  const card = wrap.querySelector('.card');
-
-  if (compareMode) {
-    // 🔹 в режиме сравнения только выделяем / снимаем выделение
-    if (selectedGames.some(g => g.id === game.id)) {
-      selectedGames = selectedGames.filter(g => g.id !== game.id);
-      card.classList.remove('selected');
-    } else {
-      selectedGames.push(game);
-      card.classList.add('selected');
-    }
-  } else {
-    // 🔹 обычный режим → открываем модалку
-    if (game) openGameModal(game);
-  }
-});
-
-
-// ✅ показать сравнение
-confirmBtn.addEventListener('click', () => {
-  if (selectedGames.length < 2) {
-    alert("Выберите хотя бы 2 игры для сравнения");
-    return;
-  }
-
-  let html = `
-  <h2>Сравнение игр</h2>
-  <div class="compare-table-wrapper">
-    <table class="compare-table">
-      <tr>
-        <th>Критерий</th>
-        ${selectedGames.map(g => `<th>${g.title}</th>`).join('')}
-      </tr>
-`;
-
-
-  const keys = ["story","graphics","gameplay","main_character","characters","atmosphere","music","rating"];
-  const labels = {
-    story: "Сюжет", graphics: "Графика", gameplay: "Геймплей",
-    main_character: "Главный герой", characters: "Персонажи",
-    atmosphere: "Атмосфера", music: "Музыка", rating: "Общий рейтинг"
-  };
-
-  keys.forEach(k => {
-    html += "<tr><td><b>" + labels[k] + "</b></td>";
-    html += selectedGames.map(g => `<td style="text-align:center">${g.ratings[k]}</td>`).join('');
-    html += "</tr>";
-  });
-
-  html += "</table></div>";
-
-  const modal = document.getElementById('game-modal');
-  const content = modal.querySelector('.modal-content');
-  content.innerHTML = `<span class="close-btn" onclick="closeGameModal()">×</span>${html}`;
-
-  modal.style.display = 'flex';
-  requestAnimationFrame(() => modal.classList.add('show'));
-
-  exitCompareMode();
-});
-
-const toggleViewBtn = document.getElementById('toggle-view');
-
-// при загрузке восстанавливаем выбранный вид
-const savedView = localStorage.getItem('view');
-if (savedView === 'grid') {
-  document.body.classList.add('grid-view');
-  toggleViewBtn.textContent = "Сетка";
-} else {
-  toggleViewBtn.textContent = "Список";
-}
-
-
-toggleViewBtn.addEventListener('click', () => {
-  document.body.classList.toggle('grid-view');
-  
-  // текст на кнопке
-  if (document.body.classList.contains('grid-view')) {
-    toggleViewBtn.textContent = "Сетка";
-    localStorage.setItem('view', 'grid');
-  } else {
-    toggleViewBtn.textContent = "Список";
-    localStorage.setItem('view', 'list');
-  }
-});
 
 </script>
 </body>
