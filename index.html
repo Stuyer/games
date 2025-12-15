@@ -184,48 +184,127 @@
   }
   body.grid-view .card .title {
     opacity: 0; background: rgba(0,0,0,0.6); text-align: center;
-    width: 100%; font-size: 1.1rem; padding: 6px; transition: opacity 0.3s ease;
+    width: 100%; font-size: 1.1rem; padding: 6px;
   }
-  body.grid-view .card:hover .title { opacity: 1; }
+  body.grid-view .card:hover .title { opacity: 1; transition: opacity 0.3s ease; }
   body.grid-view .card .popup { display: none; }
   
   body.grid-view .badge {
     top: 8px; right: 8px; font-size: 0.95rem; padding: 6px 10px;
     background: rgba(15, 15, 15, 0.75); border-radius: 10px;
-    opacity: 0; transform: translateY(-5px); transition: opacity 0.3s ease, transform 0.2s ease;
+    opacity: 0; transform: translateY(-5px);
   }
-  body.grid-view .card:hover .badge { opacity: 1; transform: translateY(0); }
+  body.grid-view .card:hover .badge { opacity: 1; transform: translateY(0); transition: opacity 0.3s ease, transform 0.2s ease; }
   body.grid-view .badge::before { color: var(--gold); margin-right: 4px; }
 
-  /* --- 6. MODAL --- */
+/* --- 6. MODAL --- */
   #game-modal {
     position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 2000;
   }
   #game-modal::before {
-    content: ""; position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.3s ease; will-change: opacity;
+    content: ""; position: absolute; inset: 0; background: rgba(0,0,0,0.7); opacity: 0; transition: opacity 0.3s ease; will-change: opacity;
   }
   #game-modal.show { display: flex; }
   #game-modal.show::before { opacity: 1; }
   
   #game-modal .modal-content {
-    position: relative; background: var(--bg); color: var(--text);
-    padding: 30px; border-radius: 20px; max-width: 900px; width: 95%;
-    box-shadow: 0 12px 35px rgba(0,0,0,0.4); font-size: 1.25rem;
-    transform: scale(0.9); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease, background 0.3s, color 0.3s;
+    position: relative;
+    /* Устанавливаем дефолтный фон (если картинка не загрузится) */
+    background: #1a1a1a; 
+    /* Принудительно белый текст, так как фон всегда будет темной картинкой */
+    color: #fff; 
+    padding: 40px; border-radius: 20px; 
+    max-width: 900px; width: 95%;
+    box-shadow: 0 12px 25px rgba(0,0,0,0.5); font-size: 1.25rem;
+    transform: scale(0.9); opacity: 0; 
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    overflow: hidden; /* Чтобы размытый фон не вылезал за скругления */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Переменная для картинки, будет обновляться через JS */
+    --modal-bg-image: url('');
   }
+  
+  /* Фоновое изображение игры в модалке */
+  #game-modal .modal-content::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--modal-bg-image);
+    background-size: cover;
+    background-position: center;
+    /* ЧБ фильтр + затемнение (brightness), чтобы текст читался лучше */
+    filter: grayscale(100%) brightness(0.4); 
+    z-index: 0;
+  }
+
   #game-modal.show .modal-content { transform: scale(1); opacity: 1; }
   
-  #game-modal h2 { margin-top: 0; font-size: 2rem; }
-  #game-modal .criteria { font-size: 1.3rem; margin-top: 15px; }
-  #game-modal .close-btn { position: absolute; top: 20px; right: 28px; font-size: 30px; font-weight: bold; cursor: pointer; }
+  /* Стилизация контента внутри модалки для читаемости (Glassmorphism) */
+  #game-modal h2, 
+  #game-modal .criteria, 
+  #modal-review {
+    position: relative;
+    z-index: 1; /* Поднимаем текст над фоном */
+    background: rgba(255, 255, 255, 0.1); /* Легкая подложка */
+    backdrop-filter: blur(10px); /* Размытие фона под текстом */
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+
+  #game-modal h2 { 
+    margin-top: 0; 
+    font-size: 2.2rem; 
+    text-align: center; 
+    background: rgba(0, 0, 0, 0.6); /* Заголовок чуть темнее */
+    display: table;
+    margin-left: auto;
+    margin-right: auto;
+  }
   
-  #modal-review { text-align: justify; line-height: 1.5; overflow-wrap: anywhere; font-size: 1.4rem;}
+  #game-modal .criteria {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    display: table;
+    margin-left:0%;
+    margin-right: auto;
+  }
+  
+  #game-modal .close-btn { 
+    position: absolute; top: 15px; right: 20px; 
+    font-size: 32px; font-weight: bold; cursor: pointer; 
+    z-index: 2; color: rgba(255,255,255,0.7); 
+    transition: color 0.3s;
+  }
+  #game-modal .close-btn:hover { color: #fff; }
+  
+  #modal-review { 
+    text-align: justify; line-height: 1.6; overflow-wrap: anywhere; font-size: 1.2rem; 
+  }
+
+  /* Compare Table Fix inside Modal */
+  .compare-table-wrapper { position: relative; z-index: 1; background: rgba(0,0,0,0.7); border-radius: 12px; padding: 10px; }
+  .compare-table th { background: rgba(50,50,50,0.9); color: #fff; }
 
   /* Compare Table */
   .compare-table-wrapper { overflow-x: auto; max-width: 90vw; }
   .compare-table { border-collapse: collapse; width: max-content; min-width: 100%; }
   .compare-table th, .compare-table td { border: 1px solid #ccc; padding: 8px 12px; text-align: center; white-space: nowrap; }
   .compare-table th { background: var(--bg); color: var(--text); position: sticky; top: 0; }
+
+/* New: Highlight Max Value in Compare Table */
+  .compare-table .highlight-max {
+    color: #38b000 !important; /* Насыщенный зеленый */
+    font-weight: bold;
+    /* Добавляем тень для лучшей видимости */
+    text-shadow: 0 0 5px rgba(56, 176, 0, 0.7); 
+    background-color: rgba(56, 176, 0, 0.08); /* Легкий зеленый фон */
+    transition: background-color 0.3s;
+  }
 
   /* --- 7. ANIMATIONS --- */
   @keyframes shine {
@@ -331,7 +410,7 @@ const GAMES = [
   { id: "det", title: "Detroit: Become Human", image: "det.jpg", ratings: {"story":9,"graphics":8,"gameplay":8,"main_character":8,"characters":8,"atmosphere":8,"music":10,"rating":8.4} },
   { id: "eld", title: "Elden Ring", image: "eld.jpg", ratings: {"story":8,"graphics":9,"gameplay":8,"main_character":7,"characters":8,"atmosphere":9,"music":10,"rating":8.4} },
   { id: "dsr", title: "Dead Space Remake", image: "dsr.jpg", ratings: {"story":8,"graphics":10,"gameplay":9,"main_character":8,"characters":7,"atmosphere":9,"music":7,"rating":8.3} },
-  { id: "bmw", title: "Black Myth: Wukong", image: "bmw.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":8,"characters":8,"atmosphere":7,"music":8,"rating":8.1} },
+  { id: "bmw", title: "Black Myth: Wukong", image: "bmw.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":8,"characters":8,"atmosphere":8,"music":8,"rating":8.3} },
   { id: "bak", title: "Batman: Arkham Knight", image: "bak.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":9,"characters":7,"atmosphere":10,"music":7,"rating":8.1} },
   { id: "hev", title: "Heavy Rain", image: "hev.jpg", ratings: {"story":10,"graphics":8,"gameplay":7,"main_character":8,"characters":8,"atmosphere":9,"music":8,"rating":8.3} },
   { id: "re4", title: "Resident Evil 4 Remake", image: "re4.jpeg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":9,"atmosphere":8,"music":8,"rating":8.1} },
@@ -343,7 +422,7 @@ const GAMES = [
   { id: "fir", title: "Firewatch", image: "fir.png", ratings: {"story":7,"graphics":7,"gameplay":8,"main_character":7,"characters":7,"atmosphere":8,"music":9,"rating":7.6} },
   { id: "swd", title: "Still Wakes the Deep", image: "swd.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":7,"characters":7,"atmosphere":9,"music":7,"rating":7.7} },
   { id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", image: "fhr.jpg", ratings: {"story":8,"graphics":6,"gameplay":7,"main_character":7,"characters":7,"atmosphere":8,"music":7,"rating":7.1} },
-  { id: "inc", title: "Inscryption", image: "inc.jpg", ratings: {"story":8,"graphics":6,"gameplay":9,"main_character":6,"characters":7,"atmosphere":7,"music":7,"rating":7.1} },
+  { id: "inc", title: "Inscryption", image: "inc.jpg", ratings: {"story":8,"graphics":7,"gameplay":9,"main_character":6,"characters":7,"atmosphere":8,"music":8,"rating":7.6} },
   { id: "mf2", title: "Mafia II", image: "mf2.png", ratings: {"story":8,"graphics":7,"gameplay":7,"main_character":8,"characters":7,"atmosphere":8,"music":7,"rating":7.4} },
   { id: "hss", title: "Hellblade: Senua's Sacrifice", image: "hss.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":7,"characters":7,"atmosphere":9,"music":7,"rating":7.7} },
   { id: "tlou2", title: "The Last of Us Part II", image: "tlou2.jpg", ratings: {"story":8,"graphics":9,"gameplay":10,"main_character":8,"characters":8,"atmosphere":9,"music":9,"rating":8.7} },
@@ -369,6 +448,7 @@ const GAMES = [
   { id: "cp", title: "The Callisto Protocol", image: "cp.jpg", ratings: {"story":8,"graphics":10,"gameplay":9,"main_character":9,"characters":7,"atmosphere":9,"music":8,"rating":8.6} },
   { id: "gow", title: "God of War", image: "gow.jpg", ratings: {"story":8,"graphics":8,"gameplay":9,"main_character":8,"characters":9,"atmosphere":8,"music":8,"rating":8.3} },
   { id: "hl2", title: "Half Life 2", image: "hl2.jpg", ratings: {"story":9,"graphics":7,"gameplay":8,"main_character":7,"characters":9,"atmosphere":9,"music":9,"rating":8.3} },
+  { id: "hks", title: "Hollow Knight: Silksong", image: "hks.png", ratings: {"story":9,"graphics":9,"gameplay":10,"main_character":8,"characters":9,"atmosphere":9,"music":10,"rating":9.1} },
 ];
 
 // Отдельный объект с обзорами (так проще управлять длинным текстом)
@@ -402,7 +482,7 @@ const REVIEWS = {
   "dsr": `Dead Space Remake — хоррор во всей его красе, которому не хватает лишь одного - пугающей музыки. 
   На мой взгляд, один из лучших ремейков всего времени, красивейшая графика, увлекательная стрельба из режущих 
   оружий, постоянное желание отрубать конечности некроморфов. Добротный сюжет.`,
-  "hev": `Heavy Rain — это игра, которую я назову, если кто-то попросит меня назвать один из лучших сюжетов в 
+  "hev": `Heavy Rain — это игра, которую я упомяну, если кто-то попросит меня назвать один из лучших сюжетов в 
   играх, мрачная атмосфера, душевные персонажи, но скверный геймплей. История этой игры точно увлечёт игрока.`,
   "rev": `Resident Evil Village — пожалуй, один из лучших резидентов настоящего времени, тягостная атмосфера, 
   разнообразные локации, множество врагов. В этой игре точно будет страшно и интересно.`,
@@ -644,32 +724,81 @@ function closeModal() {
 }
 
 function showGameDetails(game) {
+  // Передаем картинку в CSS переменную модального окна перед открытием
+  dom.modalContent.style.setProperty('--modal-bg-image', `url(imgs/${game.image})`);
+
   const criteriaHTML = Object.entries(game.ratings)
     .filter(([k]) => k !== 'rating')
-    .map(([k, v]) => `${LABELS_FULL[k]}: ${v}`)
+    .map(([k, v]) => `<b>${LABELS_FULL[k]}:</b> ${v}`) // Добавил жирный шрифт для названий
     .join('<br>');
 
-  // ИЩЕМ ОПИСАНИЕ: Сначала в объекте REVIEWS, потом внутри game, потом дефолт
   const description = REVIEWS[game.id] || game.review || "Описание скоро появится...";
 
   const html = `
     <h2>${escapeHtml(game.title)}</h2>
     <div class="criteria">${criteriaHTML}</div>
-    <p id="modal-review">${description}</p>
+    <div id="modal-review">${description}</div>
   `;
+  
+  // При открытии обычной карточки убираем лишние стили таблицы сравнения, если они были
+  dom.modalContent.classList.remove('compare-mode');
+  
   openModal(html);
 }
 
+// Функция для открытия модального окна сравнения
 function showCompareModal() {
   if (state.selectedGames.length < 2) return alert("Выберите хотя бы 2 игры.");
   
+  // --- 1. Сброс анимационных стилей (для корректной работы модалки) ---
+  dom.modalContent.style.setProperty('--modal-bg-image', 'none');
+  dom.modalContent.style.transform = '';
+  dom.modalContent.style.clipPath = ''; 
+  dom.modalContent.classList.remove('animating', 'closing');
+  // --------------------------------------------------------------------
+
   const keys = Object.keys(LABELS_FULL);
+  
+  // 2. Находим максимальные значения для каждого критерия среди выбранных игр
+  const maxRatings = {};
+  
+  keys.forEach(key => {
+    let max = -Infinity;
+    state.selectedGames.forEach(game => {
+      // Преобразуем рейтинг в число для сравнения
+      const rating = parseFloat(game.ratings[key]) || 0; 
+      if (rating > max) {
+        max = rating;
+      }
+    });
+    // Сохраняем максимальное значение, только если оно больше 0
+    if (max > 0) {
+       maxRatings[key] = max;
+    }
+  });
+  
+  // 3. Генерируем заголовки таблицы
   const headerRow = state.selectedGames.map(g => `<th>${escapeHtml(g.title)}</th>`).join('');
+  
+  // 4. Генерируем строки таблицы с выделением
   const tableRows = keys.map(k => {
-    const tds = state.selectedGames.map(g => `<td style="text-align:center">${g.ratings[k] || '-'}</td>`).join('');
+    const tds = state.selectedGames.map(game => {
+      const rating = game.ratings[k] || '-';
+      let classNames = '';
+
+      // Проверяем, является ли текущий рейтинг максимальным для этого критерия
+      if (maxRatings[k] && parseFloat(rating) === maxRatings[k]) {
+        classNames = 'highlight-max';
+      }
+      
+      // Возвращаем ячейку с классом подсветки, если необходимо
+      return `<td class="${classNames}" style="text-align:center">${rating}</td>`;
+    }).join('');
+    
     return `<tr><td><b>${LABELS_FULL[k]}</b></td>${tds}</tr>`;
   }).join('');
   
+  // 5. Собираем HTML
   const html = `
     <h2>Сравнение игр</h2>
     <div class="compare-table-wrapper">
@@ -679,6 +808,7 @@ function showCompareModal() {
       </table>
     </div>
   `;
+  
   openModal(html);
   setCompareMode(false);
 }
