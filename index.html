@@ -310,6 +310,179 @@
     100% { background-position: -100%; }
   }
 
+
+/* =========================
+   MOBILE ADAPTATION ONLY
+   ========================= */
+@media (max-width: 600px) {
+
+  /* --- Общий layout --- */
+  body {
+    padding: 16px 10px;
+  }
+
+  .page-title {
+    font-size: 1.6rem;
+  }
+
+  /* --- Панель управления --- */
+  .controls {
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .controls label {
+    font-size: 0.9rem;
+  }
+
+  .toggle-switch {
+    width: 64px;
+    height: 32px;
+
+    bottom: 16px;
+    left: 16px;
+    top: auto;
+
+    z-index: 1200;
+  }
+
+  .switch-label {
+    height: 32px;
+    border-radius: 16px;
+    border-width: 2px;
+  }
+
+  .slider::before {
+    width: 18px;
+    height: 18px;
+    top: 6px;
+    left: 6px;
+  }
+
+  .checkbox:checked ~ .slider::before {
+    transform: translateX(30px);
+  }
+  
+  select,
+  #search {
+    width: 160px;
+    font-size: 0.9rem;
+    padding: 6px 8px;
+  }
+
+  /* Кнопки меньше */
+  #compare-btn,
+  #compare-confirm,
+  #compare-cancel,
+  #toggle-view {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    width: 120px;
+    margin: 0 auto;
+  }
+
+  /* --- Отключаем grid-view полностью --- */
+  body.grid-view #grid {
+    display: flex !important;
+  }
+
+  #toggle-view {
+    display: none; /* кнопка "Сетка/Список" не нужна */
+  }
+
+  /* --- Карточки --- */
+  :root {
+    --card-w: 100%;
+    --card-h: 150px;
+  }
+
+  #grid {
+    justify-content: flex-start;
+    padding: 0 10px;
+    box-sizing: border-box;
+  }
+
+  .card-wrap {
+    width: 100%;
+    max-width: 100%;
+    display: block;
+  }
+
+  .card {
+    padding: 10px;
+    border-radius: 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .card:hover {
+    transform: none;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  }
+
+  .card:active {
+    transform: scale(0.97);
+  }
+
+  .card .title {
+    font-size: 1rem;
+    padding: 4px 8px;
+  }
+
+  /* popup отключаем (hover на телефоне не работает) */
+  .popup {
+    display: none !important;
+  }
+
+  /* badge компактнее */
+  .badge {
+    font-size: 14px;
+    padding: 5px 8px;
+    border-radius: 10px;
+  }
+
+  /* --- Кнопка "Наверх" --- */
+  #scroll-to-top {
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  /* --- МОДАЛЬНОЕ ОКНО --- */
+  #game-modal .modal-content {
+    padding: 16px;
+    font-size: 0.95rem;
+    border-radius: 14px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  #game-modal h2 {
+    font-size: 1.3rem;
+  }
+
+  #game-modal .criteria {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  #modal-review {
+    font-size: 0.95rem;
+  }
+
+  #game-modal .close-btn {
+    font-size: 26px;
+    top: 10px;
+    right: 14px;
+  }
+
+  /* --- Таблица сравнения --- */
+  .compare-table-wrapper {
+    max-width: 100%;
+  }
+
+}
+
   /* --- 8. GAME SPECIFIC TWEAKS (Backgrounds) --- */
   /* List View */
   .card-wrap[data-id="cyb"] .card { background-size: 110%; }
