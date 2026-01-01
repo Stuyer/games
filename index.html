@@ -515,6 +515,7 @@
   body.grid-view .card-wrap[data-id="atm"] .card { background-position: 102%; }
   body.grid-view .card-wrap[data-id="out"] .card { background-position: 100%; }
   body.grid-view .card-wrap[data-id="jc3"] .card { background-position: 80%; }
+  body.grid-view .card-wrap[data-id="hol"] .card { background-position: 80%; }
 </style>
 </head>
 <body>
@@ -581,7 +582,7 @@ const GAMES = [
   { id: "det", title: "Detroit: Become Human", image: "det.jpg", ratings: {"story":9,"graphics":8,"gameplay":8,"main_character":8,"characters":8,"atmosphere":8,"music":10,"rating":8.4} },
   { id: "eld", title: "Elden Ring", image: "eld.jpg", ratings: {"story":8,"graphics":9,"gameplay":8,"main_character":7,"characters":8,"atmosphere":9,"music":10,"rating":8.4} },
   { id: "dsr", title: "Dead Space Remake", image: "dsr.jpg", ratings: {"story":8,"graphics":10,"gameplay":9,"main_character":8,"characters":7,"atmosphere":9,"music":7,"rating":8.3} },
-  { id: "bmw", title: "Black Myth: Wukong", image: "bmw.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":8,"characters":8,"atmosphere":8,"music":8,"rating":8.3} },
+  { id: "bmw", title: "Black Myth: Wukong", image: "bmw.jpg", ratings: {"story":8,"graphics":9,"gameplay":9,"main_character":8,"characters":8,"atmosphere":9,"music":8,"rating":8.4} },
   { id: "bak", title: "Batman: Arkham Knight", image: "bak.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":9,"characters":7,"atmosphere":10,"music":7,"rating":8.1} },
   { id: "hev", title: "Heavy Rain", image: "hev.jpg", ratings: {"story":10,"graphics":8,"gameplay":7,"main_character":8,"characters":8,"atmosphere":9,"music":8,"rating":8.3} },
   { id: "re4", title: "Resident Evil 4 Remake", image: "re4.jpeg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":8,"characters":9,"atmosphere":8,"music":8,"rating":8.1} },
@@ -621,6 +622,9 @@ const GAMES = [
   { id: "hl2", title: "Half Life 2", image: "hl2.jpg", ratings: {"story":9,"graphics":7,"gameplay":8,"main_character":7,"characters":9,"atmosphere":9,"music":9,"rating":8.3} },
   { id: "hks", title: "Hollow Knight: Silksong", image: "hks.png", ratings: {"story":9,"graphics":9,"gameplay":10,"main_character":8,"characters":9,"atmosphere":9,"music":10,"rating":9.1} },
   { id: "lp", title: "Lies of P", image: "lp.jpg", ratings: {"story":8,"graphics":8,"gameplay":7,"main_character":7,"characters":8,"atmosphere":8,"music":8,"rating":7.7} },
+  { id: "itt", title: "It Takes Two", image: "itt.jpg", ratings: {"story":9,"graphics":8,"gameplay":9,"main_character":7,"characters":7,"atmosphere":9,"music":8,"rating":8.1} },
+  { id: "bts", title: "Beyond: Two Souls", image: "bts.jpg", ratings: {"story":9,"graphics":7,"gameplay":8,"main_character":8,"characters":8,"atmosphere":8,"music":8,"rating":8.0} },
+  { id: "hol", title: "High on Life", image: "hol.jpg", ratings: {"story":8,"graphics":8,"gameplay":8,"main_character":7,"characters":9,"atmosphere":8,"music":9,"rating":8.1} },
 ];
 
 // Отдельный объект с обзорами (так проще управлять длинным текстом)
@@ -734,6 +738,20 @@ const REVIEWS = {
   в напряжении.`,
   "gow": `God of War преподносит историю бога Кратоса и его сына Атрея, вместе они сражаются с сильными противниками в разных мирах, 
   в игре хороший сюжет и красивые пейзажи.`,
+  "hl2": `Half Life 2 это атмосферная игра с интересной историей Гордона Фримена, где игроку предстоит сразиться с кучами
+  пришельцев и Альянсом, захватившим Землю.`,
+  "hks": `Hollow Knight: Silksong — вторая часть дилогии Полого Рыцаря, в новой части добавилось много геймплейных возможностей,
+  новые большие, с множеством скрытых проходов локации, построение билда через знаки и предметы, второстепенные задания и многое другое.
+  Сюжет, саунд-дизайн и персонажи великолепны.`,
+  "lp": `Lies of P это игра, подарившая мне смешанные впечатления. С одной стороны - красивые локации, хороший, но без изюминки сюжет,
+  с другой - отвратительный геймплей, неудобные и несправедливые бои с боссами. Исследование цепляет, но ощущения прогресса от прокачки нет.`,
+  "itt": `It Takes Two одна из лучших кооп-игр в истории, интересные головоломки здесь не получится решить в одиночку, разнообразные
+  локации порадуют, а сюжет увлечёт.`,
+  "bts": `Beyond: Two Souls — одна из легендарных игр Quantic Dream. Геймплей не за одного персонажа: девушка Джуди Холмс и призрак,
+  живущий в ней. Из-за чего можно пройти вдвоём.`,
+  "hol": `High on Life — клёвый комедийный шутер от создателя «Рик и Морти». Присутствуют элементы метроидвании и шутки в стиле
+  вышеупомянутого мультсериала. Сюжет простой - про захват планеты пришельцами, но игровой процесс не заставит скучать, а музыка сохранит
+  быстрый темп.`,
 };
 
 const LABELS = {
