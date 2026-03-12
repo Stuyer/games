@@ -297,34 +297,104 @@
         }
 
         /* ── Переключатель темы (встроен в шапку) ── */
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            padding: 6px 12px;
-            border-radius: 30px;
-            background: var(--pill-bg);
-            border: 1px solid var(--surface-border);
+        .themeToggle {
+            color: var(--text-light);
+            width: 32px;
+            height: 32px;
+            display: block;
+            transition: color 0.4s ease;
+        }
+
+        body.dark .themeToggle {
+            color: var(--text-dark);
+        }
+
+        .st-sunMoonThemeToggleBtn {
+            position: relative;
             cursor: pointer;
-            user-select: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text);
-            transition: background 0.2s, color 0.2s;
         }
 
-        .theme-toggle:hover {
-            background: var(--pill-border);
+        .st-sunMoonThemeToggleBtn .themeToggleInput {
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            margin: 0;
+            cursor: pointer;
         }
 
-        /* Белый текст в тёмной теме */
-        body.dark .theme-toggle {
-            color: #ffffff;
+        .st-sunMoonThemeToggleBtn svg {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.4s ease;
+            transform: rotate(40deg);
+            pointer-events: none;
         }
 
-        .theme-toggle-icon {
-            font-size: 1rem;
-            line-height: 1;
+        .st-sunMoonThemeToggleBtn svg .sunMoon {
+            transform-origin: center center;
+            transition: inherit;
+            transform: scale(1);
+        }
+
+        .st-sunMoonThemeToggleBtn svg .sunRay {
+            transform-origin: center center;
+            transform: scale(0);
+        }
+
+        .st-sunMoonThemeToggleBtn svg mask>circle {
+            transition: transform 0.64s cubic-bezier(0.41, 0.64, 0.32, 1.575);
+            transform: translate(0px, 0px);
+        }
+
+        .st-sunMoonThemeToggleBtn svg .sunRay2 {
+            animation-delay: 0.05s !important;
+        }
+
+        .st-sunMoonThemeToggleBtn svg .sunRay3 {
+            animation-delay: 0.1s !important;
+        }
+
+        .st-sunMoonThemeToggleBtn svg .sunRay4 {
+            animation-delay: 0.17s !important;
+        }
+
+        .st-sunMoonThemeToggleBtn svg .sunRay5 {
+            animation-delay: 0.25s !important;
+        }
+
+        .st-sunMoonThemeToggleBtn svg .sunRay6 {
+            animation-delay: 0.29s !important;
+        }
+
+        .st-sunMoonThemeToggleBtn .themeToggleInput:checked+svg {
+            transform: rotate(90deg);
+        }
+
+        .st-sunMoonThemeToggleBtn .themeToggleInput:checked+svg mask>circle {
+            transform: translate(16px, -3px);
+        }
+
+        .st-sunMoonThemeToggleBtn .themeToggleInput:checked+svg .sunMoon {
+            transform: scale(0.55);
+        }
+
+        .st-sunMoonThemeToggleBtn .themeToggleInput:checked+svg .sunRay {
+            animation: showRay1832 0.4s ease 0s 1 forwards;
+        }
+
+        @keyframes showRay1832 {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         /* ── Scroll To Top ── */
@@ -389,7 +459,7 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s, background 0.4s ease, color 0.4s ease;
             position: relative;
             z-index: 2;
             flex-shrink: 0;
@@ -1212,7 +1282,7 @@
             border-radius: 16px;
             /* Выше speed-dial (1100) — чтобы клики не блокировались */
             z-index: 1150;
-            transition: opacity 0.25s, transform 0.25s;
+            transition: opacity 0.25s, transform 0.25s, background 0.4s, border-color 0.4s;
             padding-bottom: 10px;
             display: flex;
             flex-direction: column;
@@ -1240,6 +1310,7 @@
             font-size: 0.85rem;
             font-weight: 600;
             border-radius: 14px 14px 0 0;
+            transition: background 0.4s, color 0.4s;
         }
 
         body:not(.dark) .genre-header {
@@ -1262,7 +1333,7 @@
             cursor: pointer;
             user-select: none;
             font-size: 0.82rem;
-            transition: background 0.18s, border-color 0.18s, color 0.18s;
+            transition: background 0.4s, border-color 0.4s, color 0.4s;
             color: var(--text);
         }
 
@@ -1516,7 +1587,7 @@
             "w1": `The Witcher это первая часть саги о Геральте из Ривии, игра может похвастаться интересным сюжетом, невероятной атмосферой, но не самой удобной боёвкой.`,
             "awo": `A Way Out это кооперативная игра с драматической историей о двух заключённых, которые пытаются сбежать из тюрьмы, действуя сообща. Было интересно узнать о жизни обоих героев.`,
             "sco": `Scorn — это атмосферный биопанк-хоррор от первого лица с необычным визуальным стилем, вдохновлённым творчеством Гигера. Присутствуют элементы головоломки, жуткие враги и очень необычный сюжет.`,
-            "req": `Resident Evil Requiem — грандиозное продолжение серии, которое совместило в себе жуткий survival-геймплей за новую героиню Грейс Эшкрофт и экшен за легендарного Леона. Игра представляет совокупность лучших решений в предыдущих частях, но ещё больший саспенс и проработку деталей.`,
+            "req": `Resident Evil Requiem — грандиозное продолжение серии, которое совместило в себе жуткий survival-геймплей за новую героиню Грейс Эшкрофт и экшен за легендарного Леона. Игра представляет совокупность лучших решений из прошлых частей, а также ещё больший саспенс и проработку деталей.`,
         };
 
         const LABELS = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн" };
@@ -1682,9 +1753,30 @@
                             <div className="page-subtitle">{filteredGames.length} игр · сортировка: {LABELS[sortBy]}</div>
                         </div>
                         <div className="site-header-right">
-                            <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-                                <span>{theme === 'dark' ? 'Светлая' : 'Тёмная'}</span>
-                            </button>
+                            <label htmlFor="themeToggle" className="themeToggle st-sunMoonThemeToggleBtn">
+                                <input
+                                    type="checkbox"
+                                    id="themeToggle"
+                                    className="themeToggleInput"
+                                    onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                                    checked={theme === 'light'}
+                                />
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" stroke="none">
+                                    <mask id="moon-mask">
+                                        <rect x="0" y="0" width="20" height="20" fill="white" />
+                                        <circle cx="11" cy="3" r="8" fill="black" />
+                                    </mask>
+                                    <circle className="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)" />
+                                    <g>
+                                        <circle className="sunRay sunRay1" cx="18" cy="10" r="1.5" />
+                                        <circle className="sunRay sunRay2" cx="14" cy="16.928" r="1.5" />
+                                        <circle className="sunRay sunRay3" cx="6" cy="16.928" r="1.5" />
+                                        <circle className="sunRay sunRay4" cx="2" cy="10" r="1.5" />
+                                        <circle className="sunRay sunRay5" cx="6" cy="3.1718" r="1.5" />
+                                        <circle className="sunRay sunRay6" cx="14" cy="3.1718" r="1.5" />
+                                    </g>
+                                </svg>
+                            </label>
                         </div>
                     </div>
 
