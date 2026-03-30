@@ -92,6 +92,7 @@
 
         /* ── Панель управления ── */
         .controls-bar {
+            --controls-shift-x: 20px;
             display: flex;
             gap: 8px;
             align-items: center;
@@ -104,6 +105,35 @@
             border-radius: 16px;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
+            position: sticky;
+            top: 10px;
+            z-index: 1000;
+            transform: translateX(var(--controls-shift-x));
+            transition: padding 0.22s ease, gap 0.22s ease, border-radius 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+        }
+
+        .controls-bar.compact {
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 13px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+            transform: translateX(var(--controls-shift-x)) translateY(-2px);
+        }
+
+        .controls-bar.compact label {
+            font-size: 0.74rem;
+        }
+
+        .controls-bar.compact .btn,
+        .controls-bar.compact select,
+        .controls-bar.compact input {
+            font-size: 0.82rem;
+            padding: 6px 9px;
+            border-radius: 9px;
+        }
+
+        .controls-bar.compact .controls-separator {
+            height: 18px;
         }
 
         .controls-bar select,
@@ -1611,6 +1641,8 @@
             const [showGenrePanel, setShowGenrePanel] = useState(false);
             const [showScrollTop, setShowScrollTop] = useState(false);
             const [speedDialOpen, setSpeedDialOpen] = useState(false);
+            const [controlsCompact, setControlsCompact] = useState(false);
+            const searchInputRef = useRef(null);
 
             // Theme Effect
             useEffect(() => {
@@ -1626,7 +1658,11 @@
 
             // Scroll Listener
             useEffect(() => {
-                const handleScroll = () => setShowScrollTop(window.scrollY > 300);
+                const handleScroll = () => {
+                    setShowScrollTop(window.scrollY > 300);
+                    setControlsCompact(window.scrollY > 68);
+                };
+                handleScroll();
                 window.addEventListener('scroll', handleScroll);
                 return () => window.removeEventListener('scroll', handleScroll);
             }, []);
@@ -1641,6 +1677,34 @@
                 document.documentElement.style.overflow =
                     (modalGame || compareModalOpen || rouletteOpen) ? 'hidden' : '';
             }, [modalGame, compareModalOpen, rouletteOpen]);
+
+            useEffect(() => {
+                const isEditableTarget = (el) => {
+                    if (!el) return false;
+                    if (el.isContentEditable) return true;
+                    const tag = (el.tagName || '').toLowerCase();
+                    return tag === 'input' || tag === 'textarea' || tag === 'select';
+                };
+
+                const handleSearchShortcut = (e) => {
+                    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+                    if (isEditableTarget(e.target)) return;
+
+                    const isSearchHotkey =
+                        e.key === '/' || e.key === '.';
+
+                    if (!isSearchHotkey) return;
+
+                    e.preventDefault();
+                    if (searchInputRef.current) {
+                        searchInputRef.current.focus();
+                        searchInputRef.current.select();
+                    }
+                };
+
+                window.addEventListener('keydown', handleSearchShortcut);
+                return () => window.removeEventListener('keydown', handleSearchShortcut);
+            }, []);
 
             // Filter Logic
             const filteredGames = useMemo(() => {
@@ -1665,6 +1729,12 @@
                 } else {
                     setModalGame(game);
                 }
+            };
+
+            const handleCardLongPress = (game) => {
+                setCompareMode(true);
+                setSelectedGames(prev => (prev.includes(game.id) ? prev : [...prev, game.id]));
+                setSpeedDialOpen(false);
             };
 
             const handleCompareConfirm = () => {
@@ -1768,12 +1838,12 @@
                                     </mask>
                                     <circle className="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)" />
                                     <g>
-                                        <circle className="sunRay sunRay1" cx="18" cy="10" r="1.5" />
-                                        <circle className="sunRay sunRay2" cx="14" cy="16.928" r="1.5" />
-                                        <circle className="sunRay sunRay3" cx="6" cy="16.928" r="1.5" />
-                                        <circle className="sunRay sunRay4" cx="2" cy="10" r="1.5" />
-                                        <circle className="sunRay sunRay5" cx="6" cy="3.1718" r="1.5" />
-                                        <circle className="sunRay sunRay6" cx="14" cy="3.1718" r="1.5" />
+                                        <line className="sunRay sunRay1" x1="16.8" y1="10" x2="19.2" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                                        <line className="sunRay sunRay2" x1="13.4" y1="15.8888" x2="14.6" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                                        <line className="sunRay sunRay3" x1="6.6" y1="15.8888" x2="5.4" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                                        <line className="sunRay sunRay4" x1="3.2" y1="10" x2="0.8" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                                        <line className="sunRay sunRay5" x1="6.6" y1="4.211" x2="5.4" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                                        <line className="sunRay sunRay6" x1="13.4" y1="4.211" x2="14.6" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                                     </g>
                                 </svg>
                             </label>
@@ -1781,14 +1851,14 @@
                     </div>
 
                     {/* ═══ ПАНЕЛЬ УПРАВЛЕНИЯ ═══ */}
-                    <div className="controls-bar">
+                    <div className={`controls-bar ${controlsCompact ? 'compact' : ''}`}>
                         <label>Сортировка</label>
                         <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                             {Object.entries(LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                         </select>
                         <div className="controls-separator" />
                         <div className="search-wrapper">
-                            <input type="text" id="search" placeholder="Поиск игры..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ minWidth: 200 }} />
+                            <input ref={searchInputRef} type="text" id="search" placeholder="Поиск игры..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ minWidth: 200 }} />
                             {search && <span id="clear-search" onClick={() => setSearch("")} title="Очистить">×</span>}
                         </div>
                         {compareMode && (
@@ -1810,6 +1880,7 @@
                                         game={game}
                                         view={view}
                                         onClick={() => handleCardClick(game)}
+                                        onLongPress={() => handleCardLongPress(game)}
                                         selected={selectedGames.includes(game.id)}
                                         index={i}
                                         sortBy={sortBy}
@@ -1842,9 +1913,23 @@
             );
         };
 
-        const Card = ({ game, view, onClick, selected, index, sortBy }) => {
+        const Card = ({ game, view, onClick, onLongPress, selected, index, sortBy }) => {
             const cardRef = useRef(null);
             const contentRef = useRef(null);
+            const longPressTimerRef = useRef(null);
+            const longPressTriggeredRef = useRef(false);
+            const pointerStartRef = useRef({ x: 0, y: 0 });
+
+            const clearLongPressTimer = () => {
+                if (longPressTimerRef.current) {
+                    clearTimeout(longPressTimerRef.current);
+                    longPressTimerRef.current = null;
+                }
+            };
+
+            useEffect(() => {
+                return () => clearLongPressTimer();
+            }, []);
 
             const handleMouseMove = (e) => {
                 if (view === 'grid') return;
@@ -1877,6 +1962,48 @@
                 const card = contentRef.current;
                 card.style.transition = 'transform 0.5s ease-out';
                 card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg)';
+                clearLongPressTimer();
+            };
+
+            const startLongPress = (e) => {
+                if (!onLongPress) return;
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+                longPressTriggeredRef.current = false;
+                pointerStartRef.current = { x: e.clientX, y: e.clientY };
+                clearLongPressTimer();
+                longPressTimerRef.current = setTimeout(() => {
+                    longPressTriggeredRef.current = true;
+                    onLongPress();
+                }, 420);
+            };
+
+            const cancelLongPress = () => {
+                clearLongPressTimer();
+                if (longPressTriggeredRef.current) {
+                    setTimeout(() => {
+                        longPressTriggeredRef.current = false;
+                    }, 0);
+                }
+            };
+
+            const handlePointerMove = (e) => {
+                if (!longPressTimerRef.current) return;
+                const dx = Math.abs(e.clientX - pointerStartRef.current.x);
+                const dy = Math.abs(e.clientY - pointerStartRef.current.y);
+                if (dx > 8 || dy > 8) {
+                    clearLongPressTimer();
+                }
+            };
+
+            const handleClick = (e) => {
+                if (longPressTriggeredRef.current) {
+                    longPressTriggeredRef.current = false;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+                onClick();
             };
 
             return (
@@ -1887,7 +2014,12 @@
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.1, filter: "blur(10px) grayscale(1)", transition: { duration: 0.38, ease: "easeOut" } }}
                     className={`card-wrap ${selected ? 'selected' : ''}`}
-                    onClick={onClick}
+                    onClick={handleClick}
+                    onPointerDown={startLongPress}
+                    onPointerUp={cancelLongPress}
+                    onPointerCancel={cancelLongPress}
+                    onPointerLeave={cancelLongPress}
+                    onPointerMove={handlePointerMove}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
                     transition={{ duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
