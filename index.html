@@ -533,9 +533,9 @@
             transition: transform 0.4s, width 0.4s, opacity 0.4s, background-color 0.4s;
         }
 
-        .speed-dial.open .menu__icon span:nth-child(1) {
+        body:not(.dark) .speed-dial.open .menu__icon span:nth-child(1) {
             transform: translateY(8.5px) rotate(-45deg);
-            background-color: rgb(255, 59, 48);
+            background-color: var(--text-dark);
         }
 
         .speed-dial.open .menu__icon span:nth-child(2) {
@@ -543,9 +543,19 @@
             opacity: 0;
         }
 
-        .speed-dial.open .menu__icon span:nth-child(3) {
+        body:not(.dark) .speed-dial.open .menu__icon span:nth-child(3) {
             transform: translateY(-8.5px) rotate(45deg);
-            background-color: rgb(255, 59, 48);
+            background-color: var(--text-dark);
+        }
+
+        body.dark .speed-dial.open .menu__icon span:nth-child(1) {
+            transform: translateY(8.5px) rotate(-45deg);
+            background-color: var(--text-light);
+        }
+
+        body.dark .speed-dial.open .menu__icon span:nth-child(3) {
+            transform: translateY(-8.5px) rotate(45deg);
+            background-color: var(--text-light);
         }
 
         /* Дочерние кнопки */
@@ -1095,6 +1105,25 @@
             margin-right: auto;
         }
 
+        #game-modal .modal-developer {
+            position: relative;
+            z-index: 1;
+            margin: -4px auto 15px;
+            width: fit-content;
+            max-width: min(100%, 680px);
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.88);
+            font-size: 0.98rem;
+            line-height: 1.4;
+            text-align: center;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+        }
+
         #game-modal .criteria {
             font-size: 1.1rem;
             line-height: 1.6;
@@ -1497,124 +1526,124 @@
     <script type="text/babel">
         // --- DATA ---
         const GAMES = [
-            { id: "w3", title: "Witcher 3: Wild Hunt", image: "w3.jpg", genres: ["РПГ", "Открытый мир", "Сюжетная", "Фэнтези", "Экшен", "Приключение"], ratings: { "story": 10, "graphics": 9, "gameplay": 9, "main_character": 10, "characters": 10, "atmosphere": 10, "sound_design": 10, "rating": 9.7 } },
-            { id: "rdr2", title: "Red Dead Redemption 2", image: "rdr2.png", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 10, "gameplay": 10, "main_character": 10, "characters": 10, "atmosphere": 9, "sound_design": 10, "rating": 9.7 } },
-            { id: "cyb", title: "Cyberpunk 2077", image: "cyb.png", genres: ["РПГ", "Экшен", "Шутер", "Открытый мир", "Сюжетная", "Киберпанк", "Научная фантастика"], ratings: { "story": 10, "graphics": 10, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 9.3 } },
-            { id: "gtaV", title: "Grand Theft Auto V", image: "gtaV.jpg", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.9 } },
-            { id: "alw2", title: "Alan Wake 2", image: "alw2.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Выживание", "Экшен"], ratings: { "story": 10, "graphics": 10, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 9.1 } },
-            { id: "tlou", title: "The Last of Us Part I", image: "tlou.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 9, "characters": 8, "atmosphere": 9, "sound_design": 10, "rating": 9.1 } },
-            { id: "det", title: "Detroit: Become Human", image: "det.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.4 } },
-            { id: "eld", title: "Elden Ring", image: "eld.jpg", genres: ["РПГ", "Экшен", "Открытый мир", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 10, "rating": 8.4 } },
-            { id: "dsr", title: "Dead Space Remake", image: "dsr.jpg", genres: ["Хоррор", "Шутер", "Экшен", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.6 } },
-            { id: "bmw", title: "Black Myth: Wukong", image: "bmw.png", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.6 } },
-            { id: "bak", title: "Batman: Arkham Knight", image: "bak.jpg", genres: ["Экшен", "Открытый мир", "Приключение", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 8.3 } },
-            { id: "hev", title: "Heavy Rain", image: "hev.jpg", genres: ["Приключение", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8, "rating": 8.3 } },
-            { id: "re4", title: "Resident Evil 4 Remake", image: "re4.jpeg", genres: ["Хоррор", "Приключение", "Головоломка", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 8, "rating": 8.1 } },
-            { id: "d16", title: "Doom (2016)", image: "d16.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 7.9 } },
-            { id: "dete", title: "Doom Eternal", image: "dete.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
-            { id: "lim", title: "Limbo", image: "lim.jpg", genres: ["Платформер", "Головоломка", "Инди"], ratings: { "story": 6, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 10, "sound_design": 10, "rating": 7.9 } },
-            { id: "ins", title: "Inside", image: "ins.jpg", genres: ["Платформер", "Головоломка", "Инди", "Научная фантастика", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 9, "sound_design": 10, "rating": 8.0 } },
-            { id: "crw", title: "Thronebreaker: The Witcher Tales", image: "crw.jpg", genres: ["РПГ", "Карточная", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
-            { id: "fir", title: "Firewatch", image: "fir.png", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 7.7 } },
-            { id: "swd", title: "Still Wakes the Deep", image: "swd.jpg", genres: ["Хоррор", "Приключение", "Научная фантастика", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 7, "rating": 7.7 } },
-            { id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", image: "fhr.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 8, "graphics": 6, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 7.4 } },
-            { id: "inc", title: "Inscryption", image: "inc.jpg", genres: ["Карточная", "Хоррор", "Головоломка", "Инди"], ratings: { "story": 9, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 8, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
-            { id: "mf2", title: "Mafia II", image: "mf2.png", genres: ["Экшен", "Сюжетная", "Открытый мир", "Приключение"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 7, "rating": 7.4 } },
-            { id: "hss", title: "Hellblade: Senua's Sacrifice", image: "hss.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.0 } },
-            { id: "tlou2", title: "The Last of Us Part II", image: "tlou2.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 8, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
-            { id: "PTI", title: "A Plague Tale: Innocence", image: "PTI.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 8.0 } },
-            { id: "atm", title: "Atomic Heart", image: "atm.jpg", genres: ["Шутер", "Экшен", "РПГ", "Научная фантастика", "Открытый мир", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 7, "sound_design": 9, "rating": 8.0 } },
-            { id: "jc3", title: "Just Cause 3", image: "jc3.jpg", genres: ["Экшен", "Открытый мир", "Шутер", "Приключение"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 7, "sound_design": 8, "rating": 7.6 } },
-            { id: "out", title: "Outlast", image: "out.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.0 } },
-            { id: "out2", title: "Outlast 2", image: "out2.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 10, "sound_design": 9, "rating": 8.1 } },
-            { id: "re2", title: "Resident Evil 2 Remake", image: "re2.png", genres: ["Хоррор", "Головоломка", "Приключение", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 8, "rating": 8.0 } },
-            { id: "rev", title: "Resident Evil Village", image: "rev.jpg", genres: ["Хоррор", "Экшен", "Головоломка", "Приключение", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8, "rating": 8.3 } },
-            { id: "reb", title: "Resident Evil 7: Biohazard", image: "reb.jpg", genres: ["Хоррор", "Выживание", "Головоломка", "Приключение", "Экшен", "Шутер", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 9, "rating": 8.1 } },
-            { id: "lit1", title: "Little Nightmares", image: "lit1.jpg", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.1 } },
-            { id: "lit2", title: "Little Nightmares 2", image: "lit2.png", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.3 } },
-            { id: "ex33", title: "Clair Obscur: Expedition 33", image: "ex33.png", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 8, "sound_design": 10, "rating": 9.1 } },
-            { id: "ef", title: "What Remains of Edith Finch", image: "ef.jpg", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 8.1 } },
-            { id: "p2", title: "Portal 2", image: "p2.jpg", genres: ["Головоломка", "Платформер", "Научная фантастика", "Кооператив", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9, "rating": 8.1 } },
-            { id: "fc3", title: "Far Cry 3", image: "fc3.jpg", genres: ["Шутер", "Экшен", "Открытый мир", "Выживание", "Приключение", "Сюжетная"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 7.7 } },
-            { id: "str", title: "Stray", image: "str.jpg", genres: ["Приключение", "Головоломка", "Инди", "Научная фантастика", "Киберпанк", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 8, "rating": 7.7 } },
-            { id: "hk", title: "Hollow Knight", image: "hk.jpg", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10, "rating": 8.9 } },
-            { id: "drg", title: "DREDGE", image: "drg.png", genres: ["Приключение", "Хоррор", "Инди", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 7.6 } },
-            { id: "kht", title: "Kholat", image: "kht.png", genres: ["Хоррор", "Приключение", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 6, "atmosphere": 10, "sound_design": 9, "rating": 7.4 } },
-            { id: "aw", title: "Alan Wake", image: "aw.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Экшен"], ratings: { "story": 9, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 8.1 } },
-            { id: "cp", title: "The Callisto Protocol", image: "cp.jpg", genres: ["Хоррор", "Экшен", "Шутер", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
-            { id: "gow", title: "God of War", image: "gow.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 9, "rating": 8.4 } },
-            { id: "hl2", title: "Half Life 2", image: "hl2.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Приключение", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.3 } },
-            { id: "hks", title: "Hollow Knight: Silksong", image: "hks.png", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10, "rating": 9.1 } },
-            { id: "lp", title: "Lies of P", image: "lp.jpg", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 7.7 } },
-            { id: "itt", title: "It Takes Two", image: "itt.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.3 } },
-            { id: "bts", title: "Beyond: Two Souls", image: "bts.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "Экшен"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 8.0 } },
-            { id: "hol", title: "High on Life", image: "hol.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Метроидвания", "Сюжетная", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9, "rating": 8.1 } },
-            { id: "sf", title: "Split Fiction", image: "sf.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Экшен", "Сюжетная", "Научная фантастика", "Фэнтези"], ratings: { "story": 10, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 9.0 } },
-            { id: "awo", title: "A Way Out", image: "awo.jpg", genres: ["Приключение", "Экшен", "Кооператив", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 7, "rating": 7.9 } },
-            { id: "sco", title: "Scorn", image: "sco.png", genres: ["Приключение", "Головоломка", "Хоррор", "Выживание"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 7.9 } },
-            { id: "dtda", title: "Doom: The Dark Ages", image: "dtda.png", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.4 } },
-            { id: "w1", title: "The Witcher", image: "w1.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 9, "atmosphere": 10, "sound_design": 9, "rating": 8.4 } },
-            { id: "w2", title: "The Witcher 2: Assassins of Kings", image: "w2.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
-            { id: "req", title: "Resident Evil Requiem", image: "req.png", genres: ["Выживание", "Экшен", "Головоломка", "Приключение", "Сюжетная", "Хоррор", "Шутер"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 10, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 9.0 } },
+            { id: "w3", title: "Witcher 3: Wild Hunt", developer: "CD Projekt Red", image: "w3.jpg", genres: ["РПГ", "Открытый мир", "Сюжетная", "Фэнтези", "Экшен", "Приключение"], ratings: { "story": 10, "graphics": 9, "gameplay": 9, "main_character": 10, "characters": 10, "atmosphere": 10, "sound_design": 10, "rating": 9.7 } },
+            { id: "rdr2", title: "Red Dead Redemption 2", developer: "Rockstar Games", image: "rdr2.png", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 10, "gameplay": 10, "main_character": 10, "characters": 10, "atmosphere": 9, "sound_design": 10, "rating": 9.7 } },
+            { id: "cyb", title: "Cyberpunk 2077", developer: "CD Projekt Red", image: "cyb.png", genres: ["РПГ", "Экшен", "Шутер", "Открытый мир", "Сюжетная", "Киберпанк", "Научная фантастика"], ratings: { "story": 10, "graphics": 10, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 9.3 } },
+            { id: "gtaV", title: "Grand Theft Auto V", developer: "Rockstar Games", image: "gtaV.jpg", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.9 } },
+            { id: "alw2", title: "Alan Wake 2", developer: "Remedy Entertainment", image: "alw2.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Выживание", "Экшен"], ratings: { "story": 10, "graphics": 10, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 9.1 } },
+            { id: "tlou", title: "The Last of Us Part I", developer: "Naughty Dog", image: "tlou.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 9, "characters": 8, "atmosphere": 9, "sound_design": 10, "rating": 9.1 } },
+            { id: "det", title: "Detroit: Become Human", developer: "Quantic Dream", image: "det.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.4 } },
+            { id: "eld", title: "Elden Ring", developer: "FromSoftware", image: "eld.jpg", genres: ["РПГ", "Экшен", "Открытый мир", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 10, "rating": 8.4 } },
+            { id: "dsr", title: "Dead Space Remake", developer: "Motive Studio", image: "dsr.jpg", genres: ["Хоррор", "Шутер", "Экшен", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.6 } },
+            { id: "bmw", title: "Black Myth: Wukong", developer: "Game Science", image: "bmw.png", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.6 } },
+            { id: "bak", title: "Batman: Arkham Knight", developer: "Rocksteady Studios", image: "bak.jpg", genres: ["Экшен", "Открытый мир", "Приключение", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 8.3 } },
+            { id: "hev", title: "Heavy Rain", developer: "Quantic Dream", image: "hev.jpg", genres: ["Приключение", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8, "rating": 8.3 } },
+            { id: "re4", title: "Resident Evil 4 Remake", developer: "Capcom", image: "re4.jpeg", genres: ["Хоррор", "Приключение", "Головоломка", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 8, "rating": 8.1 } },
+            { id: "d16", title: "Doom (2016)", developer: "id Software", image: "d16.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 7.9 } },
+            { id: "dete", title: "Doom Eternal", developer: "id Software", image: "dete.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
+            { id: "lim", title: "Limbo", developer: "Playdead", image: "lim.jpg", genres: ["Платформер", "Головоломка", "Инди"], ratings: { "story": 6, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 10, "sound_design": 10, "rating": 7.9 } },
+            { id: "ins", title: "Inside", developer: "Playdead", image: "ins.jpg", genres: ["Платформер", "Головоломка", "Инди", "Научная фантастика", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 9, "sound_design": 10, "rating": 8.0 } },
+            { id: "crw", title: "Thronebreaker: The Witcher Tales", developer: "CD Projekt Red", image: "crw.jpg", genres: ["РПГ", "Карточная", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
+            { id: "fir", title: "Firewatch", developer: "Campo Santo", image: "fir.png", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 7.7 } },
+            { id: "swd", title: "Still Wakes the Deep", developer: "The Chinese Room", image: "swd.jpg", genres: ["Хоррор", "Приключение", "Научная фантастика", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 7, "rating": 7.7 } },
+            { id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", developer: "Quantic Dream", image: "fhr.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 8, "graphics": 6, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 7.4 } },
+            { id: "inc", title: "Inscryption", developer: "Daniel Mullins Games", image: "inc.jpg", genres: ["Карточная", "Хоррор", "Головоломка", "Инди"], ratings: { "story": 9, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 8, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
+            { id: "mf2", title: "Mafia II", developer: "2K Czech", image: "mf2.png", genres: ["Экшен", "Сюжетная", "Открытый мир", "Приключение"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 7, "rating": 7.4 } },
+            { id: "hss", title: "Hellblade: Senua's Sacrifice", developer: "Ninja Theory", image: "hss.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.0 } },
+            { id: "tlou2", title: "The Last of Us Part II", developer: "Naughty Dog", image: "tlou2.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 8, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
+            { id: "PTI", title: "A Plague Tale: Innocence", developer: "Asobo Studio", image: "PTI.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 8.0 } },
+            { id: "atm", title: "Atomic Heart", developer: "Mundfish", image: "atm.jpg", genres: ["Шутер", "Экшен", "РПГ", "Научная фантастика", "Открытый мир", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 7, "sound_design": 9, "rating": 8.0 } },
+            { id: "jc3", title: "Just Cause 3", developer: "Avalanche Studios", image: "jc3.jpg", genres: ["Экшен", "Открытый мир", "Шутер", "Приключение"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 7, "sound_design": 8, "rating": 7.6 } },
+            { id: "out", title: "Outlast", developer: "Red Barrels", image: "out.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.0 } },
+            { id: "out2", title: "Outlast 2", developer: "Red Barrels", image: "out2.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 10, "sound_design": 9, "rating": 8.1 } },
+            { id: "re2", title: "Resident Evil 2 Remake", developer: "Capcom", image: "re2.png", genres: ["Хоррор", "Головоломка", "Приключение", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 8, "rating": 8.0 } },
+            { id: "rev", title: "Resident Evil Village", developer: "Capcom", image: "rev.jpg", genres: ["Хоррор", "Экшен", "Головоломка", "Приключение", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8, "rating": 8.3 } },
+            { id: "reb", title: "Resident Evil 7: Biohazard", developer: "Capcom", image: "reb.jpg", genres: ["Хоррор", "Выживание", "Головоломка", "Приключение", "Экшен", "Шутер", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 9, "rating": 8.1 } },
+            { id: "lit1", title: "Little Nightmares", developer: "Tarsier Studios", image: "lit1.jpg", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.1 } },
+            { id: "lit2", title: "Little Nightmares 2", developer: "Tarsier Studios", image: "lit2.png", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.3 } },
+            { id: "ex33", title: "Clair Obscur: Expedition 33", developer: "Sandfall Interactive", image: "ex33.png", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 8, "sound_design": 10, "rating": 9.1 } },
+            { id: "ef", title: "What Remains of Edith Finch", developer: "Giant Sparrow", image: "ef.jpg", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 8.1 } },
+            { id: "p2", title: "Portal 2", developer: "Valve", image: "p2.jpg", genres: ["Головоломка", "Платформер", "Научная фантастика", "Кооператив", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9, "rating": 8.1 } },
+            { id: "fc3", title: "Far Cry 3", developer: "Ubisoft Montreal", image: "fc3.jpg", genres: ["Шутер", "Экшен", "Открытый мир", "Выживание", "Приключение", "Сюжетная"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 7.7 } },
+            { id: "str", title: "Stray", developer: "BlueTwelve Studio", image: "str.jpg", genres: ["Приключение", "Головоломка", "Инди", "Научная фантастика", "Киберпанк", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 8, "rating": 7.7 } },
+            { id: "hk", title: "Hollow Knight", developer: "Team Cherry", image: "hk.jpg", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10, "rating": 8.9 } },
+            { id: "drg", title: "DREDGE", developer: "Black Salt Games", image: "drg.png", genres: ["Приключение", "Хоррор", "Инди", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 7.6 } },
+            { id: "kht", title: "Kholat", developer: "IMGN.PRO", image: "kht.png", genres: ["Хоррор", "Приключение", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 6, "atmosphere": 10, "sound_design": 9, "rating": 7.4 } },
+            { id: "aw", title: "Alan Wake", developer: "Remedy Entertainment", image: "aw.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Экшен"], ratings: { "story": 9, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 8.1 } },
+            { id: "cp", title: "The Callisto Protocol", developer: "Striking Distance Studios", image: "cp.jpg", genres: ["Хоррор", "Экшен", "Шутер", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
+            { id: "gow", title: "God of War", developer: "Santa Monica Studio", image: "gow.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 9, "rating": 8.4 } },
+            { id: "hl2", title: "Half Life 2", developer: "Valve", image: "hl2.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Приключение", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.3 } },
+            { id: "hks", title: "Hollow Knight: Silksong", developer: "Team Cherry", image: "hks.png", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10, "rating": 9.1 } },
+            { id: "lp", title: "Lies of P", developer: "Round8 Studio", image: "lp.jpg", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 7.7 } },
+            { id: "itt", title: "It Takes Two", developer: "Hazelight Studios", image: "itt.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.3 } },
+            { id: "bts", title: "Beyond: Two Souls", developer: "Quantic Dream", image: "bts.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "Экшен"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 8.0 } },
+            { id: "hol", title: "High on Life", developer: "Squanch Games", image: "hol.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Метроидвания", "Сюжетная", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9, "rating": 8.1 } },
+            { id: "sf", title: "Split Fiction", developer: "Hazelight Studios", image: "sf.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Экшен", "Сюжетная", "Научная фантастика", "Фэнтези"], ratings: { "story": 10, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 9.0 } },
+            { id: "awo", title: "A Way Out", developer: "Hazelight Studios", image: "awo.jpg", genres: ["Приключение", "Экшен", "Кооператив", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 7, "rating": 7.9 } },
+            { id: "sco", title: "Scorn", developer: "Ebb Software", image: "sco.png", genres: ["Приключение", "Головоломка", "Хоррор", "Выживание"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 7.9 } },
+            { id: "dtda", title: "Doom: The Dark Ages", developer: "id Software", image: "dtda.png", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.4 } },
+            { id: "w1", title: "The Witcher", developer: "CD Projekt Red", image: "w1.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 9, "atmosphere": 10, "sound_design": 9, "rating": 8.4 } },
+            { id: "w2", title: "The Witcher 2: Assassins of Kings", developer: "CD Projekt Red", image: "w2.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
+            { id: "req", title: "Resident Evil Requiem", developer: "Capcom", image: "req.png", genres: ["Выживание", "Экшен", "Головоломка", "Приключение", "Сюжетная", "Хоррор", "Шутер"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.9 } },
         ];
 
         const REVIEWS = {
-            "w3": `Ведьмак 3 — это потрясающая RPG с огромным впечатляющим лором, красивым миром, качественно прописанными персонажами, игра отличается сильной атмосферой и грамотно подобранными саундтреками.`,
+            "w3": `Ведьмак 3 — это потрясающая RPG с огромным впечатляющим лором. Каждый квест в игре построен с вниманием к деталям, атфосфера локаций разная, но одинаково убедительная, а саундтрек стоит в ряду лучших в истории видеоигр.`,
             "rdr2": `Red Dead Redemption 2 — одна из немногих вестерн-игр, да ещё и с интересным сюжетом, красивыми видами, живыми героями и NPC и невообразимым вниманием к деталям.`,
-            "cyb": `Cyberpunk 2077 — игра с передовыми технологиями в направлениях графики и возможностями в геймплее, история захватывающая, а город будущего интересно исследовать.`,
-            "tlou": `The Last of Us 1 представляет качественно прописанное путешествие двух героев в постапокалиптическом мире. Эта игра способна и испугать, и вызвать слёзы, а стелс и бои здесь сделаны на высшем уровне.`,
-            "alw2": `Alan Wake 2 это вторая часть истории Алана Вейка - писателя, который стал участником своих историй. Главный козырь игры - ультрафотореалистичная графика, но сюжет и геймплей тоже не отстают.`,
-            "gtaV": `GTA 5 расскажет про трёх преступников в сеттинге современного мира. Сюжет весёлый, геймплей динамичный.`,
-            "tlou2": `The Last of Us 2 сиквел, который не во всём лучше первой части, но геймплей стал только разнообразнее. Сюжет не лучшая часть игры, но он тоже увлекательный.`,
-            "det": `Detroit: Become Human — шедевр и одна из лучших кинематографичных игр, которая имеет множество сюжетных развилок. Это игра про искусственный интеллект, который вышел из-под контроля.`,
-            "eld": `Elden Ring — сложная игра от Миядзаки - создателя серии Dark Souls. Заслуженная игра года со сложнейшим впечатляющих размеров лором, красивым миром и боями с боссами.`,
-            "dsr": `Dead Space Remake — хоррор в космическом сеттинге, где можно стрелять из режущих оружий по некроморфам.`,
+            "cyb": `Cyberpunk 2077 — огромный мегаполис будущего, красивый, шумный и опасный. В игре есть выбор, кем стать и гибкий геймплей, позволящий быть хакером или бойцом.`,
+            "tlou": `The Last of Us 1 это путешествие двух героев в постапокалиптическом мире. Здесь отлично реализован стелс и реалистичные бои. Ресурсов всегда хватает в обрез, что создает новую атмосферу.`,
+            "alw2": `Alan Wake 2 это вторая часть истории Алана Вейка - писателя, который стал участником своих историй. Алан пытается выбраться из кошмара, буквально печатая свою историю. Графика настолько реалистичная, что порой кажется, будто смотришь фильм.`,
+            "gtaV": `GTA 5 расскажет про трёх преступников в сеттинге современного мира. Сюжет динамичный и с юмором, геймплей не даст заскучать.`,
+            "tlou2": `The Last of Us 2 сиквел, который намеренно разрушает то, что ты любил в прошлой части, и заставляет смотреть на ту же историю с другой стороны. Принять это сложно, и это, скорее всего, так и задумано. Зато геймплей стал богаче и разнообразнее.`,
+            "det": `Detroit: Become Human про будущее, где люди и андроиды живут бок о бок. Выборов в продвижении сюжета так много, что повтороное прохождение подарит новую игру. Одна из лучших игр в жанре «Интерактивное кино».`,
+            "eld": `Elden Ring — самый масштабный проект FromSoftware. Боссы впечатляют своим дизайном, атаками и механиками, а открытый мир наполнен секретами.`,
+            "dsr": `Dead Space Remake — хоррор в космическом сеттинге, где можно стрелять из режущих оружий по некроморфам, отрубая ему конечности.`,
             "hev": `Heavy Rain — это драматическая история, мрачная атмосфера. Сюжет раскрывается вокруг трёх детективов, которым нужно раскрыть тайну.`,
             "rev": `Resident Evil Village — один из лучших «резидентов» настоящего времени с тягостной атмосферой и элементами экшена и головоломки. В этой игре точно будет страшно и интересно.`,
             "bmw": `Black Myth: Wukong отлично сделанная соулс-лайк игра, мифологический сюжет с главным героем - обезьяной, быстрая боёвка, которая несколько отличается от других игр в том же жанре. Также есть система построения билда и скиллов.`,
-            "bak": `Batman: Arkham Knight обладает невероятнейшей атмосферой, история про всеми известных Бэтмена и Джокера и топовые драки с бандитами Аркхема.`,
-            "dete": `Doom Eternal — часть легендарной серии DOOM, здесь всё тот же быстрый и динамичный геймплей с приятной графикой, огненная музыка и рубящий всё на своём пути Палач.`,
-            "crw": `Thronebreaker: The Witcher Tales — карточная игра с загадками во вселенной Ведьмака с интересным игровым процессом и сюжетом, который раскрывает историю королевы Мевы.`,
-            "out2": `Outlast 2 это ещё более жуткая и мерзкая игра, чем первая часть, много мяса, беззащитный главный герой, обезумевшие люди и удручающая атмосфера.`,
-            "reb": `Resident Evil 7: Biohazard — страх, страдания, ужас, паника, тревожность - всё, что ощущает проходящий на протяжении всей истории. Страшная игра, немного непохожая на предыдущие части. История про Итана Уинтерса, который ищет свою пропавшую жену.`,
-            "re4": `Resident Evil 4 Remake — отличный ремейк с красивой графикой, хорошим сюжетом с Леоном в главной роли, который спасает дочь президента. В игре присутствуют головоломки в стиле RE и зрелищные бои с боссами.`,
-            "d16": `Doom 16 — легендарная часть великого DOOM'a, экшен-перестрелки, постоянное движение, мясник Палач и отличная музыка Гордона.`,
+            "bak": `Batman: Arkham Knight это история про всеми известных Бэтмена и Джокера, который подаётся весьма интересно. Про ночной Готэм и топовые драки с бандитами.`,
+            "dete": `Doom Eternal усложнила DOOM 2016 года до предела, ресурсы тут постоянно заканчиваются, из-за чего приходится убивать демонов всеми оружиями и постоянно двигаться, чтобы не умереть.`,
+            "crw": `Thronebreaker: The Witcher Tales — карточная игра с загадками во вселенной Ведьмака с интересным игровым процессом на основе механик Гвинта и сюжетом, который раскрывает историю королевы Мевы. Это не спин-офф для галочки - это полноценная история.`,
+            "out2": `Outlast 2 это ещё более жуткая и мерзкая игра, чем первая часть, много мяса, беззащитный главный герой, обезумевшие культисты в глуши и удручающая атмосфера.`,
+            "reb": `Resident Evil 7: Biohazard — страх, страдания, ужас, паника, тревожность - всё, что ощущает проходящий на протяжении всей истории. Игра от первого лица с небольшим особняком. История про Итана Уинтерса, который ищет свою пропавшую жену.`,
+            "re4": `Resident Evil 4 Remake — отличный ремейк с Леоном в главной роли, который спасает дочь президента. В игре присутствуют головоломки в стиле RE и зрелищные бои с боссами.`,
+            "d16": `Doom 16 — легендарная часть великого DOOM'a, постоянное движение здесь необходимость, Палач уничтожит всё на своём пути под отличную музыку Гордона.`,
             "PTI": `A Plague Tale: Innocence — это трогающая история брата и сестры с интересным сюжетом, события происходят в средневековье во Франции, здесь придётся скрываться от инквизиции и крыс, разносящих чуму.`,
             "lim": `Limbo — эталон в жанре 2D-платформеров, спокойная, вписывающаяся в игру, музыка, приятные саунды, простое управление, мягкая ЧБ-графика с глубиной размытия, пронизывающая атмосфера, простенькие, но отлично дополняющие игру головоломки. Слабое место - сюжет, его здесь почти нет.`,
-            "hss": `Hellblade: Senua's Sacrifice это игра с отличным звуковым сопровождением, также тут необычная боёвка, присутствует множество загадок и вполне неплохой сюжет про воительницу, которая борется с голосами в голове.`,
-            "atm": `Atomic Heart — это про роботов во время СССР, хорошо прописанный сюжет, нетривиальный сеттинг, множество необычных пушек и способностей. Красивая картинка, но локации здесь скудные, в основном сюжете игры однотипные.`,
-            "out": `Outlast это в первую очередь хоррор, где можно встретить много скримеров и напряжённых моментов, он имеет крутую задумку с камерой, на которую надо снимать все "странности". Обладает отличной атмосферой и неплохим сюжетом.`,
+            "hss": `Hellblade: Senua's Sacrifice это необычная игра про девушку, которая борется с голосами в голове, они преследуют её и не дают покоя. Можно похвалить игру за оригинальные головоломки и визуальный стиль.`,
+            "atm": `Atomic Heart — это про роботов во время СССР, которые вышли из под контроля. Сеттинг оригинальный и неповторимый, множество необычных пушек и способностей. Красивая картинка, но локации здесь скудные, в основном сюжете игры однотипные.`,
+            "out": `Outlast это в первую очередь хоррор, где можно встретить много скримеров и напряжённых моментов, он имеет крутую задумку с камерой, на которую надо снимать все «странности». Больница давит своей атмосферой, а беззащитность главного героя усиливает напряжение.`,
             "fir": `Firewatch — это игра, проходить которую надо неспеша, наслаждаясь окружающими локациями. Она успокаивает и погружает в себя, сопровождая отличной музыкой, здесь есть сюжет, лес и пожарная вышка.`,
             "swd": `Still Wakes the Deep это survival-horror про электрика, который пытается выжить на нефтяной платформе, здесь можно повстречать персонажей, которые хоть и мало раскрыты, но импонируют.`,
-            "jc3": `Just Cause 3 — это третья часть игры про легендарного Рико Родригеза, здесь не лучший сюжет, множество однотипных баз, которые нужно зачистить, но это все игровые недостатки. Сильная сторона - отличный геймплей с эпичной разрушаемостью и превосходный крюк-кошка, которым пользоваться одно удовольствие.`,
+            "jc3": `Just Cause 3 — это третья часть игры про легендарного Рико Родригеза, сюжет здесь для галочки, базы однотипны, но их всё равно увлекательно зачищать. Сильная сторона - отличный геймплей с эпичной разрушаемостью и превосходный крюк-кошка, которым пользоваться одно удовольствие.`,
             "mf2": `Mafia 2 это история про всеми известного члена мафии под именем Вито Скалетта, он связал свою жизнь с криминальной деятельностью и пытается выжить со своим другом Джо. В сюжете происходит много событий, которые долго не выходят из памяти.`,
-            "ins": `Inside — это потрясающий платформер с неочевидным сюжетом, графикой и геймплеем, игра пронизывает своей атмосферой и окружением. Тайтл от создателей Limbo.`,
-            "inc": `Inscyption — карточный рогалик с оригинальным и интересным геймплеем, из-за которого перестать играть очень тяжело, здесь есть сюжет и персонажи, которые подогревают интерес к прохождению.`,
+            "ins": `Inside — наследник Limbo с более населённым миром, игра про мальчика, у которого есть своя цель.`,
+            "inc": `Inscyption — карточный рогалик, который несколько раз меняет правила прямо во время игры. Хочется порекомендовать эту игру к собственному прохождению, не зная ничего о ней.`,
             "fhr": `Fahrenheit: Indigo Prophecy Remastered это игра про обычного парня Лукаса Кейна, который совершает убийство в ресторане, но не помнит как это произошло. Истину откроют два детектива, которые взялись за это дело.`,
             "lit1": `Little Nightmares — атмосферный платформер, где главной героине - маленькой девочке предстоит выбраться из страшного мира, наполненного огромными и опасными существами.`,
-            "lit2": `Little Nightmares 2 это вторая часть превосходных "Маленьких кошмаров", здесь улучшенная графика, приятный плавный геймплей и уже 2 главных героя, включая Шестую(ГГ первой части), всё те же интересные головоломки и более опасные враги.`,
+            "lit2": `Little Nightmares 2 это вторая часть превосходных «Маленьких кошмаров», игра добавляет в мир напарника, включая Шестую(ГГ первой части), но уже в качестве компаньона, всё те же интересные головоломки и более опасные враги.`,
             "ex33": `Clair Obscur: Expedition 33 — отличная игра с неотразимым визуальным стилем и очень захватывающим сюжетом, который не выглядит как обычная клишированная история, отдельного внимания заслуживает музыка, которая используется с большим мастерством.`,
             "ef": `What Remains of Edith Finch это трогательная история, где субтитры ведут игрока по пути, игра сделана креативно и предлагает необычный игровой процесс за своё небольшое время прохождения.`,
             "p2": `Portal 2 отличная головоломка с интересной идеей и сюжетом, можно играть как одному, так и в кооперативе, много бросающих вызов уровней и загадок.`,
-            "fc3": `Far Cry 3 — игра с приятной графикой и геймплеем, пусть и наполненная обилием однообразных аванпостов, которые нужно зачищать, красивым миром, стелс-механиками и, конечно, легендарным антагонистом Ваасом.`,
+            "fc3": `Far Cry 3 помнят ради Вааса - и это не удивительно, ведь он один из лучших игровых антагонистов. Появляется ненадолго, но задаёт тон всей игре. Зачистка аванпостов рутинная, но стелс и красивый остров удержат игрока.`,
             "str": `Stray — игра в стиле киберпанк про милого котика, который остался один, он попадает в населённые роботами города и решает головоломки, чтобы выбраться. В Stray встречаются опасности и испытания, эта увлекательная игра скрасит пару вечеров.`,
-            "hk": `Hollow Knight — прекрасная игра про Рыцаря, который исследует руины королевства насекомых Халлоунест, тайтл обладает глубоким лором и приятной музыкой, а также динамичным, в меру непростым геймплеем.`,
+            "hk": `Hollow Knight — прекрасная игра про Рыцаря, который исследует руины королевства насекомых Халлоунест, тайтл обладает глубоким лором и приятной музыкой Кристофера Ларкина. Это метроидвания с элементами соулс-лайк.`,
             "drg": `DREDGE таинственная игра, где игровой процесс заключается в ловле рыбы и последующем апгрейде корабля, здесь загадочный мир, который хочется исследовать и разгадывать его загадки. На первый взгляд игра выглядит другой, но поиграв в неё, понимаешь, что был не прав. К сожалению, геймплей слегка утомляет из-за своего однообразия.`,
             "kht": `Kholat — история о загадочной трагедии, произошедшей на Перевале Дятлова. В игре предстоит расследовать дело исчезновения группы российских студентов в суровом зимнем климате и без казуальных подсказок. Прохождение не займёт много времени, но точно успеет испугать и увлечь.`,
             "re2": `Resident Evil 2 Remake — неплохой ремейк, где Леон и Клэр пытаются сбежать из города Раккун-Сити, избегая заражённых. Игра наполнена головоломками и узкими коридорами. Здесь придётся экономить ресурсы и больше прятаться от преследующих мутантов.`,
             "aw": `Alan Wake это история о писателе, который решил сделать себе отпуск и отправился на остров Брайт-Фоллс, но там встретился со своими собственно написанными кошмарами. Очень атмосферная игра, но однообразный геймплей.`,
-            "cp": `The Callisto Protocol это игра в стиле Dead Space с динамичной боёвкой и фотореалистичной графикой. Хоррор, который держит в напряжении.`,
+            "cp": `The Callisto Protocol это игра в стиле Dead Space с динамичной боёвкой и фотореалистичной графикой. Тюрьма на спутнике Юпитера - грязное и опасное место.`,
             "gow": `God of War преподносит историю бога Кратоса и его сына Атрея, вместе они сражаются с сильными противниками в разных мирах, в игре хороший сюжет и красивые пейзажи.`,
             "hl2": `Half Life 2 это атмосферная игра с интересной историей Гордона Фримена, где игроку предстоит сразиться с кучами пришельцев и Альянсом, захватившим Землю.`,
-            "hks": `Hollow Knight: Silksong — вторая часть дилогии Полого Рыцаря, в новой части добавилось много геймплейных возможностей, новые большие, с множеством скрытых проходов локации, построение билда через знаки и предметы, второстепенные задания и многое другое. Сюжет, саунд-дизайн и персонажи великолепны.`,
+            "hks": `Hollow Knight: Silksong — вторая часть дилогии Полого Рыцаря с Хорнет в главной роли, новая часть богаче первой: больше квестов, гибче геймплей, больше локации и боссов, а также такой же прекрасный саунд-дизайн и саундтрек.`,
             "lp": `Lies of P это несколько противоречивая игра. С одной стороны - красивые локации, хороший, но без изюминки сюжет, с другой - нелучший соулс-лайк геймплей, неудобные и частично несправедливые бои с боссами. Цепляющее исследование, но не всегда оправданное.`,
-            "itt": `It Takes Two одна из лучших кооп-игр в истории, интересные головоломки здесь не получится решить в одиночку, разнообразные локации порадуют, а сюжет увлечёт.`,
-            "bts": `Beyond: Two Souls — одна из легендарных игр Quantic Dream. Геймплей не за одного персонажа: девушка Джуди Холмс и призрак, живущий в ней. Из-за чего можно пройти вдвоём.`,
+            "itt": `It Takes Two одна из лучших кооп-игр в истории. Пара на грани развода проходит локации, где нужно доверять партнёру. Игра напыщена интересными механиками для обоих игроков.`,
+            "bts": `Beyond: Two Souls — одна из легендарных игр Quantic Dream. Геймплей не за одного персонажа: девушка Джуди Холмс и призрак, живущий в ней. История рассказываются в перемешанном порядке. Игру можно пройти вдвоём.`,
             "hol": `High on Life — клёвый комедийный шутер от создателя «Рик и Морти». Присутствуют элементы метроидвании и шутки в стиле вышеупомянутого мультсериала. Сюжет простой - про захват планеты пришельцами, но игровой процесс не заставит скучать, а музыка сохранит быстрый темп.`,
             "sf": `Split Fiction — игра с уникальным кооперативных геймплеем от создателей It Takes Two, по сюжету персонажи попадают в миры, которые они сами придумали. В игре очень много интересных механик, зависящих от действий обоих игроков.`,
-            "w2": `Witcher 2: Assassins of Kings — это история про ведьмака Геральта и его выборы на чьей стороне стоять, пока идет война. В игре интересный сюжет, разнообразные локации, приятная графика и саунд-дизайн. Вторая часть сделала огромный шаг вперёд по сравнению с первой.`,
+            "w2": `Witcher 2: Assassins of Kings — это история про ведьмака Геральта и его выборы на чьей стороне стоять, пока идет война. Развилка очень сильно влияет на сюжет, что даёт возможность перепройти игру и увидеть новую историю. Игра сделала огромный шаг вперёд по сравнению с первой частью.`,
             "dtda": `Doom: The Dark Ages — это приквел к части 2016 года, здесь раскрывается история Палача, но в средневековом сеттинге. Игра преподносит лучшую графику по сравнению с предыдущими частями, поддержку качественного RT, возможность управлять огромный роботом - Атланом, огнедышащим драконом и предлагает отличную музыку и динамичный геймплей.`,
-            "w1": `The Witcher это первая часть саги о Геральте из Ривии, игра может похвастаться интересным сюжетом, невероятной атмосферой, но не самой удобной боёвкой.`,
+            "w1": `The Witcher — начало саги с мрачной атмосферой и мрачным миром. Боёвка в игре не лучшая, но персонажи оправдывают терпение.`,
             "awo": `A Way Out это кооперативная игра с драматической историей о двух заключённых, которые пытаются сбежать из тюрьмы, действуя сообща. Было интересно узнать о жизни обоих героев.`,
             "sco": `Scorn — это атмосферный биопанк-хоррор от первого лица с необычным визуальным стилем, вдохновлённым творчеством Гигера. Присутствуют элементы головоломки, жуткие враги и очень необычный сюжет.`,
             "req": `Resident Evil Requiem — грандиозное продолжение серии, которое совместило в себе жуткий survival-геймплей за новую героиню Грейс Эшкрофт и экшен за легендарного Леона. Игра представляет совокупность лучших решений из прошлых частей, а также ещё больший саспенс и проработку деталей.`,
@@ -1711,9 +1740,10 @@
                 let res = GAMES.filter(g => {
                     let matchesSearch = true;
                     if (search.trim()) {
-                        const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                        const searchRegex = new RegExp(`(^|[^a-zA-Zа-яА-ЯёЁ0-9_])${escapedSearch}`, 'i');
-                        matchesSearch = searchRegex.test(g.title);
+                        const query = search.trim().toLowerCase();
+                        matchesSearch =
+                            g.title.toLowerCase().includes(query) ||
+                            g.developer.toLowerCase().includes(query);
                     }
                     const matchesGenre = selectedGenres.length === 0 || selectedGenres.every(gen => g.genres.includes(gen));
                     return matchesSearch && matchesGenre;
@@ -1858,7 +1888,7 @@
                         </select>
                         <div className="controls-separator" />
                         <div className="search-wrapper">
-                            <input ref={searchInputRef} type="text" id="search" placeholder="Поиск игры..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ minWidth: 200 }} />
+                            <input ref={searchInputRef} type="text" id="search" placeholder="Поиск игры или компании..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ minWidth: 200 }} />
                             {search && <span id="clear-search" onClick={() => setSearch("")} title="Очистить">×</span>}
                         </div>
                         {compareMode && (
@@ -2153,6 +2183,7 @@
                     }}
                 >
                     <h2>{game.title}</h2>
+                    <div className="modal-developer">Разработчик: {game.developer}</div>
 
                     <div className={`criteria ${chartMode ? 'chart-mode' : ''}`}>
                         <div className="criteria-wrapper">
@@ -2472,3 +2503,5 @@
 </body>
 
 </html>
+
+
