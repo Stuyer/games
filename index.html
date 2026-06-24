@@ -92,7 +92,6 @@
 
         /* ── Панель управления ── */
         .controls-bar {
-            --controls-shift-x: 20px;
             display: flex;
             gap: 8px;
             align-items: center;
@@ -108,32 +107,11 @@
             position: sticky;
             top: 10px;
             z-index: 1000;
-            transform: translateX(var(--controls-shift-x));
-            transition: padding 0.22s ease, gap 0.22s ease, border-radius 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+            transition: box-shadow 0.22s ease;
         }
 
         .controls-bar.compact {
-            gap: 6px;
-            padding: 7px 10px;
-            border-radius: 13px;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
-            transform: translateX(var(--controls-shift-x)) translateY(-2px);
-        }
-
-        .controls-bar.compact label {
-            font-size: 0.74rem;
-        }
-
-        .controls-bar.compact .btn,
-        .controls-bar.compact select,
-        .controls-bar.compact input {
-            font-size: 0.82rem;
-            padding: 6px 9px;
-            border-radius: 9px;
-        }
-
-        .controls-bar.compact .controls-separator {
-            height: 18px;
         }
 
         .controls-bar select,
@@ -1523,7 +1501,12 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script>
+        Babel.registerPreset('classic-jsx', {
+            presets: [[Babel.availablePresets.react, { runtime: 'classic' }]]
+        });
+    </script>
+    <script type="text/babel" data-presets="classic-jsx">
         // --- DATA ---
         const GAMES = [
             { id: "w3", title: "Witcher 3: Wild Hunt", developer: "CD Projekt Red", image: "w3.jpg", genres: ["РПГ", "Открытый мир", "Сюжетная", "Фэнтези", "Экшен", "Приключение"], ratings: { "story": 10, "graphics": 9, "gameplay": 9, "main_character": 10, "characters": 10, "atmosphere": 10, "sound_design": 10, "rating": 9.7 } },
@@ -1538,7 +1521,7 @@
             { id: "bmw", title: "Black Myth: Wukong", developer: "Game Science", image: "bmw.png", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.6 } },
             { id: "bak", title: "Batman: Arkham Knight", developer: "Rocksteady Studios", image: "bak.jpg", genres: ["Экшен", "Открытый мир", "Приключение", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 8.3 } },
             { id: "hev", title: "Heavy Rain", developer: "Quantic Dream", image: "hev.jpg", genres: ["Приключение", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8, "rating": 8.3 } },
-            { id: "re4", title: "Resident Evil 4 Remake", developer: "Capcom", image: "re4.jpeg", genres: ["Хоррор", "Приключение", "Головоломка", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 8, "rating": 8.1 } },
+            { id: "re4", title: "Resident Evil 4 Remake", developer: "Capcom", image: "re4.jpeg", genres: ["Хоррор", "Приключение", "Головоломка", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8, "rating": 8.3 } },
             { id: "d16", title: "Doom (2016)", developer: "id Software", image: "d16.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 7.9 } },
             { id: "dete", title: "Doom Eternal", developer: "id Software", image: "dete.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
             { id: "lim", title: "Limbo", developer: "Playdead", image: "lim.jpg", genres: ["Платформер", "Головоломка", "Инди"], ratings: { "story": 6, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 10, "sound_design": 10, "rating": 7.9 } },
@@ -1585,6 +1568,8 @@
             { id: "w1", title: "The Witcher", developer: "CD Projekt Red", image: "w1.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 9, "atmosphere": 10, "sound_design": 9, "rating": 8.4 } },
             { id: "w2", title: "The Witcher 2: Assassins of Kings", developer: "CD Projekt Red", image: "w2.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
             { id: "req", title: "Resident Evil Requiem", developer: "Capcom", image: "req.png", genres: ["Выживание", "Экшен", "Головоломка", "Приключение", "Сюжетная", "Хоррор", "Шутер"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.9 } },
+            { id: "mfp", title: "My Friend Pedro", developer: "DeadToast Entertainment", image: "mfp.jpg", genres: ["Инди", "Экшен", "Шутер", "Платформер"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 7, "atmosphere": 8, "sound_design": 8, "rating": 7.4 } },
+            { id: "sotc", title: "Shadow of the Colossus", developer: "Sony Computer Entertainment", image: "sotc.png", genres: ["Головоломка", "Экшен", "Шутер", "Платформер", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 6, "characters": 6, "atmosphere": 8, "sound_design": 8, "rating": 7.6 } },
         ];
 
         const REVIEWS = {
@@ -1647,6 +1632,8 @@
             "awo": `A Way Out это кооперативная игра с драматической историей о двух заключённых, которые пытаются сбежать из тюрьмы, действуя сообща. Было интересно узнать о жизни обоих героев.`,
             "sco": `Scorn — это атмосферный биопанк-хоррор от первого лица с необычным визуальным стилем, вдохновлённым творчеством Гигера. Присутствуют элементы головоломки, жуткие враги и очень необычный сюжет.`,
             "req": `Resident Evil Requiem — грандиозное продолжение серии, которое совместило в себе жуткий survival-геймплей за новую героиню Грейс Эшкрофт и экшен за легендарного Леона. Игра представляет совокупность лучших решений из прошлых частей, а также ещё больший саспенс и проработку деталей.`,
+            "mfp": `My Friend Pedro — это динамичный платформер с возможностью замедлять время и стрелять с разных оружий. Игра разбита на уровни, связанные сюжетно и с юмором.`,
+            "sotc": `Shadow of the Colossus это экслюзивная для PlayStation игра, которая предлагает исключительный геймплей в виде сражения с огромными боссами. В битвах придётся использовать паркур на самих противниках.`,
         };
 
         const LABELS = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн" };
@@ -1715,39 +1702,110 @@
                     return tag === 'input' || tag === 'textarea' || tag === 'select';
                 };
 
-                const handleSearchShortcut = (e) => {
+                const handleGlobalShortcuts = (e) => {
                     if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
                     if (isEditableTarget(e.target)) return;
 
-                    const isSearchHotkey =
-                        e.key === '/' || e.key === '.';
+                    const key = e.key.toLowerCase();
 
-                    if (!isSearchHotkey) return;
+                    // Toggle Genres Panel (f)
+                    if (e.code === 'KeyF' || key === 'f' || key === 'а') {
+                        e.preventDefault();
+                        setShowGenrePanel(prev => !prev);
+                        setSpeedDialOpen(false);
+                        return;
+                    }
 
-                    e.preventDefault();
-                    if (searchInputRef.current) {
-                        searchInputRef.current.focus();
-                        searchInputRef.current.select();
+                    // Change View (v)
+                    if (e.code === 'KeyV' || key === 'v' || key === 'м') {
+                        e.preventDefault();
+                        setView(prev => prev === 'grid' ? 'list' : 'grid');
+                        setSpeedDialOpen(false);
+                        return;
+                    }
+
+                    // Focus Search (/ or .)
+                    if (key === '/' || key === '.') {
+                        e.preventDefault();
+                        if (searchInputRef.current) {
+                            searchInputRef.current.focus();
+                            searchInputRef.current.select();
+                        }
+                        return;
                     }
                 };
 
-                window.addEventListener('keydown', handleSearchShortcut);
-                return () => window.removeEventListener('keydown', handleSearchShortcut);
+                window.addEventListener('keydown', handleGlobalShortcuts);
+                return () => window.removeEventListener('keydown', handleGlobalShortcuts);
             }, []);
 
             // Filter Logic
             const filteredGames = useMemo(() => {
-                let res = GAMES.filter(g => {
-                    let matchesSearch = true;
-                    if (search.trim()) {
-                        const query = search.trim().toLowerCase();
-                        matchesSearch =
+                let res = GAMES;
+
+                if (search.trim()) {
+                    const query = search.trim().toLowerCase();
+                    const tokens = query.split(/\s+/).filter(Boolean);
+
+                    const detectedGenres = new Set();
+                    const textTokens = [];
+
+                    const GENRE_KEYWORDS = {
+                        "сюжет": "Сюжетная", "story": "Сюжетная",
+                        "хоррор": "Хоррор", "horror": "Хоррор", "ужас": "Хоррор",
+                        "рпг": "РПГ", "rpg": "РПГ", "ролев": "РПГ",
+                        "экшен": "Экшен", "экшн": "Экшен", "action": "Экшен",
+                        "инди": "Инди", "indie": "Инди",
+                        "приключ": "Приключение", "adventure": "Приключение",
+                        "шутер": "Шутер", "shooter": "Шутер", "стрелял": "Шутер",
+                        "платформер": "Платформер", "platformer": "Платформер",
+                        "кооператив": "Кооператив", "кооп": "Кооператив", "coop": "Кооператив", "co-op": "Кооператив", "совместн": "Кооператив",
+                        "головолом": "Головоломка", "пазл": "Головоломка", "puzzle": "Головоломка",
+                        "фэнтези": "Фэнтези", "fantasy": "Фэнтези", "фентези": "Фэнтези",
+                        "открыт": "Открытый мир", "open": "Открытый мир", "мир": "Открытый мир",
+                        "стелс": "Стелс", "stealth": "Стелс",
+                        "соулс": "Соулс-лайк", "souls": "Соулс-лайк",
+                        "киберпанк": "Киберпанк", "cyberpunk": "Киберпанк",
+                        "выжива": "Выживание", "survival": "Выживание", "выживал": "Выживание",
+                        "карточ": "Карточная", "card": "Карточная",
+                        "метроид": "Метроидвания", "metroid": "Метроидвания",
+                        "фантасти": "Научная фантастика", "scifi": "Научная фантастика", "sci-fi": "Научная фантастика", "научн": "Научная фантастика",
+                        "постапокалип": "Постапокалипсис", "постап": "Постапокалипсис", "postap": "Постапокалипсис"
+                    };
+
+                    for (const token of tokens) {
+                        let isGenreToken = false;
+                        for (const [key, val] of Object.entries(GENRE_KEYWORDS)) {
+                            if (token.includes(key) || (key.includes(token) && token.length >= 3)) {
+                                detectedGenres.add(val);
+                                isGenreToken = true;
+                            }
+                        }
+                        if (!isGenreToken) {
+                            textTokens.push(token);
+                        }
+                    }
+
+                    res = res.filter(g => {
+                        const matchesSearchGenres = Array.from(detectedGenres).every(gen => g.genres.includes(gen));
+                        const matchesTextTokens = textTokens.every(tok =>
+                            g.title.toLowerCase().includes(tok) ||
+                            g.developer.toLowerCase().includes(tok)
+                        );
+                        const smartMatch = matchesSearchGenres && matchesTextTokens;
+
+                        const fallbackMatch =
                             g.title.toLowerCase().includes(query) ||
                             g.developer.toLowerCase().includes(query);
-                    }
-                    const matchesGenre = selectedGenres.length === 0 || selectedGenres.every(gen => g.genres.includes(gen));
-                    return matchesSearch && matchesGenre;
-                });
+
+                        return smartMatch || fallbackMatch;
+                    });
+                }
+
+                if (selectedGenres.length > 0) {
+                    res = res.filter(g => selectedGenres.every(gen => g.genres.includes(gen)));
+                }
+
                 return res.sort((a, b) => b.ratings[sortBy] - a.ratings[sortBy]);
             }, [search, selectedGenres, sortBy]);
 
@@ -1832,13 +1890,13 @@
                             {/* Жанры */}
                             <div className="sd-item">
                                 <div className="sd-label" title="Фильтр по жанрам" style={selectedGenres.length > 0 ? { borderColor: 'rgba(197,165,128,0.6)', background: 'rgba(197,165,128,0.1)' } : {}} onClick={() => { setShowGenrePanel(o => !o); setSpeedDialOpen(false); }}>
-                                    <span>🏷️</span> Жанры {selectedGenres.length > 0 ? `(${selectedGenres.length})` : ''}
+                                    <span>🏷️</span> Жанры (f) {selectedGenres.length > 0 ? `(${selectedGenres.length})` : ''}
                                 </div>
                             </div>
                             {/* Вид */}
                             <div className="sd-item">
                                 <div className="sd-label" title="Вид" onClick={() => { setView(view === 'grid' ? 'list' : 'grid'); setSpeedDialOpen(false); }}>
-                                    <span style={{ fontSize: '1.2em' }}>{view === 'grid' ? '☰' : '⊞'}</span> {view === 'grid' ? 'Вид: список' : 'Вид: сетка'}
+                                    <span style={{ fontSize: '1.2em' }}>{view === 'grid' ? '☰' : '⊞'}</span> {view === 'grid' ? 'Вид: список (v)' : 'Вид: сетка (v)'}
                                 </div>
                             </div>
                         </div>
@@ -2503,5 +2561,3 @@
 </body>
 
 </html>
-
-
