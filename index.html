@@ -60,6 +60,7 @@
             margin: 0;
             padding: 24px 20px 80px;
             user-select: none;
+            overflow-x: hidden;
         }
 
         /* ── Шапка ── */
@@ -634,6 +635,7 @@
             width: min(var(--card-w), 95vw);
             height: var(--card-h);
             cursor: pointer;
+            will-change: transform;
         }
 
         .card {
@@ -790,7 +792,7 @@
             display: none !important;
         }
 
-        /* Позиции карточек в режиме сетки */
+        /* Позиции карточек */
         body.grid-view .card-wrap[data-id="rdr2"] .card {
             background-position: 70%;
         }
@@ -885,6 +887,10 @@
 
         .card-wrap[data-id="rdr2"] .card {
             background-position: center 80%;
+        }
+
+        .card-wrap[data-id="dos2"] .card {
+            background-position: center 25%;
         }
 
 
@@ -1380,6 +1386,19 @@
             border-color: transparent;
         }
 
+        .genre-tag.excluded {
+            background: rgba(180, 52, 52, 0.14);
+            color: #b43c3c;
+            border-color: rgba(180, 52, 52, 0.55);
+            text-decoration: line-through;
+            text-decoration-thickness: 2px;
+        }
+
+        body.dark .genre-tag.excluded {
+            color: #ff8b8b;
+            border-color: rgba(255, 139, 139, 0.6);
+        }
+
         body:not(.dark) .genre-tag.active {
             color: white;
         }
@@ -1509,68 +1528,70 @@
     <script type="text/babel" data-presets="classic-jsx">
         // --- DATA ---
         const GAMES = [
-            { id: "w3", title: "Witcher 3: Wild Hunt", developer: "CD Projekt Red", image: "w3.jpg", genres: ["РПГ", "Открытый мир", "Сюжетная", "Фэнтези", "Экшен", "Приключение"], ratings: { "story": 10, "graphics": 9, "gameplay": 9, "main_character": 10, "characters": 10, "atmosphere": 10, "sound_design": 10, "rating": 9.7 } },
-            { id: "rdr2", title: "Red Dead Redemption 2", developer: "Rockstar Games", image: "rdr2.png", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 10, "gameplay": 10, "main_character": 10, "characters": 10, "atmosphere": 9, "sound_design": 10, "rating": 9.7 } },
-            { id: "cyb", title: "Cyberpunk 2077", developer: "CD Projekt Red", image: "cyb.png", genres: ["РПГ", "Экшен", "Шутер", "Открытый мир", "Сюжетная", "Киберпанк", "Научная фантастика"], ratings: { "story": 10, "graphics": 10, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 9.3 } },
-            { id: "gtaV", title: "Grand Theft Auto V", developer: "Rockstar Games", image: "gtaV.jpg", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.9 } },
-            { id: "tlou", title: "The Last of Us Part I", developer: "Naughty Dog", image: "tlou.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 9, "characters": 8, "atmosphere": 9, "sound_design": 10, "rating": 9.1 } },
-            { id: "alw2", title: "Alan Wake 2", developer: "Remedy Entertainment", image: "alw2.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Выживание", "Экшен"], ratings: { "story": 10, "graphics": 10, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 9.1 } },
-            { id: "det", title: "Detroit: Become Human", developer: "Quantic Dream", image: "det.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.4 } },
-            { id: "eld", title: "Elden Ring", developer: "FromSoftware", image: "eld.jpg", genres: ["РПГ", "Экшен", "Открытый мир", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 10, "rating": 8.4 } },
-            { id: "dsr", title: "Dead Space Remake", developer: "Motive Studio", image: "dsr.jpg", genres: ["Хоррор", "Шутер", "Экшен", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.6 } },
-            { id: "bmw", title: "Black Myth: Wukong", developer: "Game Science", image: "bmw.png", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.6 } },
-            { id: "bak", title: "Batman: Arkham Knight", developer: "Rocksteady Studios", image: "bak.jpg", genres: ["Экшен", "Открытый мир", "Приключение", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 8.3 } },
-            { id: "hev", title: "Heavy Rain", developer: "Quantic Dream", image: "hev.jpg", genres: ["Приключение", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8, "rating": 8.3 } },
-            { id: "re4", title: "Resident Evil 4 Remake", developer: "Capcom", image: "re4.jpeg", genres: ["Хоррор", "Приключение", "Головоломка", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8, "rating": 8.3 } },
-            { id: "d16", title: "Doom (2016)", developer: "id Software", image: "d16.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 7.9 } },
-            { id: "dete", title: "Doom Eternal", developer: "id Software", image: "dete.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
-            { id: "lim", title: "Limbo", developer: "Playdead", image: "lim.jpg", genres: ["Платформер", "Головоломка", "Инди"], ratings: { "story": 6, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 10, "sound_design": 10, "rating": 7.9 } },
-            { id: "ins", title: "Inside", developer: "Playdead", image: "ins.jpg", genres: ["Платформер", "Головоломка", "Инди", "Научная фантастика", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 9, "sound_design": 10, "rating": 8.0 } },
-            { id: "crw", title: "Thronebreaker: The Witcher Tales", developer: "CD Projekt Red", image: "crw.jpg", genres: ["РПГ", "Карточная", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
-            { id: "fir", title: "Firewatch", developer: "Campo Santo", image: "fir.png", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 7.7 } },
-            { id: "swd", title: "Still Wakes the Deep", developer: "The Chinese Room", image: "swd.jpg", genres: ["Хоррор", "Приключение", "Научная фантастика", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 7, "rating": 7.7 } },
-            { id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", developer: "Quantic Dream", image: "fhr.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 8, "graphics": 6, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 9, "rating": 7.4 } },
-            { id: "inc", title: "Inscryption", developer: "Daniel Mullins Games", image: "inc.jpg", genres: ["Карточная", "Хоррор", "Головоломка", "Инди"], ratings: { "story": 9, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 8, "atmosphere": 8, "sound_design": 9, "rating": 8.0 } },
-            { id: "mf2", title: "Mafia II", developer: "2K Czech", image: "mf2.png", genres: ["Экшен", "Сюжетная", "Открытый мир", "Приключение"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 7, "rating": 7.4 } },
-            { id: "hss", title: "Hellblade: Senua's Sacrifice", developer: "Ninja Theory", image: "hss.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.0 } },
-            { id: "tlou2", title: "The Last of Us Part II", developer: "Naughty Dog", image: "tlou2.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 8, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
-            { id: "PTI", title: "A Plague Tale: Innocence", developer: "Asobo Studio", image: "PTI.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 8.0 } },
-            { id: "atm", title: "Atomic Heart", developer: "Mundfish", image: "atm.jpg", genres: ["Шутер", "Экшен", "РПГ", "Научная фантастика", "Открытый мир", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 7, "sound_design": 9, "rating": 8.0 } },
-            { id: "jc3", title: "Just Cause 3", developer: "Avalanche Studios", image: "jc3.jpg", genres: ["Экшен", "Открытый мир", "Шутер", "Приключение"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 7, "sound_design": 8, "rating": 7.6 } },
-            { id: "out", title: "Outlast", developer: "Red Barrels", image: "out.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.0 } },
-            { id: "out2", title: "Outlast 2", developer: "Red Barrels", image: "out2.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 10, "sound_design": 9, "rating": 8.1 } },
-            { id: "re2", title: "Resident Evil 2 Remake", developer: "Capcom", image: "re2.png", genres: ["Хоррор", "Головоломка", "Приключение", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 8, "rating": 8.0 } },
-            { id: "rev", title: "Resident Evil Village", developer: "Capcom", image: "rev.jpg", genres: ["Хоррор", "Экшен", "Головоломка", "Приключение", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8, "rating": 8.3 } },
-            { id: "reb", title: "Resident Evil 7: Biohazard", developer: "Capcom", image: "reb.jpg", genres: ["Хоррор", "Выживание", "Головоломка", "Приключение", "Экшен", "Шутер", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 9, "rating": 8.1 } },
-            { id: "lit1", title: "Little Nightmares", developer: "Tarsier Studios", image: "lit1.jpg", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.1 } },
-            { id: "lit2", title: "Little Nightmares 2", developer: "Tarsier Studios", image: "lit2.png", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.3 } },
-            { id: "ex33", title: "Clair Obscur: Expedition 33", developer: "Sandfall Interactive", image: "ex33.png", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 8, "sound_design": 10, "rating": 9.1 } },
-            { id: "ef", title: "What Remains of Edith Finch", developer: "Giant Sparrow", image: "ef.jpg", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 8.1 } },
-            { id: "p2", title: "Portal 2", developer: "Valve", image: "p2.jpg", genres: ["Головоломка", "Платформер", "Научная фантастика", "Кооператив", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9, "rating": 8.1 } },
-            { id: "fc3", title: "Far Cry 3", developer: "Ubisoft Montreal", image: "fc3.jpg", genres: ["Шутер", "Экшен", "Открытый мир", "Выживание", "Приключение", "Сюжетная"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 7.7 } },
-            { id: "str", title: "Stray", developer: "BlueTwelve Studio", image: "str.jpg", genres: ["Приключение", "Головоломка", "Инди", "Научная фантастика", "Киберпанк", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 8, "rating": 7.7 } },
-            { id: "hk", title: "Hollow Knight", developer: "Team Cherry", image: "hk.jpg", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10, "rating": 8.9 } },
-            { id: "drg", title: "DREDGE", developer: "Black Salt Games", image: "drg.png", genres: ["Приключение", "Хоррор", "Инди", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 7.6 } },
-            { id: "kht", title: "Kholat", developer: "IMGN.PRO", image: "kht.png", genres: ["Хоррор", "Приключение", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 6, "atmosphere": 10, "sound_design": 9, "rating": 7.4 } },
-            { id: "aw", title: "Alan Wake", developer: "Remedy Entertainment", image: "aw.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Экшен"], ratings: { "story": 9, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 8, "rating": 8.1 } },
-            { id: "cp", title: "The Callisto Protocol", developer: "Striking Distance Studios", image: "cp.jpg", genres: ["Хоррор", "Экшен", "Шутер", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
-            { id: "gow", title: "God of War", developer: "Santa Monica Studio", image: "gow.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 9, "rating": 8.4 } },
-            { id: "hl2", title: "Half Life 2", developer: "Valve", image: "hl2.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Приключение", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.3 } },
-            { id: "hks", title: "Hollow Knight: Silksong", developer: "Team Cherry", image: "hks.png", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10, "rating": 9.1 } },
-            { id: "lp", title: "Lies of P", developer: "Round8 Studio", image: "lp.jpg", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 7.7 } },
-            { id: "itt", title: "It Takes Two", developer: "Hazelight Studios", image: "itt.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 8.3 } },
-            { id: "bts", title: "Beyond: Two Souls", developer: "Quantic Dream", image: "bts.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "Экшен"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8, "rating": 8.0 } },
-            { id: "hol", title: "High on Life", developer: "Squanch Games", image: "hol.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Метроидвания", "Сюжетная", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9, "rating": 8.1 } },
-            { id: "sf", title: "Split Fiction", developer: "Hazelight Studios", image: "sf.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Экшен", "Сюжетная", "Научная фантастика", "Фэнтези"], ratings: { "story": 10, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 9.0 } },
-            { id: "awo", title: "A Way Out", developer: "Hazelight Studios", image: "awo.jpg", genres: ["Приключение", "Экшен", "Кооператив", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 7, "rating": 7.9 } },
-            { id: "sco", title: "Scorn", developer: "Ebb Software", image: "sco.png", genres: ["Приключение", "Головоломка", "Хоррор", "Выживание"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9, "rating": 7.9 } },
-            { id: "dtda", title: "Doom: The Dark Ages", developer: "id Software", image: "dtda.png", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9, "rating": 8.4 } },
-            { id: "w1", title: "The Witcher", developer: "CD Projekt Red", image: "w1.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 9, "atmosphere": 10, "sound_design": 9, "rating": 8.4 } },
-            { id: "w2", title: "The Witcher 2: Assassins of Kings", developer: "CD Projekt Red", image: "w2.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
-            { id: "req", title: "Resident Evil Requiem", developer: "Capcom", image: "req.png", genres: ["Выживание", "Экшен", "Головоломка", "Приключение", "Сюжетная", "Хоррор", "Шутер"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9, "rating": 8.7 } },
-            { id: "mfp", title: "My Friend Pedro", developer: "DeadToast Entertainment", image: "mfp.jpg", genres: ["Инди", "Экшен", "Шутер", "Платформер"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 7, "atmosphere": 8, "sound_design": 8, "rating": 7.4 } },
-            { id: "sotc", title: "Shadow of the Colossus", developer: "Sony Computer Entertainment", image: "sotc.png", genres: ["Головоломка", "Экшен", "Шутер", "Платформер", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 6, "characters": 6, "atmosphere": 8, "sound_design": 8, "rating": 7.6 } },
-            { id: "rea", title: "REANIMAL", developer: "Tarsier Studios", image: "rea.jpg", genres: ["Головоломка", "Хоррор", "Экшен", "Платформер", "Приключение", "Кооператив", "Стелс"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 10, "rating": 8.4 } },
+            { id: "w3", title: "Witcher 3: Wild Hunt", developer: "CD Projekt Red", image: "w3.jpg", genres: ["РПГ", "Открытый мир", "Сюжетная", "Фэнтези", "Экшен", "Приключение"], ratings: { "story": 10, "graphics": 9, "gameplay": 9, "main_character": 10, "characters": 10, "atmosphere": 10, "sound_design": 10 } },
+            { id: "rdr2", title: "Red Dead Redemption 2", developer: "Rockstar Games", image: "rdr2.png", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 10, "gameplay": 10, "main_character": 10, "characters": 10, "atmosphere": 9, "sound_design": 10 } },
+            { id: "cyb", title: "Cyberpunk 2077", developer: "CD Projekt Red", image: "cyb.png", genres: ["РПГ", "Экшен", "Шутер", "Открытый мир", "Сюжетная", "Киберпанк", "Научная фантастика"], ratings: { "story": 10, "graphics": 10, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9 } },
+            { id: "gtaV", title: "Grand Theft Auto V", developer: "Rockstar Games", image: "gtaV.jpg", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 } },
+            { id: "tlou", title: "The Last of Us Part I", developer: "Naughty Dog", image: "tlou.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 9, "characters": 8, "atmosphere": 9, "sound_design": 10 } },
+            { id: "alw2", title: "Alan Wake 2", developer: "Remedy Entertainment", image: "alw2.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Выживание", "Экшен"], ratings: { "story": 10, "graphics": 10, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 } },
+            { id: "det", title: "Detroit: Become Human", developer: "Quantic Dream", image: "det.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 10 } },
+            { id: "eld", title: "Elden Ring", developer: "FromSoftware", image: "eld.jpg", genres: ["РПГ", "Экшен", "Открытый мир", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 10 } },
+            { id: "dsr", title: "Dead Space Remake", developer: "Motive Studio", image: "dsr.jpg", genres: ["Хоррор", "Шутер", "Экшен", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 9 } },
+            { id: "bmw", title: "Black Myth: Wukong", developer: "Game Science", image: "bmw.png", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 } },
+            { id: "bak", title: "Batman: Arkham Knight", developer: "Rocksteady Studios", image: "bak.jpg", genres: ["Экшен", "Открытый мир", "Приключение", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 7, "atmosphere": 10, "sound_design": 8 } },
+            { id: "hev", title: "Heavy Rain", developer: "Quantic Dream", image: "hev.jpg", genres: ["Приключение", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8 } },
+            { id: "re4", title: "Resident Evil 4 Remake", developer: "Capcom", image: "re4.jpeg", genres: ["Хоррор", "Приключение", "Головоломка", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8 } },
+            { id: "d16", title: "Doom (2016)", developer: "id Software", image: "d16.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9 } },
+            { id: "dete", title: "Doom Eternal", developer: "id Software", image: "dete.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9 } },
+            { id: "lim", title: "Limbo", developer: "Playdead", image: "lim.jpg", genres: ["Платформер", "Головоломка", "Инди"], ratings: { "story": 6, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 10, "sound_design": 10 } },
+            { id: "ins", title: "Inside", developer: "Playdead", image: "ins.jpg", genres: ["Платформер", "Головоломка", "Инди", "Научная фантастика", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 9, "sound_design": 10 } },
+            { id: "crw", title: "Thronebreaker: The Witcher Tales", developer: "CD Projekt Red", image: "crw.jpg", genres: ["РПГ", "Карточная", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 9 } },
+            { id: "fir", title: "Firewatch", developer: "Campo Santo", image: "fir.png", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 } },
+            { id: "swd", title: "Still Wakes the Deep", developer: "The Chinese Room", image: "swd.jpg", genres: ["Хоррор", "Приключение", "Научная фантастика", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 7 } },
+            { id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", developer: "Quantic Dream", image: "fhr.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 8, "graphics": 6, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 9 } },
+            { id: "inc", title: "Inscryption", developer: "Daniel Mullins Games", image: "inc.jpg", genres: ["Карточная", "Хоррор", "Головоломка", "Инди"], ratings: { "story": 9, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 8, "atmosphere": 8, "sound_design": 9 } },
+            { id: "mf2", title: "Mafia II", developer: "2K Czech", image: "mf2.png", genres: ["Экшен", "Сюжетная", "Открытый мир", "Приключение"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 7 } },
+            { id: "hss", title: "Hellblade: Senua's Sacrifice", developer: "Ninja Theory", image: "hss.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 } },
+            { id: "tlou2", title: "The Last of Us Part II", developer: "Naughty Dog", image: "tlou2.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 8, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 } },
+            { id: "PTI", title: "A Plague Tale: Innocence", developer: "Asobo Studio", image: "PTI.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 } },
+            { id: "atm", title: "Atomic Heart", developer: "Mundfish", image: "atm.jpg", genres: ["Шутер", "Экшен", "РПГ", "Научная фантастика", "Открытый мир", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 7, "sound_design": 9 } },
+            { id: "jc3", title: "Just Cause 3", developer: "Avalanche Studios", image: "jc3.jpg", genres: ["Экшен", "Открытый мир", "Шутер", "Приключение"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 7, "sound_design": 8 } },
+            { id: "out", title: "Outlast", developer: "Red Barrels", image: "out.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 9 } },
+            { id: "out2", title: "Outlast 2", developer: "Red Barrels", image: "out2.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 10, "sound_design": 9 } },
+            { id: "re2", title: "Resident Evil 2 Remake", developer: "Capcom", image: "re2.png", genres: ["Хоррор", "Головоломка", "Приключение", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 8 } },
+            { id: "rev", title: "Resident Evil Village", developer: "Capcom", image: "rev.jpg", genres: ["Хоррор", "Экшен", "Головоломка", "Приключение", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8 } },
+            { id: "reb", title: "Resident Evil 7: Biohazard", developer: "Capcom", image: "reb.jpg", genres: ["Хоррор", "Выживание", "Головоломка", "Приключение", "Экшен", "Шутер", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 9 } },
+            { id: "lit1", title: "Little Nightmares", developer: "Tarsier Studios", image: "lit1.jpg", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 } },
+            { id: "lit2", title: "Little Nightmares 2", developer: "Tarsier Studios", image: "lit2.png", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 } },
+            { id: "ex33", title: "Clair Obscur: Expedition 33", developer: "Sandfall Interactive", image: "ex33.png", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 8, "sound_design": 10 } },
+            { id: "ef", title: "What Remains of Edith Finch", developer: "Giant Sparrow", image: "ef.jpg", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 } },
+            { id: "p2", title: "Portal 2", developer: "Valve", image: "p2.jpg", genres: ["Головоломка", "Платформер", "Научная фантастика", "Кооператив", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9 } },
+            { id: "fc3", title: "Far Cry 3", developer: "Ubisoft Montreal", image: "fc3.jpg", genres: ["Шутер", "Экшен", "Открытый мир", "Выживание", "Приключение", "Сюжетная"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 } },
+            { id: "str", title: "Stray", developer: "BlueTwelve Studio", image: "str.jpg", genres: ["Приключение", "Головоломка", "Инди", "Научная фантастика", "Киберпанк", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 8 } },
+            { id: "hk", title: "Hollow Knight", developer: "Team Cherry", image: "hk.jpg", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 } },
+            { id: "drg", title: "DREDGE", developer: "Black Salt Games", image: "drg.png", genres: ["Приключение", "Хоррор", "Инди", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 7, "atmosphere": 10, "sound_design": 8 } },
+            { id: "kht", title: "Kholat", developer: "IMGN.PRO", image: "kht.png", genres: ["Хоррор", "Приключение", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 6, "atmosphere": 10, "sound_design": 9 } },
+            { id: "aw", title: "Alan Wake", developer: "Remedy Entertainment", image: "aw.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Экшен"], ratings: { "story": 9, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 8 } },
+            { id: "cp", title: "The Callisto Protocol", developer: "Striking Distance Studios", image: "cp.jpg", genres: ["Хоррор", "Экшен", "Шутер", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 7, "atmosphere": 9, "sound_design": 9 } },
+            { id: "gow", title: "God of War", developer: "Santa Monica Studio", image: "gow.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 9 } },
+            { id: "hl2", title: "Half Life 2", developer: "Valve", image: "hl2.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Приключение", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 9, "sound_design": 9 } },
+            { id: "hks", title: "Hollow Knight: Silksong", developer: "Team Cherry", image: "hks.png", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 } },
+            { id: "lp", title: "Lies of P", developer: "Round8 Studio", image: "lp.jpg", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 } },
+            { id: "itt", title: "It Takes Two", developer: "Hazelight Studios", image: "itt.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 } },
+            { id: "bts", title: "Beyond: Two Souls", developer: "Quantic Dream", image: "bts.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "Экшен"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 } },
+            { id: "hol", title: "High on Life", developer: "Squanch Games", image: "hol.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Метроидвания", "Сюжетная", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9 } },
+            { id: "sf", title: "Split Fiction", developer: "Hazelight Studios", image: "sf.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Экшен", "Сюжетная", "Научная фантастика", "Фэнтези"], ratings: { "story": 10, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 } },
+            { id: "awo", title: "A Way Out", developer: "Hazelight Studios", image: "awo.jpg", genres: ["Приключение", "Экшен", "Кооператив", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 7 } },
+            { id: "sco", title: "Scorn", developer: "Ebb Software", image: "sco.png", genres: ["Приключение", "Головоломка", "Хоррор", "Выживание"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 } },
+            { id: "dtda", title: "Doom: The Dark Ages", developer: "id Software", image: "dtda.png", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 } },
+            { id: "w1", title: "The Witcher", developer: "CD Projekt Red", image: "w1.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 9, "atmosphere": 10, "sound_design": 9 } },
+            { id: "w2", title: "The Witcher 2: Assassins of Kings", developer: "CD Projekt Red", image: "w2.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9 } },
+            { id: "req", title: "Resident Evil Requiem", developer: "Capcom", image: "req.png", genres: ["Выживание", "Экшен", "Головоломка", "Приключение", "Сюжетная", "Хоррор", "Шутер"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 } },
+            { id: "mfp", title: "My Friend Pedro", developer: "DeadToast Entertainment", image: "mfp.jpg", genres: ["Инди", "Экшен", "Шутер", "Платформер"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 7, "atmosphere": 8, "sound_design": 8 } },
+            { id: "sotc", title: "Shadow of the Colossus", developer: "Sony Computer Entertainment", image: "sotc.png", genres: ["Головоломка", "Экшен", "Шутер", "Платформер", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 6, "characters": 6, "atmosphere": 8, "sound_design": 8 } },
+            { id: "rea", title: "REANIMAL", developer: "Tarsier Studios", image: "rea.jpg", genres: ["Головоломка", "Хоррор", "Экшен", "Платформер", "Приключение", "Кооператив", "Стелс"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 } },
+            { id: "dos2", title: "Divinity: Original Sin 2", developer: "Larian Studios", image: "dos2.jpg", genres: ["РПГ", "Приключение", "Фэнтези", "Кооператив", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 10 } },
+            { id: "prag", title: "PRAGMATA", developer: "Capcom", image: "prag.png", genres: ["Экшен", "Приключение", "Научная фантастика", "Шутер", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 } },
         ];
 
         const REVIEWS = {
@@ -1636,10 +1657,20 @@
             "mfp": `My Friend Pedro — это динамичный платформер с возможностью замедлять время и стрелять с разных оружий. Игра разбита на уровни, связанные сюжетно и с юмором.`,
             "sotc": `Shadow of the Colossus это эксклюзивная для PlayStation игра, которая предлагает исключительный геймплей в виде сражения с огромными боссами. В битвах придётся использовать паркур на самих противниках.`,
             "rea": `REANIMAL это кооперативный хоррор-платформер с элементами стелса на пару вечеров, цепляет необычным геймдизайном и атмосферой одиночества. Игра от разработчиков первой и второй частей Little Nightmares.`,
+            "dos2": `Divinity: Original Sin 2 это ролевая пошаговая игра в изометрической перспективе с сюжетом, который позволит делать выборы и геймплеем с 10 школами навыков, которые можно комбинировать.`,
+            "prag": `PRAGMATA это драматичная история Хью - космического инженера и Дианы - андроида, умеющего взламывать. Им вместе предстоит пройти через массу роботов и отправиться с Луны на Землю. Игра предоставляет комфортный геймплей, совмещающий способности обоих героев.`,
         };
 
         const LABELS = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн" };
         const LABELS_FULL = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Главный герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн" };
+
+        const CRITERIA_KEYS = ["story", "graphics", "gameplay", "main_character", "characters", "atmosphere", "sound_design"];
+        const calcRating = (ratings) => {
+            const vals = CRITERIA_KEYS.map(k => ratings[k]).filter(v => v !== undefined);
+            if (!vals.length) return 0;
+            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            return Math.round(avg * 10) / 10;
+        };
 
         const normalizeSearchPart = (value) =>
             value.toLowerCase().replace(/ё/g, "е").trim();
@@ -1665,7 +1696,7 @@
             { label: "Выживание", aliases: "выжива, выживал, survival" },
             { label: "Карточная", aliases: "карточ, card" },
             { label: "Метроидвания", aliases: "метроид, metroid" },
-            { label: "Научная фантастика", aliases: "фантасти, scifi, sci-fi, научн" },
+            { label: "Научная фантастика", aliases: "фантасти, scifi, sci-fi, научн, скайфай" },
             { label: "Постапокалипсис", aliases: "постапокалип, постап, postap" },
         ];
         const GENRES = GENRE_RULES.map(({ label }) => label);
@@ -1682,6 +1713,7 @@
             const [view, setView] = useState(localStorage.getItem('view') || 'list');
             const [search, setSearch] = useState("");
             const [selectedGenres, setSelectedGenres] = useState([]);
+            const [excludedGenres, setExcludedGenres] = useState([]);
             const [sortBy, setSortBy] = useState("rating");
             const [selectedGames, setSelectedGames] = useState([]);
             const [compareMode, setCompareMode] = useState(false);
@@ -1787,58 +1819,125 @@
                 let res = GAMES;
 
                 if (search.trim()) {
-                    const query = normalizeSearchPart(search);
-                    const tokens = query.split(/\s+/).filter(Boolean);
+                    // Split the RAW input first so '-' is detected before any normalization
+                    const rawTokens = search.trim().split(/\s+/).filter(Boolean);
 
                     const detectedGenres = new Set();
+                    const excludedGenresSearch = new Set();
                     const textTokens = [];
 
                     const matchesAlias = (token, alias) =>
                         token === alias ||
                         (token.length >= 3 && (alias.includes(token) || token.includes(alias)));
 
-                    for (const token of tokens) {
-                        const matchedGenre = GENRE_ALIAS_INDEX.find(({ aliases }) =>
-                            aliases.some(alias => matchesAlias(token, alias))
-                        );
+                    for (const rawToken of rawTokens) {
+                        const isExclude = rawToken.charAt(0) === '-' && rawToken.length > 1;
+                        const cleanRaw = isExclude ? rawToken.slice(1) : rawToken;
+                        const cleanToken = normalizeSearchPart(cleanRaw);
+
+                        const matchedGenre = cleanToken.length > 0
+                            ? GENRE_ALIAS_INDEX.find(({ aliases }) =>
+                                aliases.some(alias => matchesAlias(cleanToken, alias)))
+                            : null;
 
                         if (matchedGenre) {
-                            detectedGenres.add(matchedGenre.label);
-                        } else {
-                            textTokens.push(token);
+                            if (isExclude) {
+                                excludedGenresSearch.add(matchedGenre.label);
+                            } else {
+                                detectedGenres.add(matchedGenre.label);
+                            }
+                        } else if (!isExclude) {
+                            textTokens.push(cleanToken);
                         }
                     }
+
+                    const hasExcludeTokens = excludedGenresSearch.size > 0;
+                    const hasIncludeGenres = detectedGenres.size > 0;
+                    const normalizedQuery = normalizeSearchPart(search);
 
                     res = res.filter(g => {
                         const gameTitle = normalizeSearchPart(g.title);
                         const gameDeveloper = normalizeSearchPart(g.developer);
-                        const matchesSearchGenres = Array.from(detectedGenres).every(gen => g.genres.includes(gen));
-                        const matchesTextTokens = textTokens.every(tok =>
-                            gameTitle.includes(tok) ||
-                            gameDeveloper.includes(tok)
-                        );
-                        const smartMatch = matchesSearchGenres && matchesTextTokens;
 
-                        const fallbackMatch =
-                            gameTitle.includes(query) ||
-                            gameDeveloper.includes(query);
+                        const matchesInclude = Array.from(detectedGenres).every(gen => g.genres.includes(gen));
+                        const matchesExclude = Array.from(excludedGenresSearch).every(gen => !g.genres.includes(gen));
+                        const matchesText = textTokens.every(tok =>
+                            gameTitle.includes(tok) || gameDeveloper.includes(tok)
+                        );
+                        const smartMatch = matchesInclude && matchesExclude && matchesText;
+
+                        // Fallback to simple substring only when no genre logic was triggered
+                        const fallbackMatch = !hasExcludeTokens && !hasIncludeGenres && textTokens.length === 0 && (
+                            gameTitle.includes(normalizedQuery) ||
+                            gameDeveloper.includes(normalizedQuery)
+                        );
 
                         return smartMatch || fallbackMatch;
                     });
                 }
 
-                if (selectedGenres.length > 0) {
-                    res = res.filter(g => selectedGenres.every(gen => g.genres.includes(gen)));
+                if (selectedGenres.length > 0 || excludedGenres.length > 0) {
+                    res = res.filter(g =>
+                        selectedGenres.every(gen => g.genres.includes(gen)) &&
+                        excludedGenres.every(gen => !g.genres.includes(gen))
+                    );
                 }
 
-                return res.sort((a, b) => b.ratings[sortBy] - a.ratings[sortBy]);
-            }, [search, selectedGenres, sortBy]);
+                const getVal = (g) => sortBy === 'rating' ? calcRating(g.ratings) : g.ratings[sortBy];
+                return res.sort((a, b) => getVal(b) - getVal(a));
+            }, [search, selectedGenres, excludedGenres, sortBy]);
+
+            const genreClickTimerRef = useRef(null);
+
+            const handleGenreClick = (genre) => {
+                if (genreClickTimerRef.current) {
+                    clearTimeout(genreClickTimerRef.current);
+                    genreClickTimerRef.current = null;
+                }
+                genreClickTimerRef.current = setTimeout(() => {
+                    genreClickTimerRef.current = null;
+                    if (excludedGenres.includes(genre)) {
+                        setExcludedGenres(prev => prev.filter(item => item !== genre));
+                    } else {
+                        setSelectedGenres(prev => prev.includes(genre)
+                            ? prev.filter(item => item !== genre)
+                            : [...prev, genre]
+                        );
+                    }
+                }, 180);
+            };
+
+            const handleGenreDoubleClick = (genre) => {
+                if (genreClickTimerRef.current) {
+                    clearTimeout(genreClickTimerRef.current);
+                    genreClickTimerRef.current = null;
+                }
+                setSelectedGenres(prev => prev.filter(item => item !== genre));
+                setExcludedGenres(prev => prev.includes(genre)
+                    ? prev.filter(item => item !== genre)
+                    : [...prev, genre]
+                );
+            };
+
+            const handleGenreContextMenu = (genre, e) => {
+                e.preventDefault();
+                handleGenreDoubleClick(genre);
+            };
+
+            const clearGenreFilters = () => {
+                setSelectedGenres([]);
+                setExcludedGenres([]);
+            };
 
             const handleCardClick = (game) => {
                 if (compareMode) {
-                    setSelectedGames(prev =>
-                        prev.includes(game.id) ? prev.filter(id => id !== game.id) : [...prev, game.id]
-                    );
+                    setSelectedGames(prev => {
+                        const next = prev.includes(game.id) ? prev.filter(id => id !== game.id) : [...prev, game.id];
+                        if (next.length === 0) {
+                            setCompareMode(false);
+                        }
+                        return next;
+                    });
                 } else {
                     setModalGame(game);
                 }
@@ -1870,13 +1969,20 @@
                         <div className="genre-header">
                             <span>Фильтр по жанрам</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <button onClick={() => setSelectedGenres([])} title="Сбросить фильтр" style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: '1rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>⟳</button>
+                                <button onClick={clearGenreFilters} title="Сбросить фильтр" style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: '1rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>⟳</button>
                                 <button onClick={() => setShowGenrePanel(false)} title="Закрыть" style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.85)', fontSize: '1.2rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1, fontWeight: 300 }}>×</button>
                             </div>
                         </div>
                         <div className="genre-list">
                             {GENRES.map(g => (
-                                <div key={g} className={`genre-tag ${selectedGenres.includes(g) ? 'active' : ''}`} onClick={() => setSelectedGenres(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])}>
+                                <div
+                                    key={g}
+                                    className={`genre-tag ${selectedGenres.includes(g) ? 'active' : ''} ${excludedGenres.includes(g) ? 'excluded' : ''}`}
+                                    onClick={() => handleGenreClick(g)}
+                                    onDoubleClick={() => handleGenreDoubleClick(g)}
+                                    onContextMenu={(e) => handleGenreContextMenu(g, e)}
+                                    title={excludedGenres.includes(g) ? 'Жанр исключён (клик/ПКМ чтобы вернуть)' : 'ПКМ или 2-й клик: исключить genre'}
+                                >
                                     {g}
                                 </div>
                             ))}
@@ -1915,7 +2021,7 @@
                             {/* Жанры */}
                             <div className="sd-item">
                                 <div className="sd-label" title="Фильтр по жанрам" style={selectedGenres.length > 0 ? { borderColor: 'rgba(197,165,128,0.6)', background: 'rgba(197,165,128,0.1)' } : {}} onClick={() => { setShowGenrePanel(o => !o); setSpeedDialOpen(false); }}>
-                                    <span>🏷️</span> Жанры (f) {selectedGenres.length > 0 ? `(${selectedGenres.length})` : ''}
+                                    <span>🏷️</span> Жанры (f) {selectedGenres.length + excludedGenres.length > 0 ? `(${selectedGenres.length + excludedGenres.length})` : ''}
                                 </div>
                             </div>
                             {/* Вид */}
@@ -2062,7 +2168,7 @@
                 const xNorm = (x / w) * 2 - 1;
                 const yNorm = (y / h) * 2 - 1;
 
-                const maxTilt = 9;
+                const maxTilt = 5;
                 const rotateX = yNorm * maxTilt * -1;
                 const rotateY = xNorm * maxTilt;
 
@@ -2125,7 +2231,7 @@
                     ref={cardRef}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.1, filter: "blur(10px) grayscale(1)", transition: { duration: 0.38, ease: "easeOut" } }}
+                    exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.38, ease: "easeOut" } }}
                     className={`card-wrap ${selected ? 'selected' : ''}`}
                     onClick={handleClick}
                     onPointerDown={startLongPress}
@@ -2135,7 +2241,11 @@
                     onPointerMove={handlePointerMove}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
-                    transition={{ duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
+                    transition={{
+                        layout: { type: "spring", stiffness: 220, damping: 28, mass: 1.3 },
+                        opacity: { duration: 0.4, ease: "easeOut" },
+                        scale: { duration: 0.4, ease: "easeOut" },
+                    }}
                     style={view === 'list' ? { marginBottom: 20 } : {}}
                     data-id={game.id}
                 >
@@ -2146,7 +2256,7 @@
                     >
                         <div className="badge">
                             <span className="rank" style={{ color: 'white', marginRight: 6 }}>#{index + 1}</span>
-                            <span style={{ color: 'gold' }}>{game.ratings.rating}</span>
+                            <span style={{ color: 'gold' }}>{calcRating(game.ratings)}</span>
                         </div>
                         <div className="title">{game.title}</div>
                         {view !== 'grid' && (
@@ -2387,10 +2497,9 @@
             const maxRatings = useMemo(() => {
                 const max = {};
                 Object.keys(LABELS_FULL).forEach(key => {
-                    if (key === 'rating') return;
                     let m = -Infinity;
                     gamesToCompare.forEach(g => {
-                        const val = parseFloat(g.ratings[key] || 0);
+                        const val = parseFloat(key === 'rating' ? calcRating(g.ratings) : (g.ratings[key] || 0));
                         if (val > m) m = val;
                     });
                     if (m > 0) max[key] = m;
@@ -2483,7 +2592,7 @@
                                                     <tr key={key}>
                                                         <td><b>{LABELS_FULL[key]}</b></td>
                                                         {gamesToCompare.map(g => {
-                                                            const val = g.ratings[key];
+                                                            const val = key === 'rating' ? calcRating(g.ratings) : g.ratings[key];
                                                             const isMax = parseFloat(val) === maxRatings[key];
                                                             return <td key={g.id} className={isMax ? 'highlight-max' : ''}>{val}</td>
                                                         })}
