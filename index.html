@@ -1716,6 +1716,459 @@
     #roulette-modal .roulette-box {
       user-select: text;
     }
+
+    /* ═════════════════════════════════════════════════════════════
+       МОБИЛЬНАЯ ВЕРСИЯ — десктопные правила выше не изменяются
+       ═════════════════════════════════════════════════════════════ */
+    @media (max-width: 640px) {
+      html,
+      body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: clip;
+      }
+
+      html {
+        scrollbar-gutter: auto;
+      }
+
+      body {
+        padding: 14px 10px 118px;
+        box-sizing: border-box;
+      }
+
+      .site-header {
+        margin-bottom: 16px;
+        padding: 0 38px;
+      }
+
+      .page-title {
+        font-size: 1.42rem;
+        line-height: 1.18;
+      }
+
+      .page-subtitle {
+        font-size: 0.68rem;
+        line-height: 1.35;
+      }
+
+      .site-header-right {
+        right: 0;
+        top: 0;
+        transform: none;
+      }
+
+      .controls-bar {
+        top: 8px;
+        gap: 6px;
+        margin-bottom: 16px;
+        padding: 7px;
+        border-radius: 13px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+
+      .search-wrapper {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .controls-bar input,
+      .controls-bar select {
+        font-size: 0.78rem;
+        padding: 8px 9px;
+      }
+
+      .controls-bar .btn {
+        font-size: 0.75rem;
+        padding: 8px 9px;
+      }
+
+      #grid {
+        gap: 14px;
+        width: 100%;
+        min-width: 0;
+      }
+
+      .card-wrap,
+      body.grid-view .card-wrap {
+        width: 100%;
+        height: 220px;
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      .card {
+        border-radius: 14px;
+        padding: 12px;
+        box-sizing: border-box;
+      }
+
+      .card .title {
+        max-width: calc(100% - 78px);
+        font-size: 1.02rem;
+        line-height: 1.25;
+        padding: 6px 8px;
+      }
+
+      .card .badge {
+        top: 9px;
+        right: 9px;
+        padding: 6px 8px;
+        font-size: 0.78rem;
+        border-radius: 9px;
+      }
+
+      .popup,
+      .genres-popup,
+      .grid-sort-badge {
+        display: none !important;
+      }
+
+      .speed-dial {
+        left: 14px;
+        bottom: 94px;
+      }
+
+      #scroll-to-top.visible {
+        right: 14px;
+        bottom: 94px;
+      }
+
+      .genre-panel {
+        left: 10px;
+        right: 10px;
+        bottom: 160px;
+        width: min(280px, calc(100vw - 20px));
+        max-width: none;
+        max-height: 58vh;
+        box-sizing: border-box;
+      }
+
+      .sort-dock {
+        left: 10px;
+        right: 10px;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        width: auto;
+        max-width: none;
+        transform: none;
+        padding: 4px;
+        min-height: 60px;
+        box-sizing: border-box;
+      }
+
+      .sort-dock-track {
+        justify-content: center;
+        flex-wrap: wrap;
+        overflow: visible;
+        gap: 2px;
+        min-height: 48px;
+        scrollbar-width: none;
+      }
+
+      .sort-dock-track::-webkit-scrollbar {
+        display: none;
+      }
+
+      .sort-dock-btn {
+        font-size: 0.55rem;
+        line-height: 1.1;
+        padding: 5px 4px;
+      }
+
+      @media (max-width: 440px) {
+        .sort-dock-btn {
+          font-size: 0.79rem;
+          height: 30px;
+          padding: 4px 3px;
+        }
+      }
+
+      /* Карточка игры на отдельной мобильной странице */
+      .game-page {
+        min-height: 100dvh;
+        width: calc(100% + 20px);
+        box-sizing: border-box;
+        margin: -14px -10px -118px;
+        padding: 10px 10px 30px;
+        background: var(--bg);
+      }
+
+      .game-page-header {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 5px 0 12px;
+        background: linear-gradient(var(--bg) 72%, transparent);
+      }
+
+      .game-page-back {
+        flex: 0 0 auto;
+        border: 1px solid var(--surface-border);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--text);
+        padding: 8px 11px;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .game-page-header-title {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.92rem;
+        font-weight: 700;
+      }
+
+      .game-page-hero {
+        position: relative;
+        box-sizing: border-box;
+        min-height: 210px;
+        display: flex;
+        align-items: flex-end;
+        padding: 14px;
+        overflow: hidden;
+        border-radius: 16px;
+        color: #fff;
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      }
+
+      .game-page-hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(transparent 25%, rgba(0, 0, 0, 0.82));
+      }
+
+      .game-page-hero-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      .game-page-title {
+        margin: 0;
+        font-size: 1.45rem;
+        line-height: 1.15;
+      }
+
+      .game-page-developer {
+        margin-top: 5px;
+        font-size: 0.82rem;
+        opacity: 0.75;
+      }
+
+      .game-page-section {
+        margin-top: 14px;
+        padding: 14px;
+        box-sizing: border-box;
+        border: 1px solid var(--surface-border);
+        border-radius: 14px;
+        background: var(--surface);
+        backdrop-filter: blur(8px);
+      }
+
+      .game-page-section-title {
+        margin: 0 0 10px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        opacity: 0.55;
+      }
+
+      .game-page-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .game-page-info-item {
+        min-width: 0;
+        padding: 8px 9px;
+        border-radius: 10px;
+        background: var(--pill-bg);
+      }
+
+      .game-page-info-key {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        opacity: 0.5;
+      }
+
+      .game-page-info-value {
+        display: block;
+        overflow-wrap: anywhere;
+        font-size: 0.82rem;
+        line-height: 1.3;
+      }
+
+      .game-page-genres {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .game-page-genre {
+        padding: 4px 8px;
+        border: 1px solid var(--pill-border);
+        border-radius: 20px;
+        font-size: 0.72rem;
+      }
+
+      .game-page-ratings {
+        position: relative;
+        font-size: 0.86rem;
+        line-height: 1.7;
+      }
+
+      .game-page-chart {
+        width: 100%;
+        height: 280px;
+      }
+
+      .game-page-chart-toggle {
+        display: block;
+        margin: 12px auto 0;
+        border: 1px solid var(--pill-border);
+        border-radius: 9px;
+        background: var(--pill-bg);
+        color: var(--text);
+        padding: 7px 10px;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .game-page-review {
+        text-align: justify;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+      }
+
+      /* Адаптация прежних окон сравнения и рулетки */
+      #game-modal {
+        align-items: flex-start;
+        overflow-y: auto;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      #game-modal .modal-content {
+        width: 100%;
+        max-width: none;
+        min-height: calc(100dvh - 20px);
+        max-height: none;
+        padding: 46px 14px 22px;
+        border-radius: 16px;
+        box-sizing: border-box;
+        overflow-y: auto;
+      }
+
+      #game-modal .modal-content.compare-mode {
+        min-height: calc(100dvh - 20px);
+        padding: 42px 10px 18px;
+      }
+
+      #game-modal .modal-content.compare-mode h2 {
+        margin: 0 24px 14px;
+        font-size: 1.35rem;
+      }
+
+      #game-modal .modal-body {
+        flex-direction: column;
+        align-items: stretch;
+        margin-top: 0;
+      }
+
+      #game-modal .modal-left,
+      #game-modal .modal-right {
+        width: 100%;
+      }
+
+      #game-modal .criteria {
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 0.88rem;
+        line-height: 1.55;
+        padding: 13px 12px 18px;
+      }
+
+      #game-modal .criteria-view.text-view {
+        white-space: normal;
+      }
+
+      #game-modal .criteria-view.chart-view > div {
+        width: min(76vw, 290px) !important;
+        height: min(76vw, 290px) !important;
+      }
+
+      #game-modal .modal-info-panel {
+        padding: 10px;
+      }
+
+      #modal-review {
+        margin-bottom: 0;
+        padding: 13px;
+        font-size: 0.92rem;
+        line-height: 1.55;
+        text-align: left;
+      }
+
+      .modal-nav-hint {
+        display: none;
+      }
+
+      .modal-nav-counter {
+        top: 18px;
+        left: 14px;
+      }
+
+      #roulette-modal {
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      .roulette-box {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100dvh - 20px);
+        padding: 24px 12px 18px;
+        box-sizing: border-box;
+        overflow: hidden;
+        border-radius: 16px;
+      }
+
+      .roulette-box h2 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+
+      .roulette-window {
+        height: 180px;
+        margin: 16px 0;
+      }
+
+      .r-card {
+        width: 120px;
+        height: 150px;
+      }
+
+      #spin-btn {
+        width: 100%;
+        padding: 11px 20px !important;
+        font-size: 1rem !important;
+      }
+    }
   </style>
 </head>
 
@@ -1778,7 +2231,7 @@
       { id: "gow", title: "God of War", developer: "Santa Monica Studio", image: "gow.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2022', playtime: '33 ч.' },
       { id: "hl2", title: "Half Life 2", developer: "Valve", image: "hl2.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Приключение", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2004', playtime: '16 ч.' },
       { id: "hks", title: "Hollow Knight: Silksong", developer: "Team Cherry", image: "hks.png", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 }, year: '2025', playtime: '47 ч.' },
-      { id: "lp", title: "Lies of P", developer: "Round8 Studio", image: "lp.jpg", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2023', playtime: '36 ч.' },
+      { id: "lp", title: "Lies of P", developer: "Nough Studio", image: "lp.jpg", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2023', playtime: '36 ч.' },
       { id: "itt", title: "It Takes Two", developer: "Hazelight Studios", image: "itt.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2021', playtime: '14 ч.' },
       { id: "bts", title: "Beyond: Two Souls", developer: "Quantic Dream", image: "bts.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "Экшен"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2019', playtime: '12 ч.' },
       { id: "hol", title: "High on Life", developer: "Squanch Games", image: "hol.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Метроидвания", "Сюжетная", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2022', playtime: '13 ч.' },
@@ -1845,24 +2298,24 @@
       "cp": `The Callisto Protocol это игра в стиле Dead Space с динамичной боёвкой и фотореалистичной графикой. Тюрьма на спутнике Юпитера - грязное и опасное место.`,
       "gow": `God of War преподносит историю бога Кратоса и его сына Атрея, вместе они сражаются с сильными противниками в разных мирах, в игре хороший сюжет и красивые пейзажи.`,
       "hl2": `Half Life 2 это атмосферная игра с интересной историей Гордона Фримена, где игроку предстоит сразиться с кучами пришельцев и Альянсом, захватившим Землю.`,
-      "hks": `Hollow Knight: Silksong — вторая часть дилогии Полого Рыцаря с Хорнет в главной роли, новая часть богаче первой: больше квестов, гибче геймплей, больше локации и боссов, а также такой же прекрасный саунд-дизайн и саундтрек.`,
+      "hks": `Hollow Knight: Silksong — вторая часть дилогии Полого Рыцаря с Хорнет в главной роли, новая часть богаче первой: больше квестов, гибче геймплей, выше локации и больше боссов, а также такой же прекрасный саунд-дизайн.`,
       "lp": `Lies of P это несколько противоречивая игра. С одной стороны - красивые локации, хороший, но без изюминки сюжет, с другой - нелучший соулс-лайк геймплей, неудобные и частично несправедливые бои с боссами. Цепляющее исследование, но не всегда оправданное.`,
       "itt": `It Takes Two одна из лучших кооп-игр в истории. Пара на грани развода проходит локации, где нужно доверять партнёру. Игра напыщена интересными механиками для обоих игроков.`,
       "bts": `Beyond: Two Souls — одна из легендарных игр Quantic Dream. Геймплей не за одного персонажа: девушка Джуди Холмс и призрак, живущий в ней. История рассказываются в перемешанном порядке. Игру можно пройти вдвоём.`,
       "hol": `High on Life — клёвый комедийный шутер от создателя «Рик и Морти». Присутствуют элементы метроидвании и шутки в стиле вышеупомянутого мультсериала. Сюжет простой - про захват планеты пришельцами, но игровой процесс не заставит скучать, а музыка сохранит быстрый темп.`,
       "sf": `Split Fiction — игра с уникальным кооперативных геймплеем от создателей It Takes Two, по сюжету персонажи попадают в миры, которые они сами придумали. В игре очень много интересных механик, зависящих от действий обоих игроков.`,
       "w2": `Witcher 2: Assassins of Kings — это история про ведьмака Геральта и его выборы на чьей стороне стоять, пока идет война. Развилка очень сильно влияет на сюжет, что даёт возможность перепройти игру и увидеть новую историю. Игра сделала огромный шаг вперёд по сравнению с первой частью.`,
-      "dtda": `Doom: The Dark Ages — это приквел к части 2016 года, здесь раскрывается история Палача, но в средневековом сеттинге. Игра преподносит лучшую графику по сравнению с предыдущими частями, поддержку качественного RT, возможность управлять огромный роботом - Атланом, огнедышащим драконом и предлагает отличную музыку и динамичный геймплей.`,
-      "w1": `The Witcher — начало саги с мрачной атмосферой и мрачным миром. Боёвка в игре не лучшая, но персонажи оправдывают терпение.`,
+      "dtda": `Doom: The Dark Ages — это приквел к части 2016 года, здесь раскрывается история Палача, но в средневековом сеттинге. Игра преподносит лучшую графику по сравнению с предыдущими частями, возможность управлять огромный роботом - Атланом, огнедышащим драконом и предлагает отличную музыку и динамичный геймплей.`,
+      "w1": `The Witcher — начало саги с мрачной атмосферой и мрачным миром. Наблюдать за историей молодого Геральта интересно, правда, к боевой системе нужно привыкнуть.`,
       "awo": `A Way Out это кооперативная игра с драматической историей о двух заключённых, которые пытаются сбежать из тюрьмы, действуя сообща. Было интересно узнать о жизни обоих героев.`,
-      "sco": `Scorn — это атмосферный биопанк-хоррор от первого лица с необычным визуальным стилем, вдохновлённым творчеством Гигера. Присутствуют элементы головоломки, жуткие враги и очень необычный сюжет.`,
+      "sco": `Scorn — это атмосферный биопанк-хоррор от первого лица с необычным визуальным стилем, вдохновлённым творчеством Гигера. Присутствуют элементы головоломки, жуткие враги и крайне необычный сюжет.`,
       "req": `Resident Evil Requiem — грандиозное продолжение серии, которое совместило в себе жуткий survival-геймплей за новую героиню Грейс Эшкрофт и экшен за легендарного Леона. Игра представляет совокупность лучших решений из прошлых частей, а также ещё больший саспенс и проработку деталей.`,
       "mfp": `My Friend Pedro — это динамичный платформер с возможностью замедлять время и стрелять с разных оружий. Игра разбита на уровни, связанные сюжетно и с юмором.`,
       "sotc": `Shadow of the Colossus это эксклюзивная для PlayStation игра, которая предлагает исключительный геймплей в виде сражения с огромными боссами. В битвах придётся использовать паркур на самих противниках.`,
       "rea": `REANIMAL это кооперативный хоррор-платформер с элементами стелса на пару вечеров, цепляет необычным геймдизайном и атмосферой одиночества. Игра от разработчиков первой и второй частей Little Nightmares.`,
       "dos2": `Divinity: Original Sin 2 это ролевая пошаговая игра в изометрической перспективе с сюжетом, который позволит делать выборы и геймплеем с 10 школами навыков, которые можно комбинировать.`,
       "prag": `PRAGMATA это драматичная история Хью - космического инженера и Дианы - андроида, умеющего взламывать. Им вместе предстоит пройти через массу роботов и отправиться с Луны на Землю. Игра предоставляет комфортный геймплей, совмещающий способности обоих героев.`,
-      "ded2": `Dead Island 2 в первую очередь привлекает реалистичной системой расчленения зомби и необычным для своего жанра геймдизайном. События происходят в лакшери отелях, домах селебрити и на улицах дорогого Лос-Анджелеса. Мне особенно понравились проработка интерьера и смена обстановки.`,
+      "ded2": `Dead Island 2 в первую очередь привлекает реалистичной системой расчленения зомби и необычным для своего жанра геймдизайном. События происходят в лакшери отелях, домах селебрити и на улицах дорогого Лос-Анджелеса. Мне особенно понравились проработка интерьера и разновидность оружия.`,
     };
 
     const LABELS = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн", year: "Год выхода", playtime: "Время прохождения" };
@@ -1954,6 +2407,12 @@
     const App = () => {
       const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
       const [view, setView] = useState(localStorage.getItem('view') || 'list');
+      const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
+      const [gamePage, setGamePage] = useState(() => {
+        if (!window.matchMedia('(max-width: 640px)').matches) return null;
+        const gameId = new URLSearchParams(window.location.search).get('game');
+        return GAMES.find(g => g.id === gameId) || null;
+      });
       const [search, setSearch] = useState("");
       const [debouncedSearch, setDebouncedSearch] = useState("");
       const [selectedGenres, setSelectedGenres] = useState([]);
@@ -1969,6 +2428,31 @@
       const [speedDialOpen, setSpeedDialOpen] = useState(false);
       const [controlsCompact, setControlsCompact] = useState(false);
       const searchInputRef = useRef(null);
+
+      const activeView = isMobile ? 'list' : view;
+
+      // Keep the mobile layout isolated from the desktop view state.
+      useEffect(() => {
+        const mediaQuery = window.matchMedia('(max-width: 640px)');
+        const handleViewportChange = (event) => setIsMobile(event.matches);
+        const handleResize = () => setIsMobile(window.innerWidth <= 640);
+        mediaQuery.addEventListener?.('change', handleViewportChange);
+        window.addEventListener('resize', handleResize);
+        return () => {
+          mediaQuery.removeEventListener?.('change', handleViewportChange);
+          window.removeEventListener('resize', handleResize);
+        };
+      }, []);
+
+      // A mobile game page is a real history entry, so Back returns to the list.
+      useEffect(() => {
+        const handlePopState = () => {
+          const gameId = new URLSearchParams(window.location.search).get('game');
+          setGamePage(GAMES.find(g => g.id === gameId) || null);
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+      }, []);
 
       // Debounce search state for smooth filtering without animation desync
       useEffect(() => {
@@ -1986,9 +2470,9 @@
 
       // View Persistence and Body Class
       useEffect(() => {
-        localStorage.setItem('view', view);
-        document.body.classList.toggle('grid-view', view === 'grid');
-      }, [view]);
+        if (!isMobile) localStorage.setItem('view', view);
+        document.body.classList.toggle('grid-view', activeView === 'grid');
+      }, [view, isMobile, activeView]);
 
       // Scroll Listener
       useEffect(() => {
@@ -2185,6 +2669,9 @@
       }, [debouncedSearch, selectedGenres, excludedGenres, sortBy]);
 
       const genreClickTimerRef = useRef(null);
+      const genreTapRef = useRef({ genre: null, time: 0 });
+      const suppressGenreClickRef = useRef(false);
+      const suppressNativeDoubleClickRef = useRef(false);
 
       const handleGenreClick = (genre) => {
         if (genreClickTimerRef.current) {
@@ -2216,6 +2703,40 @@
         );
       };
 
+      // Touch devices do not consistently emit a native dblclick event.
+      // Detect a quick second tap while keeping the desktop double-click path.
+      const handleGenrePointerUp = (genre, e) => {
+        if (e.pointerType !== 'touch') return;
+
+        const now = Date.now();
+        const previousTap = genreTapRef.current;
+        if (previousTap.genre === genre && now - previousTap.time < 360) {
+          genreTapRef.current = { genre: null, time: 0 };
+          suppressGenreClickRef.current = true;
+          suppressNativeDoubleClickRef.current = true;
+          handleGenreDoubleClick(genre);
+          return;
+        }
+
+        genreTapRef.current = { genre, time: now };
+      };
+
+      const handleGenreClickEvent = (genre) => {
+        if (suppressGenreClickRef.current) {
+          suppressGenreClickRef.current = false;
+          return;
+        }
+        handleGenreClick(genre);
+      };
+
+      const handleGenreDoubleClickEvent = (genre) => {
+        if (suppressNativeDoubleClickRef.current) {
+          suppressNativeDoubleClickRef.current = false;
+          return;
+        }
+        handleGenreDoubleClick(genre);
+      };
+
       const handleGenreContextMenu = (genre, e) => {
         e.preventDefault();
         handleGenreDoubleClick(genre);
@@ -2224,6 +2745,29 @@
       const clearGenreFilters = () => {
         setSelectedGenres([]);
         setExcludedGenres([]);
+      };
+
+      const navigateToGame = (game) => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('game', game.id);
+        window.history.pushState({ gameId: game.id }, '', url);
+        setGamePage(game);
+        setModalGame(null);
+        setRouletteOpen(false);
+        setSpeedDialOpen(false);
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      };
+
+      const closeGamePage = () => {
+        if (window.history.state?.gameId) {
+          window.history.back();
+          return;
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.delete('game');
+        window.history.pushState({}, '', url);
+        setGamePage(null);
+        window.scrollTo({ top: 0, behavior: 'auto' });
       };
 
       const handleCardClick = (game) => {
@@ -2235,6 +2779,8 @@
             }
             return next;
           });
+        } else if (isMobile) {
+          navigateToGame(game);
         } else {
           setModalGame(game);
         }
@@ -2256,6 +2802,10 @@
         setSelectedGames([]);
       }
 
+      if (gamePage && isMobile) {
+        return <GamePage game={gamePage} theme={theme} onBack={closeGamePage} />;
+      }
+
       return (
         <div>
           {/* Scroll to Top */}
@@ -2275,10 +2825,11 @@
                 <div
                   key={g}
                   className={`genre-tag ${selectedGenres.includes(g) ? 'active' : ''} ${excludedGenres.includes(g) ? 'excluded' : ''}`}
-                  onClick={() => handleGenreClick(g)}
-                  onDoubleClick={() => handleGenreDoubleClick(g)}
+                  onClick={() => handleGenreClickEvent(g)}
+                  onPointerUp={(e) => handleGenrePointerUp(g, e)}
+                  onDoubleClick={() => handleGenreDoubleClickEvent(g)}
                   onContextMenu={(e) => handleGenreContextMenu(g, e)}
-                  title={excludedGenres.includes(g) ? 'Жанр исключён (клик/ПКМ чтобы вернуть)' : 'ПКМ или 2-й клик: исключить genre'}
+                  title={excludedGenres.includes(g) ? 'Жанр исключён (клик/ПКМ чтобы вернуть)' : 'ПКМ или 2-й клик: исключить жанр'}
                 >
                   {g}
                 </div>
@@ -2308,7 +2859,7 @@
                   <span>⚖️</span> {compareMode ? 'Отмена сравнения' : 'Сравнить игры'}
                 </div>
               </div>
-              {compareMode && (
+              {compareMode && !isMobile && (
                 <div className="sd-item">
                   <div className="sd-label" style={{ background: 'rgba(46,139,87,0.18)', borderColor: 'rgba(46,139,87,0.35)' }} onClick={() => { handleCompareConfirm(); setSpeedDialOpen(false); }}>
                     <span>✓</span> Подтвердить выбор
@@ -2318,15 +2869,15 @@
               {/* Жанры */}
               <div className="sd-item">
                 <div className="sd-label" title="Фильтр по жанрам" style={selectedGenres.length > 0 ? { borderColor: 'rgba(197,165,128,0.6)', background: 'rgba(197,165,128,0.1)' } : {}} onClick={() => { setShowGenrePanel(o => !o); setSpeedDialOpen(false); }}>
-                  <span>🏷️</span> Жанры (f) {selectedGenres.length + excludedGenres.length > 0 ? `(${selectedGenres.length + excludedGenres.length})` : ''}
+                  <span>🏷️</span> {isMobile ? 'Жанры' : 'Жанры (f)'} {selectedGenres.length + excludedGenres.length > 0 ? `(${selectedGenres.length + excludedGenres.length})` : ''}
                 </div>
               </div>
               {/* Вид */}
-              <div className="sd-item">
+              {!isMobile && <div className="sd-item">
                 <div className="sd-label" title="Вид" onClick={() => { setView(view === 'grid' ? 'list' : 'grid'); setSpeedDialOpen(false); }}>
                   <span style={{ fontSize: '1.2em' }}>{view === 'grid' ? '☰' : '⊞'}</span> {view === 'grid' ? 'Вид: список (v)' : 'Вид: сетка (v)'}
                 </div>
-              </div>
+              </div>}
             </div>
           </div>
           {/* Оверлей закрывает веер */}
@@ -2369,7 +2920,7 @@
           {/* ═══ ПАНЕЛЬ УПРАВЛЕНИЯ ═══ */}
           <div className={`controls-bar ${controlsCompact ? 'compact' : ''}`}>
             <div className="search-wrapper" style={{ flex: 1 }}>
-              <input ref={searchInputRef} type="text" id="search" placeholder="Поиск по играм, жанрам, годам, оценкам или компаниям..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
+              <input ref={searchInputRef} type="text" id="search" placeholder={isMobile ? "Поиск по играм, студиям и многому другому..." : "Поиск по играм, жанрам, годам, оценкам или компаниям..."} value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
               {search && <span id="clear-search" onClick={() => { setSearch(""); setDebouncedSearch(""); }} title="Очистить">×</span>}
             </div>
             {compareMode && (
@@ -2383,13 +2934,13 @@
 
           <main>
             {/* Grid / List with Framer Motion Layout */}
-            <motion.div layout key={view} id="grid" className={view === 'grid' ? 'grid-view' : ''}>
+            <motion.div layout key={activeView} id="grid" className={activeView === 'grid' ? 'grid-view' : ''}>
               <AnimatePresence mode="popLayout">
                 {filteredGames.map((game, i) => (
                   <Card
                     key={game.id}
                     game={game}
-                    view={view}
+                    view={activeView}
                     onClick={() => handleCardClick(game)}
                     onLongPress={() => handleCardLongPress(game)}
                     selected={selectedGames.includes(game.id)}
@@ -2432,7 +2983,7 @@
                 setSelectedGames([]);
               }}
             />}
-            {rouletteOpen && <RouletteModal onClose={() => setRouletteOpen(false)} onSelect={setModalGame} />}
+            {rouletteOpen && <RouletteModal onClose={() => setRouletteOpen(false)} onSelect={isMobile ? navigateToGame : setModalGame} />}
           </AnimatePresence>
         </div>
       );
@@ -2838,6 +3389,111 @@
       );
     };
 
+    const GamePage = ({ game, onBack }) => {
+      const [chartMode, setChartMode] = useState(false);
+      const chartRef = useRef(null);
+      const chartInstanceRef = useRef(null);
+
+      useEffect(() => {
+        if (!chartMode || !chartRef.current) return;
+
+        const timer = setTimeout(() => {
+          if (!chartRef.current) return;
+          if (chartInstanceRef.current) chartInstanceRef.current.destroy();
+
+          const isDark = document.body.classList.contains('dark');
+          const textColor = isDark ? '#fff' : '#1a1a1a';
+          const gridColor = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.22)';
+          const criteriaKeys = Object.keys(game.ratings).filter(key => key !== 'rating');
+
+          chartInstanceRef.current = new Chart(chartRef.current.getContext('2d'), {
+            type: 'radar',
+            data: {
+              labels: criteriaKeys.map(key => LABELS[key]),
+              datasets: [{
+                label: game.title,
+                data: criteriaKeys.map(key => game.ratings[key]),
+                fill: true,
+                backgroundColor: 'rgba(255, 215, 0, 0.2)',
+                borderColor: '#d4a900',
+                pointBackgroundColor: '#d4a900',
+                pointBorderColor: isDark ? '#fff' : '#333'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                r: {
+                  angleLines: { color: gridColor },
+                  grid: { color: gridColor },
+                  pointLabels: { color: textColor, font: { size: 10, family: 'Inter' } },
+                  ticks: { display: false },
+                  suggestedMin: 0,
+                  suggestedMax: 10
+                }
+              },
+              plugins: { legend: { display: false } }
+            }
+          });
+        }, 40);
+
+        return () => {
+          clearTimeout(timer);
+          if (chartInstanceRef.current) {
+            chartInstanceRef.current.destroy();
+            chartInstanceRef.current = null;
+          }
+        };
+      }, [chartMode, game]);
+
+      return (
+        <main className="game-page">
+          <div className="game-page-header">
+            <button className="game-page-back" onClick={onBack}>← Назад</button>
+            <div className="game-page-header-title">Карточка игры</div>
+          </div>
+
+          <section className="game-page-hero" style={{ backgroundImage: `url(imgs/${game.image})` }}>
+            <div className="game-page-hero-content">
+              <h1 className="game-page-title">{game.title}</h1>
+              <div className="game-page-developer">{game.developer} · оценка {calcRating(game.ratings)}</div>
+            </div>
+          </section>
+
+          <section className="game-page-section">
+            <h2 className="game-page-section-title">Информация</h2>
+            <div className="game-page-info">
+              <div className="game-page-info-item"><span className="game-page-info-key">Год</span><span className="game-page-info-value">{game.year || '2023'}</span></div>
+              <div className="game-page-info-item"><span className="game-page-info-key">Время</span><span className="game-page-info-value">{game.playtime || '30 ч.'}</span></div>
+              <div className="game-page-info-item" style={{ gridColumn: '1 / -1' }}><span className="game-page-info-key">Студия</span><span className="game-page-info-value">{game.developer}</span></div>
+            </div>
+            <div className="game-page-genres" style={{ marginTop: 10 }}>
+              {game.genres.map(genre => <span key={genre} className="game-page-genre">{genre}</span>)}
+            </div>
+          </section>
+
+          <section className="game-page-section">
+            <h2 className="game-page-section-title">Оценки</h2>
+            {!chartMode && <div className="game-page-ratings">
+              {Object.entries(game.ratings).filter(([key]) => key !== 'rating').map(([key, value]) => (
+                <div key={key}><b>{LABELS_FULL[key]}:</b> {value}</div>
+              ))}
+            </div>}
+            {chartMode && <div className="game-page-chart"><canvas ref={chartRef}></canvas></div>}
+            <button className="game-page-chart-toggle" onClick={() => setChartMode(mode => !mode)}>
+              {chartMode ? '📝 Показать списком' : '🕸️ Показать графиком'}
+            </button>
+          </section>
+
+          <section className="game-page-section">
+            <h2 className="game-page-section-title">Описание</h2>
+            <div className="game-page-review">{REVIEWS[game.id] || 'Описание...'}</div>
+          </section>
+        </main>
+      );
+    };
+
     const CompareModal = ({ selectedGameIds, onClose, theme }) => {
       const [chartMode, setChartMode] = useState(false);
       const chartRef = useRef(null);
@@ -2999,12 +3655,22 @@
         const winnerIndex = Math.floor(Math.random() * 36) + 50; // 50..85
         const winnerGame = tapeItems[winnerIndex];
 
-        const cardWidth = 160;
-        const totalItemWidth = cardWidth + 10;
+        // Read the rendered card size so mobile (120px) and desktop (160px)
+        // use the same geometry as the tape animation.
+        const firstCard = tapeRef.current.querySelector('.r-card');
+        if (!firstCard) {
+          setSpinning(false);
+          return;
+        }
+        const cardRect = firstCard.getBoundingClientRect();
+        const cardStyles = getComputedStyle(firstCard);
+        const marginLeft = parseFloat(cardStyles.marginLeft) || 0;
+        const marginRight = parseFloat(cardStyles.marginRight) || 0;
+        const cardWidth = cardRect.width;
+        const totalItemWidth = cardWidth + marginLeft + marginRight;
         const containerWidth = windowRef.current.offsetWidth;
-        const winnerCenterOnTape = winnerIndex * totalItemWidth + totalItemWidth / 2;
-        const randomOffset = (Math.random() - 0.5) * (cardWidth * 0.6);
-        const targetTransform = containerWidth / 2 - winnerCenterOnTape + randomOffset;
+        const winnerCenterOnTape = winnerIndex * totalItemWidth + marginLeft + cardWidth / 2;
+        const targetTransform = containerWidth / 2 - winnerCenterOnTape;
 
         tapeRef.current.style.transition = 'transform 5s cubic-bezier(0.1, 0.95, 0.1, 1)';
         tapeRef.current.style.transform = `translateX(${targetTransform}px)`;
