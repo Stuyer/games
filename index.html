@@ -4,7 +4,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Тир-лист видеоигр</title>
+  <title>Zvux Good Games</title>
+  <link rel="icon" type="image/svg+xml" href="favicons/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicons/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png" />
+  <link rel="shortcut icon" href="favicons/favicon.ico" />
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -24,13 +29,10 @@
       --text-dark: #e8e6e1;
       --card-w: 1000px;
       --card-h: 280px;
-      --card-radius: 18px;
       --primary-color: #1A1D1E;
-      --primary-hover: #333333;
       --gold: #ffd700;
       --bg: var(--bg-light);
       --text: var(--text-light);
-      --modal-bg-image: none;
       --surface: rgba(255, 255, 255, 0.55);
       --solid-surface: #ffffff;
       --solid-surface-hover: #f0f0f0;
@@ -43,7 +45,6 @@
       --bg: var(--bg-dark);
       --text: var(--text-dark);
       --primary-color: #C5A580;
-      --primary-hover: #AA8C6B;
       --surface: rgba(255, 255, 255, 0.05);
       --solid-surface: #1e1e22;
       --solid-surface-hover: #2a2a30;
@@ -255,11 +256,6 @@
       flex-shrink: 0;
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 0;
-    }
-
     #grid {
       display: flex;
       flex-direction: column;
@@ -269,7 +265,6 @@
       perspective: 1000px;
       perspective-origin: center top;
       position: relative;
-      will-change: contents;
     }
 
     .page-title {
@@ -362,20 +357,6 @@
       transform: scale(0.97);
     }
 
-    .btn-accent {
-      background: var(--primary-color);
-      color: white;
-      border-color: transparent;
-    }
-
-    body.dark .btn-accent {
-      color: #111;
-    }
-
-    .btn-accent:hover {
-      background: var(--primary-hover);
-    }
-
     .btn-green {
       background: rgba(46, 139, 87, 0.15);
       border-color: rgba(46, 139, 87, 0.3);
@@ -394,16 +375,6 @@
 
     .btn-red:hover {
       background: rgba(220, 20, 60, 0.22);
-    }
-
-    .controls label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      user-select: none;
-      opacity: 0.55;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      white-space: nowrap;
     }
 
     /* ── Переключатель темы (встроен в шапку) ── */
@@ -1018,6 +989,13 @@
       background-position: center 25%;
     }
 
+    .card-wrap[data-id="sh2r"] .card {
+      background-position: center 75%;
+    }
+
+    .card-wrap[data-id="oww"] .card {
+      background-position: center 75%;
+    }
 
     /* --- 6. МОДАЛЬНОЕ ОКНО (Ported from SiteSandbox.html) --- */
     #game-modal {
@@ -1078,6 +1056,188 @@
       border-collapse: collapse;
       width: max-content;
       min-width: 100%;
+    }
+
+    /* Сравнение: общий размер окна для таблицы и графика */
+    #game-modal .modal-content.compare-mode {
+      height: min(640px, 92vh);
+      max-width: 1000px;
+      min-height: 0;
+      box-sizing: border-box;
+      padding: 36px 40px;
+    }
+
+    #game-modal .modal-content.compare-mode > h2 {
+      flex: 0 0 auto;
+      margin: 0 24px 26px;
+    }
+
+    #game-modal .modal-content.compare-mode > .criteria {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 36px !important;
+      overflow: hidden;
+    }
+
+    #game-modal .modal-content.compare-mode .criteria-wrapper {
+      min-width: 0;
+      min-height: 0;
+    }
+
+    #game-modal .modal-content.compare-mode > .criteria:not(.chart-mode) {
+      justify-content: flex-start;
+      padding-top: 8px;
+    }
+
+    #game-modal .modal-content.compare-mode > .criteria:not(.chart-mode) .criteria-wrapper {
+      height: auto;
+      align-self: flex-start;
+    }
+
+    #game-modal .modal-content.compare-mode .criteria-view.text-view.active {
+      height: auto;
+      min-height: 0;
+    }
+
+    #game-modal .modal-content.compare-mode .compare-table-wrapper {
+      width: 100%;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      box-sizing: border-box;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .compare-chart-layout {
+      display: grid;
+      grid-template-columns: minmax(190px, 0.32fr) minmax(0, 1fr);
+      gap: 18px;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .compare-games-list {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .compare-games-list-title {
+      flex: 0 0 auto;
+      padding: 10px 12px;
+      color: rgba(255, 255, 255, 0.72);
+      border-bottom: 0;
+      font-size: 0.86rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .compare-games-list-items {
+      min-height: 0;
+      overflow-y: auto;
+      padding: 8px;
+      scrollbar-width: thin;
+    }
+
+    .compare-game-list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      width: 100%;
+      padding: 9px 8px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 0.88rem;
+      font-family: inherit;
+      line-height: 1.3;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .compare-game-list-item:hover,
+    .compare-game-list-item:focus-visible {
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+    }
+
+    .compare-game-list-item.is-inactive {
+      color: rgba(255, 255, 255, 0.42);
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+    }
+
+    .compare-game-list-item.is-inactive .compare-game-list-swatch {
+      opacity: 0.35;
+      filter: grayscale(1);
+    }
+
+    .compare-game-list-item + .compare-game-list-item {
+      margin-top: 3px;
+    }
+
+    .compare-game-list-swatch {
+      flex: 0 0 10px;
+      width: 10px;
+      height: 10px;
+      margin-top: 3px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14);
+      transition: opacity 0.38s ease, filter 0.38s ease;
+    }
+
+    .compare-chart-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .compare-chart-shell {
+      width: min(100%, 520px);
+      height: min(100%, 520px);
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 1 / 1;
+    }
+
+    body:not(.dark) #game-modal .modal-content.compare-mode .compare-games-list {
+      border: 0;
+      background: transparent;
+    }
+
+    body:not(.dark) #game-modal .modal-content.compare-mode .compare-games-list-title {
+      color: rgba(0, 0, 0, 0.68);
+      border-bottom: 0;
+    }
+
+    body:not(.dark) #game-modal .modal-content.compare-mode .compare-game-list-item {
+      color: rgba(0, 0, 0, 0.82);
+    }
+
+    body:not(.dark) #game-modal .modal-content.compare-mode .compare-game-list-item.is-inactive {
+      color: rgba(0, 0, 0, 0.42);
+    }
+
+    body:not(.dark) #game-modal .modal-content.compare-mode .compare-game-list-item:hover,
+    body:not(.dark) #game-modal .modal-content.compare-mode .compare-game-list-item:focus-visible {
+      background: rgba(0, 0, 0, 0.08);
     }
 
     .compare-table th,
@@ -1197,6 +1357,10 @@
       margin-top: auto;
     }
 
+    .modal-body.has-similar-games .modal-left {
+      flex: 0 1 auto;
+    }
+
     /* Левая: критерии */
     .modal-left {
       flex: 1;
@@ -1226,6 +1390,153 @@
       padding: 10px 13px;
       border: 1px solid rgba(255, 255, 255, 0.13);
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .similar-games-toggle {
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.88);
+      font: inherit;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    }
+
+    .similar-games-toggle:hover {
+      background: rgba(255, 255, 255, 0.19);
+      border-color: rgba(255, 255, 255, 0.34);
+      transform: translateY(-1px);
+    }
+
+    .similar-games-toggle:active {
+      transform: translateY(0);
+    }
+
+    .similar-games-toggle:disabled {
+      cursor: default;
+      opacity: 0.72;
+      transform: none;
+    }
+
+    .similar-games-panel {
+      position: relative;
+      z-index: 1;
+      flex: 1 1 280px;
+      align-self: flex-end;
+      width: auto;
+      min-width: 0;
+      max-height: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      padding: 13px;
+      box-sizing: border-box;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .similar-games-panel-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .similar-games-panel-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.94);
+    }
+
+    .similar-games-list {
+      display: grid;
+      gap: 7px;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 3px;
+    }
+
+    .similar-game-item {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 11px;
+      background: rgba(18, 18, 20, 0.34);
+      color: rgba(255, 255, 255, 0.9);
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    }
+
+    .similar-game-item:hover {
+      background: rgba(18, 18, 20, 0.48);
+      border-color: rgba(255, 255, 255, 0.28);
+      transform: translateX(2px);
+    }
+
+    .similar-game-thumb {
+      width: 48px;
+      height: 34px;
+      border-radius: 7px;
+      background-position: center;
+      background-size: cover;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
+
+    .similar-game-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .similar-game-title {
+      overflow: hidden;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .similar-game-meta {
+      overflow: hidden;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.64rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .similar-game-arrow {
+      padding: 0 5px;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 1rem;
+    }
+
+    .similar-games-empty {
+      padding: 14px 8px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.75rem;
+      line-height: 1.45;
+      text-align: center;
     }
 
     .modal-info-row {
@@ -1281,12 +1592,6 @@
       line-height: 1.5;
     }
 
-    /* Удаляем старые .modal-meta классы */
-    .modal-meta,
-    .modal-title-block {
-      display: none;
-    }
-
     #game-modal .criteria {
       font-size: 1.1rem;
       line-height: 1.6;
@@ -1307,6 +1612,7 @@
       flex-direction: column;
       justify-content: flex-start;
       transition: none;
+      min-height: 225px;
     }
 
     #game-modal .criteria.chart-mode {
@@ -1341,6 +1647,18 @@
       justify-content: center;
     }
 
+    #game-modal .modal-content:not(.compare-mode) .criteria-view.chart-view > div {
+      width: 290px !important;
+      height: 290px !important;
+    }
+
+    @media (min-width: 641px) {
+      #game-modal .criteria.chart-mode {
+        padding-top: 4px;
+        padding-bottom: 4px;
+      }
+    }
+
     .criteria-view.hidden {
       opacity: 0;
       pointer-events: none;
@@ -1359,8 +1677,8 @@
 
     .toggle-chart-btn {
       position: absolute;
-      bottom: -18px;
-      right: -38px;
+      bottom: 8px;
+      right: 8px;
       width: 30px;
       height: 30px;
       border-radius: 50%;
@@ -1382,6 +1700,11 @@
       transform: scale(1.1);
     }
 
+    .toggle-chart-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
     #game-modal .close-btn {
       position: absolute;
       top: 15px;
@@ -1396,66 +1719,6 @@
 
     #game-modal .close-btn:hover {
       color: #fff;
-    }
-
-    /* Modal Navigation Arrows */
-    .modal-nav-btn {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 20px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(6px);
-      transition: background 0.2s, transform 0.2s, color 0.2s;
-      z-index: 3;
-      user-select: none;
-    }
-
-    .modal-nav-btn:hover {
-      background: rgba(255, 255, 255, 0.25);
-      color: #fff;
-      transform: translateX(-50%) scale(1.12);
-    }
-
-    .modal-nav-btn:active {
-      transform: translateX(-50%) scale(0.95);
-    }
-
-    .modal-nav-btn.nav-up {
-      top: 15px;
-      left: calc(50% - 60px);
-      transform: none;
-    }
-
-    .modal-nav-btn.nav-up:hover {
-      transform: scale(1.12);
-    }
-
-    .modal-nav-btn.nav-up:active {
-      transform: scale(0.95);
-    }
-
-    .modal-nav-btn.nav-down {
-      top: 15px;
-      left: calc(50% + 16px);
-      transform: none;
-    }
-
-    .modal-nav-btn.nav-down:hover {
-      transform: scale(1.12);
-    }
-
-    .modal-nav-btn.nav-down:active {
-      transform: scale(0.95);
     }
 
     .modal-nav-hint {
@@ -2055,6 +2318,64 @@
         overflow-wrap: anywhere;
       }
 
+      .game-page-similar-toggle {
+        display: block;
+        width: 100%;
+        margin-top: 14px;
+        padding: 10px 12px;
+        border: 1px solid var(--pill-border);
+        border-radius: 10px;
+        background: var(--pill-bg);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        transition: background 0.2s, border-color 0.2s, transform 0.2s;
+      }
+
+      .game-page-similar-toggle:hover {
+        background: var(--solid-surface-hover);
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+      }
+
+      .game-page-similar-panel {
+        flex: 0 0 auto;
+        align-self: stretch;
+        width: 100%;
+        max-height: none;
+        margin-top: 12px;
+        padding: 12px;
+        border-color: var(--surface-border);
+        background: var(--surface);
+        box-shadow: none;
+        box-sizing: border-box;
+      }
+
+      .game-page-similar-panel .similar-games-list {
+        max-height: none;
+        overflow: visible;
+      }
+
+      body:not(.dark) .game-page-similar-panel .similar-game-item {
+        background: rgba(0, 0, 0, 0.06);
+        border-color: rgba(0, 0, 0, 0.1);
+        color: var(--text);
+        text-shadow: none;
+      }
+
+      body:not(.dark) .game-page-similar-panel .similar-game-item:hover {
+        background: rgba(0, 0, 0, 0.1);
+        border-color: rgba(0, 0, 0, 0.16);
+      }
+
+      body:not(.dark) .game-page-similar-panel .similar-game-meta {
+        color: rgba(0, 0, 0, 0.58);
+      }
+
       /* Адаптация прежних окон сравнения и рулетки */
       #game-modal {
         align-items: flex-start;
@@ -2075,6 +2396,7 @@
       }
 
       #game-modal .modal-content.compare-mode {
+        height: calc(100dvh - 20px);
         min-height: calc(100dvh - 20px);
         padding: 42px 10px 18px;
       }
@@ -2082,6 +2404,25 @@
       #game-modal .modal-content.compare-mode h2 {
         margin: 0 24px 14px;
         font-size: 1.35rem;
+      }
+
+      #game-modal .modal-content.compare-mode > .criteria {
+        padding: 10px;
+      }
+
+      #game-modal .modal-content.compare-mode .compare-chart-layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(96px, 132px) minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      #game-modal .modal-content.compare-mode .compare-games-list {
+        max-height: none;
+      }
+
+      #game-modal .modal-content.compare-mode .compare-chart-shell {
+        width: min(76vw, 360px);
+        height: min(76vw, 360px);
       }
 
       #game-modal .modal-body {
@@ -2101,6 +2442,7 @@
         font-size: 0.88rem;
         line-height: 1.55;
         padding: 13px 12px 18px;
+        min-height: 0;
       }
 
       #game-modal .criteria-view.text-view {
@@ -2114,6 +2456,17 @@
 
       #game-modal .modal-info-panel {
         padding: 10px;
+      }
+
+      #game-modal .similar-games-panel {
+        flex: 0 0 auto;
+        width: 100%;
+        max-height: 430px;
+        padding: 12px;
+      }
+
+      #game-modal .similar-games-panel-header {
+        display: block;
       }
 
       #modal-review {
@@ -2216,12 +2569,12 @@
       { id: "re2", title: "Resident Evil 2 Remake", developer: "Capcom", image: "re2.png", genres: ["Хоррор", "Головоломка", "Приключение", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 8 }, year: '2019', playtime: '15 ч.' },
       { id: "rev", title: "Resident Evil Village", developer: "Capcom", image: "rev.jpg", genres: ["Хоррор", "Экшен", "Головоломка", "Приключение", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2021', playtime: '14 ч.' },
       { id: "reb", title: "Resident Evil 7: Biohazard", developer: "Capcom", image: "reb.jpg", genres: ["Хоррор", "Выживание", "Головоломка", "Приключение", "Экшен", "Шутер", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 9 }, year: '2017', playtime: '12 ч.' },
-      { id: "lit1", title: "Little Nightmares", developer: "Tarsier Studios", image: "lit1.jpg", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2017', playtime: '5 ч.' },
-      { id: "lit2", title: "Little Nightmares 2", developer: "Tarsier Studios", image: "lit2.png", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2021', playtime: '6 ч.' },
+      { id: "lit1", title: "Little Nightmares", developer: "Tarsier Studios", image: "lit1.jpg", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2017', playtime: '5 ч.' },
+      { id: "lit2", title: "Little Nightmares 2", developer: "Tarsier Studios", image: "lit2.png", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2021', playtime: '6 ч.' },
       { id: "ex33", title: "Clair Obscur: Expedition 33", developer: "Sandfall Interactive", image: "ex33.png", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 8, "sound_design": 10 }, year: '2025', playtime: '47 ч.' },
       { id: "ef", title: "What Remains of Edith Finch", developer: "Giant Sparrow", image: "ef.jpg", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2017', playtime: '3 ч.' },
       { id: "p2", title: "Portal 2", developer: "Valve", image: "p2.jpg", genres: ["Головоломка", "Платформер", "Научная фантастика", "Кооператив", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2011', playtime: '14 ч.' },
-      { id: "fc3", title: "Far Cry 3", developer: "Ubisoft Montreal", image: "fc3.jpg", genres: ["Шутер", "Экшен", "Открытый мир", "Выживание", "Приключение", "Сюжетная"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2012', playtime: '26 ч.' },
+      { id: "fc3", title: "Far Cry 3", developer: "Ubisoft Montreal", image: "fc3.jpg", genres: ["Шутер", "Экшен", "Открытый мир", "Приключение", "Сюжетная"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2012', playtime: '26 ч.' },
       { id: "str", title: "Stray", developer: "BlueTwelve Studio", image: "str.jpg", genres: ["Приключение", "Головоломка", "Инди", "Научная фантастика", "Киберпанк", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 8 }, year: '2022', playtime: '7 ч.' },
       { id: "hk", title: "Hollow Knight", developer: "Team Cherry", image: "hk.jpg", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 }, year: '2017', playtime: '41 ч.' },
       { id: "drg", title: "DREDGE", developer: "Black Salt Games", image: "drg.png", genres: ["Приключение", "Хоррор", "Инди", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2023', playtime: '13 ч.' },
@@ -2248,6 +2601,9 @@
       { id: "dos2", title: "Divinity: Original Sin 2", developer: "Larian Studios", image: "dos2.jpg", genres: ["РПГ", "Приключение", "Фэнтези", "Кооператив", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 10 }, year: '2017', playtime: '101 ч.' },
       { id: "prag", title: "PRAGMATA", developer: "Capcom", image: "prag.png", genres: ["Экшен", "Приключение", "Научная фантастика", "Шутер", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2026', playtime: '16 ч.' },
       { id: "ded2", title: "Dead Island 2", developer: "Dambuster Studios", image: "ded2.jpg", genres: ["Экшен", "Шутер", "РПГ", "Постапокалипсис", "Приключение"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2024', playtime: '20 ч.' },
+      { id: "obf", title: "Ori and the Blind Forest: Definitive Edition", developer: "Moon Studios", image: "obf.png", genres: ["Метроидвания", "Платформер", "Приключение", "Сюжетная", "Фэнтези", "Инди", "Экшен", "Открытый мир", "Головоломка"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 8 }, year: '2016', playtime: '11 ч.' },
+      { id: "sh2r", title: "Silent Hill 2 Remake", developer: "Bloober Team", image: "sh2r.jpg", genres: ["Хоррор", "Сюжетная", "Приключение", "Экшен", "Головоломка", "Шутер"], ratings: { "story": 9, "graphics": 9, "gameplay": 8, "main_character": 9, "characters": 8, "atmosphere": 10, "sound_design": 9 }, year: '2024', playtime: '17 ч.' },
+      { id: "oww", title: "Ori and the Will of the Wisps", developer: "Moon Studios", image: "oww.png", genres: ["Метроидвания", "Платформер", "Приключение", "Сюжетная", "Фэнтези", "Инди", "Экшен", "Открытый мир", "Головоломка"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2020', playtime: '13 ч.' },
     ];
 
     const REVIEWS = {
@@ -2260,7 +2616,7 @@
       "tlou2": `The Last of Us 2 сиквел, который намеренно разрушает то, что ты любил в прошлой части, и заставляет смотреть на ту же историю с другой стороны. Принять это сложно, и это, скорее всего, так и задумано. Зато геймплей стал богаче и разнообразнее.`,
       "det": `Detroit: Become Human про будущее, где люди и андроиды живут бок о бок. Выборов в продвижении сюжета так много, что повтороное прохождение подарит новую игру. Одна из лучших игр в жанре «Интерактивное кино».`,
       "eld": `Elden Ring — самый масштабный проект FromSoftware. Боссы впечатляют своим дизайном, атаками и механиками, а открытый мир наполнен секретами.`,
-      "dsr": `Dead Space Remake — хоррор в космическом сеттинге, где можно стрелять из режущих оружий по некроморфам, отрубая ему конечности.`,
+      "dsr": `Dead Space Remake — хоррор в космическом сеттинге, где можно стрелять из режущих оружий по некроморфам, отрубая им конечности.`,
       "hev": `Heavy Rain — это драматическая история, мрачная атмосфера. Сюжет раскрывается вокруг трёх детективов, которым нужно раскрыть тайну.`,
       "rev": `Resident Evil Village — один из лучших «резидентов» настоящего времени с тягостной атмосферой и элементами экшена и головоломки. В этой игре точно будет страшно и интересно.`,
       "bmw": `Black Myth: Wukong отлично сделанная соулс-лайк игра, мифологический сюжет с главным героем - обезьяной, быстрая боёвка, которая несколько отличается от других игр в том же жанре. Также есть система построения билда и скиллов.`,
@@ -2291,7 +2647,7 @@
       "fc3": `Far Cry 3 помнят ради Вааса - и это не удивительно, ведь он один из лучших игровых антагонистов. Появляется ненадолго, но задаёт тон всей игре. Зачистка аванпостов рутинная, но стелс и красивый остров удержат игрока.`,
       "str": `Stray — игра в стиле киберпанк про милого котика, который остался один, он попадает в населённые роботами города и решает головоломки, чтобы выбраться. В Stray встречаются опасности и испытания, эта увлекательная игра скрасит пару вечеров.`,
       "hk": `Hollow Knight — прекрасная игра про Рыцаря, который исследует руины королевства насекомых Халлоунест, тайтл обладает глубоким лором и приятной музыкой Кристофера Ларкина. Это метроидвания с элементами соулс-лайк.`,
-      "drg": `DREDGE таинственная игра, где игровой процесс заключается в ловле рыбы и последующем апгрейде корабля, здесь загадочный мир, который хочется исследовать и разгадывать его загадки. На первый взгляд игра выглядит другой, но поиграв в неё, понимаешь, что был не прав. К сожалению, геймплей слегка утомляет из-за своего однообразия.`,
+      "drg": `DREDGE это место, где игровой процесс заключается в ловле рыбы и последующем апгрейде корабля, здесь загадочный мир, который хочется исследовать и разгадывать его загадки. На первый взгляд игра выглядит другой, но поиграв в неё, понимаешь, что был не прав. К сожалению, геймплей слегка утомляет из-за своего однообразия.`,
       "kht": `Kholat — история о загадочной трагедии, произошедшей на Перевале Дятлова. В игре предстоит расследовать дело исчезновения группы российских студентов в суровом зимнем климате и без казуальных подсказок. Прохождение не займёт много времени, но точно успеет испугать и увлечь.`,
       "re2": `Resident Evil 2 Remake — неплохой ремейк, где Леон и Клэр пытаются сбежать из города Раккун-Сити, избегая заражённых. Игра наполнена головоломками и узкими коридорами. Здесь придётся экономить ресурсы и больше прятаться от преследующих мутантов.`,
       "aw": `Alan Wake это история о писателе, который решил сделать себе отпуск и отправился на остров Брайт-Фоллс, но там встретился со своими собственно написанными кошмарами. Очень атмосферная игра, но однообразный геймплей.`,
@@ -2316,6 +2672,9 @@
       "dos2": `Divinity: Original Sin 2 это ролевая пошаговая игра в изометрической перспективе с сюжетом, который позволит делать выборы и геймплеем с 10 школами навыков, которые можно комбинировать.`,
       "prag": `PRAGMATA это драматичная история Хью - космического инженера и Дианы - андроида, умеющего взламывать. Им вместе предстоит пройти через массу роботов и отправиться с Луны на Землю. Игра предоставляет комфортный геймплей, совмещающий способности обоих героев.`,
       "ded2": `Dead Island 2 в первую очередь привлекает реалистичной системой расчленения зомби и необычным для своего жанра геймдизайном. События происходят в лакшери отелях, домах селебрити и на улицах дорогого Лос-Анджелеса. Мне особенно понравились проработка интерьера и разновидность оружия.`,
+      "obf": `Ori and the Blind Forest: Definitive Edition — это драматичная история о маленьком существе, которому нужно пройти полосу препятствий, чтобы спасти умирающий лес. Жестокость игры по отношению к ошибкам игрока может быть раздражающей, но в целом геймплей увлекает.`,
+      "sh2r": `Silent Hill 2 Remake это психологический хоррор, где главный герой Джеймс Сандерленд ищет свою жену. Особо хочу отметить необычные головоломки и качественную режиссуру в кат-сценах. Из того, что не понравилось - затянутый геймплей и устаревшая боевая система.`,
+      "oww": `Ori and the Will of the Wisps сделала огромный прорыв по сравнению с приквелом. Разработчики сильно улучшили боевую систему, добавив новые способности. Также прогресс замечен и в побегах, которые стали кинематографичнее и яснее. На впечатления повлиял и визуал - картинка стала ярче и красочней.`,
     };
 
     const LABELS = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн", year: "Год выхода", playtime: "Время прохождения" };
@@ -2435,12 +2794,9 @@
       useEffect(() => {
         const mediaQuery = window.matchMedia('(max-width: 640px)');
         const handleViewportChange = (event) => setIsMobile(event.matches);
-        const handleResize = () => setIsMobile(window.innerWidth <= 640);
         mediaQuery.addEventListener?.('change', handleViewportChange);
-        window.addEventListener('resize', handleResize);
         return () => {
           mediaQuery.removeEventListener?.('change', handleViewportChange);
-          window.removeEventListener('resize', handleResize);
         };
       }, []);
 
@@ -2610,12 +2966,6 @@
             }
           }
 
-          const hasExcludeTokens = excludedGenresSearch.size > 0;
-          const hasIncludeGenres = detectedGenres.size > 0;
-          const hasYearFilters = yearFilters.length > 0;
-          const hasRatingFilters = ratingFilters.length > 0;
-          const normalizedQuery = normalizeSearchPart(debouncedSearch);
-
           res = res.filter(g => {
             const gameTitle = normalizeSearchPart(g.title);
             const gameDeveloper = normalizeSearchPart(g.developer);
@@ -2641,14 +2991,7 @@
               gameTitle.includes(tok) || gameDeveloper.includes(tok)
             );
 
-            const smartMatch = matchesYear && matchesRating && matchesInclude && matchesExclude && matchesText;
-
-            const fallbackMatch = !hasExcludeTokens && !hasIncludeGenres && !hasYearFilters && !hasRatingFilters && textTokens.length === 0 && (
-              gameTitle.includes(normalizedQuery) ||
-              gameDeveloper.includes(normalizedQuery)
-            );
-
-            return smartMatch || fallbackMatch;
+            return matchesYear && matchesRating && matchesInclude && matchesExclude && matchesText;
           });
         }
 
@@ -2659,13 +3002,13 @@
           );
         }
 
-        const getVal = (g) => {
-          if (sortBy === 'rating') return calcRating(g.ratings);
-          if (sortBy === 'year') return parseInt(g.year, 10) || 0;
-          if (sortBy === 'playtime') return parseInt(g.playtime, 10) || 0;
-          return g.ratings[sortBy] ?? 0;
-        };
-        return res.sort((a, b) => getVal(b) - getVal(a));
+        const getSortValue = {
+          rating: g => calcRating(g.ratings),
+          year: g => parseInt(g.year, 10) || 0,
+          playtime: g => parseInt(g.playtime, 10) || 0,
+        }[sortBy] || (g => g.ratings[sortBy] ?? 0);
+
+        return [...res].sort((a, b) => getSortValue(b) - getSortValue(a));
       }, [debouncedSearch, selectedGenres, excludedGenres, sortBy]);
 
       const genreClickTimerRef = useRef(null);
@@ -2803,7 +3146,7 @@
       }
 
       if (gamePage && isMobile) {
-        return <GamePage game={gamePage} theme={theme} onBack={closeGamePage} />;
+        return <GamePage key={gamePage.id} game={gamePage} onBack={closeGamePage} onOpenGame={navigateToGame} />;
       }
 
       return (
@@ -2886,7 +3229,7 @@
           {/* ═══ ШАПКА ═══ */}
           <div className="site-header">
             <div className="site-header-left">
-              <div className="page-title">Личный архив видеоигр</div>
+              <div className="page-title">Zvux Good Games</div>
               <div className="page-subtitle">{filteredGames.length} игр · сортировка: {LABELS[sortBy]}</div>
             </div>
             <div className="site-header-right">
@@ -2905,7 +3248,7 @@
                   </mask>
                   <circle className="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)" />
                   <g>
-                    <line className="sunRay sunRay1" x1="16.8" y1="10" x2="19.2" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    <line className="sunRay" x1="16.8" y1="10" x2="19.2" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                     <line className="sunRay sunRay2" x1="13.4" y1="15.8888" x2="14.6" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                     <line className="sunRay sunRay3" x1="6.6" y1="15.8888" x2="5.4" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                     <line className="sunRay sunRay4" x1="3.2" y1="10" x2="0.8" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -3084,7 +3427,7 @@
 
       return (
         <motion.div
-          layout
+          layout="position"
           ref={cardRef}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -3112,7 +3455,7 @@
             style={{ backgroundImage: `url(imgs/${game.image})` }}
           >
             <div className="badge">
-              <span className="rank" style={{ color: 'white', marginRight: 6 }}>#{index + 1}</span>
+              <span style={{ color: 'white', marginRight: 6 }}>#{index + 1}</span>
               <span style={{ color: 'gold' }}>{calcRating(game.ratings)}</span>
             </div>
             {view === 'grid' && sortBy !== 'rating' && (
@@ -3139,10 +3482,6 @@
       );
     };
 
-    const SLIDE_ENTER_DURATION = 0.42;
-    const SLIDE_EXIT_DURATION = 0.14;
-    const SLIDE_EASE = [0.4, 0.0, 0.2, 1];
-
     const slideVariants = {
       enter: (dir) => ({
         opacity: 0,
@@ -3161,7 +3500,81 @@
       }
     };
 
-    const GameModalSlide = React.forwardRef(({ game, slideDir, chartMode, setChartMode }, ref) => {
+    const getSimilarGames = (game, games, limit = 5) => {
+      const sourceGenres = new Set(game.genres || []);
+      if (!sourceGenres.size || !games) return [];
+
+      return games
+        .filter(candidate => candidate.id !== game.id)
+        .map(candidate => {
+          const candidateGenres = new Set(candidate.genres || []);
+          const sharedGenres = [...sourceGenres].filter(genre => candidateGenres.has(genre));
+          const unionSize = new Set([...sourceGenres, ...candidateGenres]).size;
+
+          return {
+            game: candidate,
+            sharedGenres,
+            sharedCount: sharedGenres.length,
+            similarity: unionSize ? sharedGenres.length / unionSize : 0,
+          };
+        })
+        .filter(item => item.sharedCount > 0)
+        .sort((a, b) => (
+          b.sharedCount - a.sharedCount
+          || b.similarity - a.similarity
+          || calcRating(b.game.ratings) - calcRating(a.game.ratings)
+          || a.game.title.localeCompare(b.game.title, 'ru')
+        ))
+        .slice(0, limit);
+    };
+
+    const SimilarGamesPanel = ({ game, games, onSelect, className = '', role = 'dialog' }) => {
+      const similarGames = useMemo(() => getSimilarGames(game, games), [game, games]);
+
+      return (
+        <motion.div
+          className={`similar-games-panel ${className}`.trim()}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+          role={role}
+          aria-label={`Похожие игры для ${game.title}`}
+        >
+          <div className="similar-games-panel-header">
+            <div className="similar-games-panel-title">Похожие игры по жанру</div>
+          </div>
+          <div className="similar-games-list">
+            {similarGames.length > 0 ? similarGames.map(({ game: similarGame, sharedGenres }) => (
+              <button
+                key={similarGame.id}
+                className="similar-game-item"
+                type="button"
+                onClick={() => onSelect(similarGame)}
+                title={`Открыть ${similarGame.title}`}
+              >
+                <span
+                  className="similar-game-thumb"
+                  style={{ backgroundImage: `url(imgs/${similarGame.image})` }}
+                  aria-hidden="true"
+                />
+                <span className="similar-game-copy">
+                  <span className="similar-game-title">{similarGame.title}</span>
+                  <span className="similar-game-meta">
+                    {sharedGenres.length} {sharedGenres.length === 1 ? 'общий жанр' : 'общих жанра'} · {sharedGenres.join(' · ')}
+                  </span>
+                </span>
+                <span className="similar-game-arrow" aria-hidden="true">→</span>
+              </button>
+            )) : (
+              <div className="similar-games-empty">В текущем списке нет другой игры с общим жанром.</div>
+            )}
+          </div>
+        </motion.div>
+      );
+    };
+
+    const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, setChartMode, similarOpen, similarLayoutOpen, similarToggleBusy, onToggleSimilar, onSimilarSelect, onSimilarExitComplete }, ref) => {
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
 
@@ -3193,13 +3606,20 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              elements: { line: { borderWidth: 3 } },
+              layout: {
+                padding: 0
+              },
+              elements: { line: { borderWidth: 4 } },
               scales: {
                 r: {
                   angleLines: { color: 'rgba(255, 255, 255, 0.3)' },
                   grid: { color: 'rgba(255, 255, 255, 0.3)' },
-                  pointLabels: { color: 'white', font: { size: 14, family: 'Inter' } },
-                  ticks: { backdropColor: 'transparent', color: 'rgba(255, 255, 255, 0.7)', showLabelBackdrop: false, stepSize: 2, font: { size: 10 } },
+                  pointLabels: {
+                    color: 'white',
+                    padding: 0,
+                    font: { size: 13, family: 'Inter' }
+                  },
+                  ticks: { backdropColor: 'transparent', color: 'rgba(255, 255, 255, 0.7)', showLabelBackdrop: false, stepSize: 2, font: { size: 11 } },
                   suggestedMin: 0, suggestedMax: 10
                 }
               },
@@ -3235,7 +3655,7 @@
           }}
         >
           {/* Верхний ряд: критерии слева + инфо справа */}
-          <div className="modal-body">
+          <div className={`modal-body ${similarLayoutOpen ? 'has-similar-games' : ''}`}>
             {/* Левая: критерии */}
             <div className="modal-left">
               <div className={`criteria ${chartMode ? 'chart-mode' : ''}`}>
@@ -3250,12 +3670,22 @@
                       <canvas ref={chartRef}></canvas>
                     </div>
                   </div>
-                  <button className="toggle-chart-btn" onClick={() => setChartMode(!chartMode)} title={chartMode ? "Показать текст" : "Показать график"}>
-                    {chartMode ? "📝" : "🕸️"}
-                  </button>
                 </div>
+                <button className="toggle-chart-btn" disabled={similarOpen || similarLayoutOpen} onClick={() => setChartMode(!chartMode)} title={chartMode ? "Показать текст" : "Показать график"}>
+                  {chartMode ? "📝" : "🕸️"}
+                </button>
               </div>
             </div>
+
+            <AnimatePresence initial={false} onExitComplete={onSimilarExitComplete}>
+              {similarOpen && (
+                <SimilarGamesPanel
+                  game={game}
+                  games={games}
+                  onSelect={onSimilarSelect}
+                />
+              )}
+            </AnimatePresence>
 
             {/* Правая: компактная инфо-панель */}
             <div className="modal-right">
@@ -3287,11 +3717,21 @@
                   <span className="modal-info-val">{game.playtime || "30 ч."}</span>
                 </div>
               </div>
+              <button
+                className="similar-games-toggle"
+                type="button"
+                onClick={onToggleSimilar}
+                disabled={similarToggleBusy}
+                aria-expanded={similarOpen}
+              >
+                {similarOpen ? 'Скрыть' : 'Похожие игры по жанру'}
+              </button>
             </div>
           </div>
 
           {/* Нижний ряд: описание на всю ширину */}
           <div id="modal-review">{REVIEWS[game.id] || "Описание..."}</div>
+
         </motion.div>
       );
     });
@@ -3300,11 +3740,22 @@
       const [slideDir, setSlideDir] = useState(0);
       const [displayGame, setDisplayGame] = useState(game);
       const [chartMode, setChartMode] = useState(false);
+      const [similarOpen, setSimilarOpen] = useState(false);
+      const [similarLayoutOpen, setSimilarLayoutOpen] = useState(false);
+      const [similarToggleBusy, setSimilarToggleBusy] = useState(false);
+      const similarToggleBusyRef = useRef(false);
+      const similarToggleTimerRef = useRef(null);
       const currentIndexRef = useRef(allGames ? allGames.findIndex(g => g.id === game.id) : 0);
+
+      useEffect(() => () => {
+        if (similarToggleTimerRef.current) clearTimeout(similarToggleTimerRef.current);
+      }, []);
 
       // Sync displayGame when game prop changes (from outside, e.g. roulette)
       useEffect(() => {
         setDisplayGame(game);
+        setSimilarOpen(false);
+        setSimilarLayoutOpen(false);
         currentIndexRef.current = allGames ? allGames.findIndex(g => g.id === game.id) : 0;
       }, [game]);
 
@@ -3319,9 +3770,41 @@
         const nextGame = allGames[nextIndex];
         setSlideDir(dir);
         setDisplayGame(nextGame);
+        setSimilarOpen(false);
+        setSimilarLayoutOpen(false);
         if (onNavigate) onNavigate(nextGame);
       };
       navigateRef.current = navigate;
+
+      const toggleSimilar = () => {
+        if (similarToggleBusyRef.current) return;
+
+        similarToggleBusyRef.current = true;
+        setSimilarToggleBusy(true);
+        similarToggleTimerRef.current = setTimeout(() => {
+          similarToggleBusyRef.current = false;
+          similarToggleTimerRef.current = null;
+          setSimilarToggleBusy(false);
+        }, 240);
+
+        if (similarOpen) {
+          setSimilarOpen(false);
+          return;
+        }
+        if (chartMode) setChartMode(false);
+        setSimilarLayoutOpen(true);
+        setSimilarOpen(true);
+      };
+
+      const openSimilarGame = (nextGame) => {
+        const nextIndex = allGames ? allGames.findIndex(g => g.id === nextGame.id) : -1;
+        if (nextIndex >= 0) currentIndexRef.current = nextIndex;
+        setSlideDir(1);
+        setDisplayGame(nextGame);
+        setSimilarOpen(false);
+        setSimilarLayoutOpen(false);
+        if (onNavigate) onNavigate(nextGame);
+      };
 
       // Keyboard navigation — подписка один раз, navigate берётся из ref
       useEffect(() => {
@@ -3374,9 +3857,16 @@
                 <GameModalSlide
                   key={displayGame.id}
                   game={displayGame}
+                  games={allGames}
                   slideDir={slideDir}
                   chartMode={chartMode}
                   setChartMode={setChartMode}
+                  similarOpen={similarOpen}
+                  similarLayoutOpen={similarLayoutOpen}
+                  similarToggleBusy={similarToggleBusy}
+                  onToggleSimilar={toggleSimilar}
+                  onSimilarSelect={openSimilarGame}
+                  onSimilarExitComplete={() => setSimilarLayoutOpen(false)}
                 />
               </AnimatePresence>
             </div>
@@ -3389,10 +3879,15 @@
       );
     };
 
-    const GamePage = ({ game, onBack }) => {
+    const GamePage = ({ game, onBack, onOpenGame }) => {
       const [chartMode, setChartMode] = useState(false);
+      const [similarOpen, setSimilarOpen] = useState(false);
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
+
+      useEffect(() => {
+        setSimilarOpen(false);
+      }, [game.id]);
 
       useEffect(() => {
         if (!chartMode || !chartRef.current) return;
@@ -3489,17 +3984,84 @@
           <section className="game-page-section">
             <h2 className="game-page-section-title">Описание</h2>
             <div className="game-page-review">{REVIEWS[game.id] || 'Описание...'}</div>
+            <button
+              className="game-page-similar-toggle"
+              type="button"
+              onClick={() => setSimilarOpen(open => !open)}
+              aria-expanded={similarOpen}
+            >
+              {similarOpen ? 'Скрыть' : 'Похожие игры по жанру'}
+            </button>
+            <AnimatePresence initial={false}>
+              {similarOpen && (
+                <SimilarGamesPanel
+                  game={game}
+                  games={GAMES}
+                  className="game-page-similar-panel"
+                  role="region"
+                  onSelect={(nextGame) => {
+                    setSimilarOpen(false);
+                    if (onOpenGame) onOpenGame(nextGame);
+                  }}
+                />
+              )}
+            </AnimatePresence>
           </section>
         </main>
       );
     };
 
+    const COMPARE_CHART_COLORS = [
+      'rgba(255, 99, 132, 0.4)',
+      'rgba(54, 162, 235, 0.4)',
+      'rgba(255, 206, 86, 0.4)',
+      'rgba(75, 192, 192, 0.4)',
+      'rgba(153, 102, 255, 0.4)',
+      'rgba(255, 159, 64, 0.4)'
+    ];
+
+    const COMPARE_CHART_BORDER_COLORS = [
+      'rgba(255, 99, 132, 1)',
+      'rgba(54, 162, 235, 1)',
+      'rgba(255, 206, 86, 1)',
+      'rgba(75, 192, 192, 1)',
+      'rgba(153, 102, 255, 1)',
+      'rgba(255, 159, 64, 1)'
+    ];
+
+    const compareColorWithOpacity = (color, opacity) => {
+      const match = String(color).match(/rgba?\(([^)]+)\)/);
+      if (!match) return color;
+      const parts = match[1].split(',').map(part => part.trim());
+      const baseAlpha = parts.length > 3 ? parseFloat(parts[3]) : 1;
+      return `rgba(${parts.slice(0, 3).join(', ')}, ${(baseAlpha * opacity).toFixed(3)})`;
+    };
+
     const CompareModal = ({ selectedGameIds, onClose, theme }) => {
       const [chartMode, setChartMode] = useState(false);
+      const [inactiveGameIds, setInactiveGameIds] = useState([]);
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
+      const inactiveGameIdsRef = useRef(inactiveGameIds);
+      const datasetOpacityRef = useRef(new Map());
+      const datasetAnimationFramesRef = useRef(new Map());
+      inactiveGameIdsRef.current = inactiveGameIds;
 
-      const gamesToCompare = GAMES.filter(g => selectedGameIds.includes(g.id));
+      const allGamesToCompare = useMemo(
+        () => GAMES.filter(g => selectedGameIds.includes(g.id)),
+        [selectedGameIds]
+      );
+      const gamesToCompare = useMemo(
+        () => allGamesToCompare.filter(g => !inactiveGameIds.includes(g.id)),
+        [allGamesToCompare, inactiveGameIds]
+      );
+
+      const toggleCompareGame = (gameId) => {
+        setInactiveGameIds(prev => prev.includes(gameId)
+          ? prev.filter(id => id !== gameId)
+          : [...prev, gameId]
+        );
+      };
 
       // Calculate max ratings for highlighting
       const maxRatings = useMemo(() => {
@@ -3516,60 +4078,122 @@
       }, [gamesToCompare]);
 
       useEffect(() => {
-        if (chartMode && chartRef.current && gamesToCompare.length > 0) {
-          const timer = setTimeout(() => {
-            const ctx = chartRef.current.getContext('2d');
-            if (chartInstanceRef.current) chartInstanceRef.current.destroy();
+        if (!chartMode || !chartRef.current || allGamesToCompare.length === 0) return;
 
-            const criteriaKeys = Object.keys(LABELS).filter(k => k !== 'rating' && k !== 'year' && k !== 'playtime');
-            const colors = ['rgba(255, 99, 132, 0.4)', 'rgba(54, 162, 235, 0.4)', 'rgba(255, 206, 86, 0.4)', 'rgba(75, 192, 192, 0.4)', 'rgba(153, 102, 255, 0.4)', 'rgba(255, 159, 64, 0.4)'];
-            const borderColors = ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'];
+        const timer = setTimeout(() => {
+          if (!chartRef.current) return;
+          const ctx = chartRef.current.getContext('2d');
+          if (chartInstanceRef.current) chartInstanceRef.current.destroy();
 
-            const datasets = gamesToCompare.map((game, index) => ({
+          const criteriaKeys = Object.keys(LABELS).filter(k => k !== 'rating' && k !== 'year' && k !== 'playtime');
+          const datasets = allGamesToCompare.map(game => {
+            const colorIndex = allGamesToCompare.findIndex(item => item.id === game.id);
+            const initialOpacity = inactiveGameIdsRef.current.includes(game.id) ? 0 : 1;
+            datasetOpacityRef.current.set(game.id, initialOpacity);
+            return {
               label: game.title,
               data: criteriaKeys.map(k => game.ratings[k]),
-              backgroundColor: colors[index % colors.length],
-              borderColor: borderColors[index % borderColors.length],
+              backgroundColor: compareColorWithOpacity(COMPARE_CHART_COLORS[colorIndex % COMPARE_CHART_COLORS.length], initialOpacity),
+              borderColor: compareColorWithOpacity(COMPARE_CHART_BORDER_COLORS[colorIndex % COMPARE_CHART_BORDER_COLORS.length], initialOpacity),
               borderWidth: 2,
-              pointBackgroundColor: borderColors[index % borderColors.length],
-              pointBorderColor: '#fff',
-              pointHoverBackgroundColor: '#fff',
-              pointHoverBorderColor: borderColors[index % borderColors.length]
-            }));
+              pointBackgroundColor: compareColorWithOpacity(COMPARE_CHART_BORDER_COLORS[colorIndex % COMPARE_CHART_BORDER_COLORS.length], initialOpacity),
+              pointBorderColor: compareColorWithOpacity('rgba(255, 255, 255, 1)', initialOpacity),
+              pointHoverBackgroundColor: compareColorWithOpacity('rgba(255, 255, 255, 1)', initialOpacity),
+              pointHoverBorderColor: compareColorWithOpacity(COMPARE_CHART_BORDER_COLORS[colorIndex % COMPARE_CHART_BORDER_COLORS.length], initialOpacity)
+            };
+          });
 
-            const isDark = theme === 'dark' || document.body.classList.contains('dark');
-            const textColor = isDark ? 'white' : '#000';
-            const gridColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.4)';
+          const isDark = theme === 'dark' || document.body.classList.contains('dark');
+          const textColor = isDark ? 'white' : '#000';
+          const gridColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.4)';
 
-            chartInstanceRef.current = new Chart(ctx, {
-              type: 'radar',
-              data: { labels: criteriaKeys.map(k => LABELS[k]), datasets },
-              options: {
-                responsive: true, maintainAspectRatio: false,
-                elements: { line: { borderWidth: 2 } },
-                scales: {
-                  r: {
-                    angleLines: { color: gridColor },
-                    grid: { color: gridColor },
-                    pointLabels: { color: textColor, font: { size: 14, family: 'Inter' } },
-                    ticks: { display: false, backdropColor: 'transparent' },
-                    suggestedMin: 0,
-                    suggestedMax: 10
-                  }
-                },
-                plugins: {
-                  legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 14 } } }
+          chartInstanceRef.current = new Chart(ctx, {
+            type: 'radar',
+            data: { labels: criteriaKeys.map(k => LABELS[k]), datasets },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 420, easing: 'easeOutCubic' },
+              layout: { padding: 18 },
+              elements: { line: { borderWidth: 2 } },
+              scales: {
+                r: {
+                  angleLines: { color: gridColor },
+                  grid: { color: gridColor },
+                  pointLabels: { color: textColor, padding: 4, font: { size: 14, family: 'Inter' } },
+                  ticks: { display: false, backdropColor: 'transparent' },
+                  suggestedMin: 0,
+                  suggestedMax: 10
                 }
+              },
+              plugins: {
+                legend: { display: false }
               }
-            });
-          }, 50);
+            }
+          });
+        }, 50);
 
-          return () => {
-            clearTimeout(timer);
-            if (chartInstanceRef.current) chartInstanceRef.current.destroy();
-          };
-        }
-      }, [chartMode, gamesToCompare, theme]);
+        return () => {
+          clearTimeout(timer);
+          datasetAnimationFramesRef.current.forEach(frame => cancelAnimationFrame(frame));
+          datasetAnimationFramesRef.current.clear();
+          if (chartInstanceRef.current) {
+            chartInstanceRef.current.destroy();
+            chartInstanceRef.current = null;
+          }
+        };
+      }, [chartMode, allGamesToCompare, theme]);
+
+      const animateCompareGame = (game, index, targetOpacity) => {
+        const chart = chartInstanceRef.current;
+        if (!chart) return;
+
+        const dataset = chart.data.datasets[index];
+        if (!dataset) return;
+
+        const previousFrame = datasetAnimationFramesRef.current.get(game.id);
+        if (previousFrame) cancelAnimationFrame(previousFrame);
+
+        const startOpacity = datasetOpacityRef.current.get(game.id) ?? targetOpacity;
+        const startedAt = performance.now();
+        const duration = 380;
+        const colorIndex = allGamesToCompare.findIndex(item => item.id === game.id);
+        const fillColor = COMPARE_CHART_COLORS[colorIndex % COMPARE_CHART_COLORS.length];
+        const borderColor = COMPARE_CHART_BORDER_COLORS[colorIndex % COMPARE_CHART_BORDER_COLORS.length];
+
+        const frame = (now) => {
+          const progress = Math.min(1, (now - startedAt) / duration);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const opacity = startOpacity + (targetOpacity - startOpacity) * eased;
+
+          dataset.backgroundColor = compareColorWithOpacity(fillColor, opacity);
+          dataset.borderColor = compareColorWithOpacity(borderColor, opacity);
+          dataset.pointBackgroundColor = compareColorWithOpacity(borderColor, opacity);
+          dataset.pointBorderColor = compareColorWithOpacity('rgba(255, 255, 255, 1)', opacity);
+          dataset.pointHoverBackgroundColor = compareColorWithOpacity('rgba(255, 255, 255, 1)', opacity);
+          dataset.pointHoverBorderColor = compareColorWithOpacity(borderColor, opacity);
+          datasetOpacityRef.current.set(game.id, opacity);
+          chart.update('none');
+
+          if (progress < 1) {
+            const nextFrame = requestAnimationFrame(frame);
+            datasetAnimationFramesRef.current.set(game.id, nextFrame);
+          } else {
+            datasetOpacityRef.current.set(game.id, targetOpacity);
+            datasetAnimationFramesRef.current.delete(game.id);
+          }
+        };
+
+        const frameId = requestAnimationFrame(frame);
+        datasetAnimationFramesRef.current.set(game.id, frameId);
+      };
+
+      useEffect(() => {
+        if (!chartMode || !chartInstanceRef.current) return;
+        allGamesToCompare.forEach((game, index) => {
+          animateCompareGame(game, index, inactiveGameIds.includes(game.id) ? 0 : 1);
+        });
+      }, [inactiveGameIds, chartMode, allGamesToCompare]);
 
       return (
         <motion.div id="game-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
@@ -3578,7 +4202,6 @@
             onClick={e => e.stopPropagation()}
             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", duration: 0.5 }}
-            style={{ '--modal-bg-image': 'none' }}
           >
             <span className="close-btn" onClick={onClose}>×</span>
             <h2>Сравнение игр</h2>
@@ -3612,14 +4235,43 @@
                 </div>
                 {/* Chart View */}
                 <div className={`criteria-view chart-view ${chartMode ? 'active' : 'hidden'}`}>
-                  <div style={{ width: 500, height: 500 }}>
-                    <canvas ref={chartRef} id="compareRadarChart"></canvas>
+                  <div className="compare-chart-layout">
+                    <aside className="compare-games-list" aria-label="Игры в сравнении">
+                      <div className="compare-games-list-title">Игры в сравнении</div>
+                      <div className="compare-games-list-items">
+                        {allGamesToCompare.map((game, index) => {
+                          const isInactive = inactiveGameIds.includes(game.id);
+                          return (
+                            <button
+                              className={`compare-game-list-item ${isInactive ? 'is-inactive' : ''}`}
+                              type="button"
+                              key={game.id}
+                              onClick={() => toggleCompareGame(game.id)}
+                              aria-pressed={!isInactive}
+                              title={isInactive ? `Вернуть ${game.title} в сравнение` : `Исключить ${game.title} из сравнения`}
+                            >
+                              <span
+                                className="compare-game-list-swatch"
+                                style={{ backgroundColor: COMPARE_CHART_BORDER_COLORS[index % COMPARE_CHART_BORDER_COLORS.length] }}
+                                aria-hidden="true"
+                              />
+                              <span>{game.title}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </aside>
+                    <div className="compare-chart-area">
+                      <div className="compare-chart-shell">
+                        <canvas ref={chartRef}></canvas>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
               </div>
             </div>
-            <button className="toggle-chart-btn" onClick={() => setChartMode(!chartMode)} title={chartMode ? "Показать таблицу" : "Показать график"} style={{ bottom: 10, right: 20, width: 40, height: 40, fontSize: 20, position: 'absolute' }}>
+            <button className="toggle-chart-btn" onClick={() => setChartMode(!chartMode)} title={chartMode ? "Показать таблицу" : "Показать график"} style={{ bottom: 12, right: 18, width: 40, height: 40, fontSize: 20, position: 'absolute' }}>
               {chartMode ? "📝" : "🕸️"}
             </button>
           </motion.div>
