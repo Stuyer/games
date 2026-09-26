@@ -53,6 +53,25 @@
       --pill-border: rgba(255, 255, 255, 0.12);
     }
 
+    /* Modern filter palette: shared tokens keep both themes visually related. */
+    :root {
+      --genre-accent: #9a5d32;
+      --genre-accent-strong: #7b431f;
+      --genre-accent-soft: rgba(154, 93, 50, 0.12);
+      --genre-panel-bg: rgba(255, 250, 243, 0.96);
+      --genre-panel-muted: rgba(38, 29, 24, 0.58);
+      --genre-panel-shadow: 0 24px 70px rgba(62, 34, 15, 0.22);
+    }
+
+    body.dark {
+      --genre-accent: #d6a875;
+      --genre-accent-strong: #f0c58f;
+      --genre-accent-soft: rgba(214, 168, 117, 0.15);
+      --genre-panel-bg: rgba(28, 27, 30, 0.97);
+      --genre-panel-muted: rgba(232, 230, 225, 0.58);
+      --genre-panel-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+    }
+
     body {
       background: var(--bg);
       color: var(--text);
@@ -92,6 +111,117 @@
       gap: 10px;
     }
 
+    .site-header.rating-info-active {
+      z-index: 2200;
+    }
+
+    .rating-info-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(1px);
+      -webkit-backdrop-filter: blur(1px);
+    }
+
+    .rating-info-trigger {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--surface-border);
+      border-radius: 50%;
+      background: var(--pill-bg);
+      color: var(--text);
+      font-family: Georgia, serif;
+      font-size: 0.96rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .rating-info-trigger:hover,
+    .rating-info-trigger[aria-expanded="true"] {
+      background: var(--pill-border);
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .rating-info-popover {
+      position: absolute;
+      top: calc(100% + 12px);
+      right: 0;
+      z-index: 2300;
+      width: min(400px, calc(100vw - 40px));
+      max-height: min(70vh, 520px);
+      overflow-y: auto;
+      box-sizing: border-box;
+      padding: 18px;
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      background: var(--solid-surface);
+      color: var(--text);
+      text-align: left;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .rating-info-popover h2 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .rating-info-lead,
+    .rating-info-note,
+    .rating-info-text {
+      margin: 0;
+      font-size: 0.78rem;
+      line-height: 1.55;
+      opacity: 0.78;
+      white-space: pre-line;
+    }
+
+    .rating-info-usage-text {
+      text-align: justify;
+      overflow-wrap: anywhere;
+      white-space: pre-line;
+    }
+
+    .rating-info-lead {
+      margin-bottom: 14px;
+    }
+
+    .rating-info-item + .rating-info-item {
+      margin-top: 11px;
+    }
+
+    .rating-info-label {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .rating-info-subtitle {
+      margin: 17px 0 5px;
+      font-size: 0.88rem;
+      line-height: 1.3;
+    }
+
+    .rating-info-note {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--surface-border);
+      font-size: 0.72rem;
+      opacity: 0.58;
+    }
+
     /* ── Панель управления ── */
     .controls-bar {
       display: flex;
@@ -114,6 +244,15 @@
 
     .controls-bar.compact {
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+    }
+
+    .controls-bar.search-only {
+      padding: 0;
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     .controls-bar select,
@@ -256,6 +395,27 @@
       flex-shrink: 0;
     }
 
+    #search,
+    .controls-bar .compare-confirm-btn,
+    .controls-bar .btn-red {
+      height: 32px;
+      box-sizing: border-box;
+    }
+
+    .controls-bar .compare-confirm-btn,
+    .controls-bar .btn-red {
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      padding-top: 4px;
+      padding-bottom: 4px;
+    }
+
+    .controls-bar .compare-confirm-btn:hover,
+    .controls-bar .btn-red:hover {
+      transform: none;
+    }
+
     #grid {
       display: flex;
       flex-direction: column;
@@ -310,17 +470,34 @@
 
     .search-wrapper {
       position: relative;
-      display: inline-flex;
-      align-items: center;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      min-width: 0;
     }
 
     #search {
       padding-right: 28px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(14px) saturate(90%);
+      -webkit-backdrop-filter: blur(14px) saturate(90%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 3px 14px rgba(0, 0, 0, 0.08);
+    }
+
+    body.dark #search {
+      background: rgba(30, 30, 34, 0.82);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 3px 14px rgba(0, 0, 0, 0.22);
     }
 
     #clear-search {
       position: absolute;
-      right: 8px;
+      top: 50%;
+      right: 7px;
+      display: grid;
+      width: 20px;
+      height: 20px;
+      place-items: center;
+      transform: translateY(-50%);
       font-size: 16px;
       cursor: pointer;
       color: #888;
@@ -333,6 +510,77 @@
     }
 
     /* ── Пилюли-кнопки ── */
+    .search-suggestions {
+      position: absolute;
+      top: calc(100% + 7px);
+      left: 0;
+      right: 0;
+      z-index: 30;
+      display: grid;
+      gap: 2px;
+      overflow: hidden;
+      padding: 8px;
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(16px) saturate(90%);
+      -webkit-backdrop-filter: blur(16px) saturate(90%);
+    }
+
+    body.dark .search-suggestions {
+      background: rgba(30, 30, 34, 0.96);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .search-suggestion {
+      display: block;
+      width: 100%;
+      overflow: hidden;
+      padding: 6px 8px;
+      border: 0;
+      border-radius: 8px;
+      color: var(--genre-accent-strong);
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      transition: color 0.18s;
+    }
+
+    .search-suggestion:hover,
+    .search-suggestion:focus-visible {
+      color: var(--text);
+      outline: none;
+    }
+
+    .search-suggestion-body {
+      display: block;
+      overflow: hidden;
+      min-width: 0;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .search-suggestion-query {
+      color: inherit;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .search-suggestion-separator {
+      display: inline-block;
+      margin: 0 7px;
+      color: var(--text);
+      opacity: 0.35;
+    }
+
+    .search-suggestion-hint {
+      color: var(--text);
+      font-size: 0.7rem;
+      opacity: 0.56;
+    }
+
     .btn {
       font-family: 'Inter', sans-serif;
       font-size: 0.88rem;
@@ -530,6 +778,7 @@
       flex-direction: column-reverse;
       align-items: flex-start;
       gap: 0;
+      pointer-events: none;
     }
 
     /* Главная кнопка */
@@ -550,11 +799,11 @@
       position: relative;
       z-index: 2;
       flex-shrink: 0;
+      pointer-events: auto;
     }
 
-    /* Закрытый speed-dial не перехватывает клики под собой */
-    .speed-dial:not(.open) .speed-dial-items {
-      pointer-events: none;
+    .speed-dial.open .speed-dial-items {
+      pointer-events: auto;
     }
 
     .speed-dial-main:hover {
@@ -620,9 +869,7 @@
       display: flex;
       flex-direction: column-reverse;
       gap: 10px;
-      /* padding даёт пространство для scale(1.12) без обрезки */
       padding: 8px 12px 12px 12px;
-      /* Отрицательный margin компенсирует сдвиг позиций от padding */
       margin: -8px -12px 0 -12px;
       overflow: visible;
     }
@@ -736,6 +983,24 @@
       box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
     }
 
+    @keyframes compare-selection-shadow {
+      from {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 0 rgba(0, 0, 0, 0);
+      }
+      to {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 4px var(--primary-color);
+      }
+    }
+
+    @keyframes compare-deselection-shadow {
+      from {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 4px var(--primary-color);
+      }
+      to {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 0 rgba(0, 0, 0, 0);
+      }
+    }
+
     .card .title {
       font-size: 2rem;
       padding: 6px 10px;
@@ -801,6 +1066,15 @@
 
     .card-wrap.selected .card {
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 4px var(--primary-color);
+      animation: compare-selection-shadow 0.3s ease-out both;
+    }
+
+    .card-wrap.selected:hover .card {
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 4px var(--primary-color);
+    }
+
+    .card-wrap.deselecting .card {
+      animation: compare-deselection-shadow 0.3s ease-out both;
     }
 
     .highlight-criterion {
@@ -997,7 +1271,18 @@
       background-position: center 75%;
     }
 
-    /* --- 6. МОДАЛЬНОЕ ОКНО (Ported from SiteSandbox.html) --- */
+    .card-wrap[data-id="twd"] .card {
+      background-position: center 10%;
+    }
+
+    .card-wrap[data-id="aw"] .card {
+      background-position: center 80%;
+    }
+
+    .card-wrap[data-id="twd2"] .card {
+      background-position: center 35%;
+    }
+
     #game-modal {
       position: fixed;
       inset: 0;
@@ -1053,31 +1338,32 @@
     }
 
     .compare-table {
+      --compare-col-w: 160px;
       border-collapse: collapse;
+      table-layout: fixed;
       width: max-content;
-      min-width: 100%;
     }
 
     /* Сравнение: общий размер окна для таблицы и графика */
     #game-modal .modal-content.compare-mode {
-      height: min(640px, 92vh);
+      height: min(620px, 92vh);
       max-width: 1000px;
       min-height: 0;
       box-sizing: border-box;
       padding: 36px 40px;
     }
 
-    #game-modal .modal-content.compare-mode > h2 {
+    #game-modal .modal-content.compare-mode>h2 {
       flex: 0 0 auto;
-      margin: 0 24px 26px;
+      margin: 0 24px 18px;
     }
 
-    #game-modal .modal-content.compare-mode > .criteria {
+    #game-modal .modal-content.compare-mode>.criteria {
       flex: 1 1 auto;
       min-height: 0;
       width: 100%;
       box-sizing: border-box;
-      margin-bottom: 36px !important;
+      margin-bottom: 20px !important;
       overflow: hidden;
     }
 
@@ -1086,12 +1372,12 @@
       min-height: 0;
     }
 
-    #game-modal .modal-content.compare-mode > .criteria:not(.chart-mode) {
+    #game-modal .modal-content.compare-mode>.criteria:not(.chart-mode) {
       justify-content: flex-start;
       padding-top: 8px;
     }
 
-    #game-modal .modal-content.compare-mode > .criteria:not(.chart-mode) .criteria-wrapper {
+    #game-modal .modal-content.compare-mode>.criteria:not(.chart-mode) .criteria-wrapper {
       height: auto;
       align-self: flex-start;
     }
@@ -1102,9 +1388,10 @@
     }
 
     #game-modal .modal-content.compare-mode .compare-table-wrapper {
-      width: 100%;
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 auto;
       height: auto;
-      max-width: none;
       max-height: none;
       box-sizing: border-box;
       overflow-x: auto;
@@ -1186,7 +1473,7 @@
       filter: grayscale(1);
     }
 
-    .compare-game-list-item + .compare-game-list-item {
+    .compare-game-list-item+.compare-game-list-item {
       margin-top: 3px;
     }
 
@@ -1242,8 +1529,12 @@
 
     .compare-table th,
     .compare-table td {
+      width: var(--compare-col-w);
+      min-width: var(--compare-col-w);
+      max-width: var(--compare-col-w);
+      box-sizing: border-box;
       border: 1px solid #ccc;
-      padding: 8px 12px;
+      padding: 6px 6px;
       text-align: center;
       white-space: nowrap;
     }
@@ -1253,6 +1544,48 @@
       color: #fff;
       position: sticky;
       top: 0;
+      vertical-align: top;
+      padding: 8px 6px 6px;
+    }
+
+    .compare-header-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .compare-header-title {
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .compare-header-img {
+      width: 100%;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 6px;
+      display: block;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .compare-header-criteria-icon {
+      font-size: 1.35rem;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.85;
     }
 
     .compare-table .highlight-max {
@@ -1647,7 +1980,7 @@
       justify-content: center;
     }
 
-    #game-modal .modal-content:not(.compare-mode) .criteria-view.chart-view > div {
+    #game-modal .modal-content:not(.compare-mode) .criteria-view.chart-view>div {
       width: 290px !important;
       height: 290px !important;
     }
@@ -1868,8 +2201,6 @@
       color: white;
     }
 
-
-
     /* Roulette Styles */
     #roulette-modal {
       position: fixed;
@@ -1984,6 +2315,7 @@
        МОБИЛЬНАЯ ВЕРСИЯ — десктопные правила выше не изменяются
        ═════════════════════════════════════════════════════════════ */
     @media (max-width: 640px) {
+
       html,
       body {
         width: 100%;
@@ -2021,6 +2353,11 @@
         transform: none;
       }
 
+      .rating-info-popover {
+        right: -2px;
+        width: min(380px, calc(100vw - 28px));
+      }
+
       .controls-bar {
         top: 8px;
         gap: 6px;
@@ -2047,6 +2384,12 @@
       .controls-bar .btn {
         font-size: 0.75rem;
         padding: 8px 9px;
+      }
+
+      .controls-bar .compare-confirm-btn {
+        height: 32px;
+        padding-top: 4px;
+        padding-bottom: 4px;
       }
 
       #grid {
@@ -2406,7 +2749,7 @@
         font-size: 1.35rem;
       }
 
-      #game-modal .modal-content.compare-mode > .criteria {
+      #game-modal .modal-content.compare-mode>.criteria {
         padding: 10px;
       }
 
@@ -2449,7 +2792,7 @@
         white-space: normal;
       }
 
-      #game-modal .criteria-view.chart-view > div {
+      #game-modal .criteria-view.chart-view>div {
         width: min(76vw, 290px) !important;
         height: min(76vw, 290px) !important;
       }
@@ -2522,6 +2865,251 @@
         font-size: 1rem !important;
       }
     }
+    /* Genre palette refresh */
+    .genre-panel {
+      left: 24px;
+      bottom: 92px;
+      width: min(368px, calc(100vw - 48px));
+      max-height: none;
+      padding: 0;
+      background: var(--genre-panel-bg);
+      border: 1px solid color-mix(in srgb, var(--genre-accent) 24%, transparent);
+      border-radius: 24px;
+      box-shadow: var(--genre-panel-shadow);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .genre-panel::before {
+      display: none;
+    }
+
+    .genre-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 29px;
+      height: 29px;
+      padding: 0;
+      border: 1px solid var(--surface-border);
+      border-radius: 10px;
+      background: var(--pill-bg);
+      color: var(--text);
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .genre-icon-btn:hover,
+    .genre-icon-btn:focus-visible {
+      background: var(--genre-accent-soft);
+      border-color: var(--genre-accent);
+      outline: none;
+    }
+
+    .genre-filter-tools {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 9px 16px 5px;
+    }
+
+    .genre-helper {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 6px;
+      color: var(--genre-panel-muted);
+      font-size: 0.7rem;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .genre-helper-spacer {
+      flex: 1 1 auto;
+    }
+
+    .genre-helper-key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 18px;
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      background: var(--pill-bg);
+      color: var(--genre-accent);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .genre-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-content: start;
+      gap: 5px;
+      padding: 2px 16px 12px;
+      overflow-y: visible;
+      scrollbar-width: thin;
+      scrollbar-color: var(--genre-accent) transparent;
+    }
+
+    .genre-tag {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-width: 0;
+      min-height: 32px;
+      box-sizing: border-box;
+      padding: 5px 28px 5px 8px;
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      background: var(--pill-bg);
+      color: var(--text);
+      font-size: 0.76rem;
+      line-height: 1.15;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+
+    .genre-tag::after {
+      content: '+';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      right: 8px;
+      width: 16px;
+      height: 16px;
+      flex: 0 0 16px;
+      border-radius: 6px;
+      background: rgba(128, 128, 128, 0.12);
+      color: var(--genre-panel-muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .genre-tag:hover,
+    .genre-tag:focus-visible {
+      border-color: var(--genre-accent);
+      outline: none;
+    }
+
+    .genre-tag.active {
+      background: var(--genre-accent);
+      border-color: var(--genre-accent);
+      color: #fff;
+      box-shadow: 0 5px 14px color-mix(in srgb, var(--genre-accent) 25%, transparent);
+    }
+
+    .genre-tag.active::after {
+      content: '✓';
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+    }
+
+    .genre-tag.excluded {
+      background: rgba(180, 52, 52, 0.1);
+      border-color: rgba(180, 52, 52, 0.46);
+      color: #a53434;
+      text-decoration: none;
+    }
+
+    .genre-tag.excluded::after {
+      content: '−';
+      background: rgba(180, 52, 52, 0.14);
+      color: #a53434;
+    }
+
+    body.dark .genre-tag.excluded {
+      color: #ff9c9c;
+      border-color: rgba(255, 139, 139, 0.54);
+    }
+
+    body.dark .genre-tag.excluded::after {
+      color: #ff9c9c;
+      background: rgba(255, 139, 139, 0.14);
+    }
+
+    /* Comparison view: same surface language as the filter palette. */
+    #game-modal .modal-content.compare-mode {
+      border: 1px solid color-mix(in srgb, var(--genre-accent) 26%, var(--surface-border));
+      border-radius: 26px;
+      background: var(--genre-panel-bg);
+      box-shadow: var(--genre-panel-shadow);
+      color: var(--text);
+    }
+
+    #game-modal .modal-content.compare-mode > h2 {
+      margin-left: 8px;
+      color: var(--text);
+      background: none;
+      -webkit-text-fill-color: currentColor;
+      text-align: left;
+      letter-spacing: -0.02em;
+    }
+
+    #game-modal .modal-content.compare-mode .criteria {
+      border: 1px solid var(--surface-border);
+      border-radius: 18px;
+      background: var(--pill-bg);
+    }
+
+    #game-modal .modal-content.compare-mode .compare-table-wrapper {
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      background: var(--genre-panel-bg);
+      box-shadow: none;
+    }
+
+    #game-modal .modal-content.compare-mode .compare-table th {
+      background: var(--genre-accent-soft);
+      color: var(--text);
+      border-color: var(--surface-border);
+    }
+
+    #game-modal .modal-content.compare-mode .compare-table td {
+      border-color: var(--surface-border);
+      color: var(--text);
+    }
+
+    #game-modal .modal-content.compare-mode .compare-table tr:nth-child(even) td {
+      background: rgba(128, 128, 128, 0.04);
+    }
+
+    @media (max-width: 640px) {
+      .genre-panel {
+        left: 12px;
+        right: 12px;
+        bottom: calc(86px + env(safe-area-inset-bottom));
+        width: auto;
+        max-height: none;
+        border-radius: 22px;
+      }
+
+      .genre-filter-tools {
+        padding: 8px 13px 4px;
+      }
+
+      .genre-list {
+        gap: 4px;
+        padding: 2px 13px 9px;
+      }
+
+      .genre-tag {
+        min-height: 34px;
+        padding-left: 7px;
+        padding-right: 25px;
+        font-size: 0.72rem;
+      }
+
+      #game-modal .modal-content.compare-mode {
+        border-radius: 20px;
+      }
+    }
+
   </style>
 </head>
 
@@ -2536,74 +3124,77 @@
   <script type="text/babel" data-presets="classic-jsx">
     // --- DATA ---
     const GAMES = [
-      { id: "w3", title: "Witcher 3: Wild Hunt", developer: "CD Projekt Red", image: "w3.jpg", genres: ["РПГ", "Открытый мир", "Сюжетная", "Фэнтези", "Экшен", "Приключение"], ratings: { "story": 10, "graphics": 9, "gameplay": 9, "main_character": 10, "characters": 10, "atmosphere": 10, "sound_design": 10 }, year: '2015', playtime: '103 ч.' },
-      { id: "rdr2", title: "Red Dead Redemption 2", developer: "Rockstar Games", image: "rdr2.png", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 10, "gameplay": 10, "main_character": 10, "characters": 10, "atmosphere": 9, "sound_design": 10 }, year: '2018', playtime: '84 ч.' },
-      { id: "cyb", title: "Cyberpunk 2077", developer: "CD Projekt Red", image: "cyb.png", genres: ["РПГ", "Экшен", "Шутер", "Открытый мир", "Сюжетная", "Киберпанк", "Научная фантастика"], ratings: { "story": 10, "graphics": 10, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2020', playtime: '59 ч.' },
-      { id: "gtaV", title: "Grand Theft Auto V", developer: "Rockstar Games", image: "gtaV.jpg", genres: ["Экшен", "Приключение", "Открытый мир", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2013', playtime: '49 ч.' },
-      { id: "tlou", title: "The Last of Us Part I", developer: "Naughty Dog", image: "tlou.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 9, "characters": 8, "atmosphere": 9, "sound_design": 10 }, year: '2023', playtime: '18 ч.' },
-      { id: "alw2", title: "Alan Wake 2", developer: "Remedy Entertainment", image: "alw2.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Выживание", "Экшен"], ratings: { "story": 10, "graphics": 10, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2023', playtime: '27 ч.' },
-      { id: "det", title: "Detroit: Become Human", developer: "Quantic Dream", image: "det.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 10 }, year: '2018', playtime: '15 ч.' },
+      { id: "w3", title: "The Witcher 3: Wild Hunt", developer: "CD Projekt Red", image: "w3.jpg", genres: ["Открытый мир", "Приключение", "Сюжетная", "Фэнтези", "Экшен", "РПГ"], ratings: { "story": 10, "graphics": 9, "gameplay": 9, "main_character": 10, "characters": 10, "atmosphere": 10, "sound_design": 10 }, year: '2015', playtime: '103 ч.' },
+      { id: "rdr2", title: "Red Dead Redemption 2", developer: "Rockstar Games", image: "rdr2.png", genres: ["Открытый мир", "Приключение", "Экшен", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 10, "gameplay": 10, "main_character": 10, "characters": 10, "atmosphere": 9, "sound_design": 10 }, year: '2018', playtime: '84 ч.' },
+      { id: "tlou", title: "The Last of Us Part I", developer: "Naughty Dog", image: "tlou.jpg", genres: ["Экшен", "Приключение", "QTE", "Хоррор", "Выживание", "Стелс", "Сюжетная", "Постапокалипсис"], ratings: { "story": 9, "graphics": 10, "gameplay": 10, "main_character": 9, "characters": 8, "atmosphere": 9, "sound_design": 10 }, year: '2023', playtime: '18 ч.' },
+      { id: "cyb", title: "Cyberpunk 2077", developer: "CD Projekt Red", image: "cyb.png", genres: ["Научная фантастика", "Экшен", "РПГ", "Шутер", "Открытый мир", "Сюжетная", "Киберпанк"], ratings: { "story": 10, "graphics": 10, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2020', playtime: '59 ч.' },
+      { id: "gtaV", title: "Grand Theft Auto V", developer: "Rockstar Games", image: "gtaV.jpg", genres: ["Приключение", "Открытый мир", "Сюжетная", "Экшен", "Шутер"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2013', playtime: '49 ч.' },
+      { id: "alw2", title: "Alan Wake 2", developer: "Remedy Entertainment", image: "alw2.jpg", genres: ["Приключение", "Сюжетная", "Хоррор", "Выживание", "Экшен"], ratings: { "story": 10, "graphics": 10, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2023', playtime: '27 ч.' },
+      { id: "det", title: "Detroit: Become Human", developer: "Quantic Dream", image: "det.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "QTE", "Интерактивное кино"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 10 }, year: '2018', playtime: '15 ч.' },
       { id: "eld", title: "Elden Ring", developer: "FromSoftware", image: "eld.jpg", genres: ["РПГ", "Экшен", "Открытый мир", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 10 }, year: '2022', playtime: '100 ч.' },
-      { id: "dsr", title: "Dead Space Remake", developer: "Motive Studio", image: "dsr.jpg", genres: ["Хоррор", "Шутер", "Экшен", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2023', playtime: '17 ч.' },
-      { id: "bmw", title: "Black Myth: Wukong", developer: "Game Science", image: "bmw.png", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2024', playtime: '55 ч.' },
-      { id: "bak", title: "Batman: Arkham Knight", developer: "Rocksteady Studios", image: "bak.jpg", genres: ["Экшен", "Открытый мир", "Приключение", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2015', playtime: '31 ч.' },
-      { id: "hev", title: "Heavy Rain", developer: "Quantic Dream", image: "hev.jpg", genres: ["Приключение", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2019', playtime: '12 ч.' },
-      { id: "re4", title: "Resident Evil 4 Remake", developer: "Capcom", image: "re4.jpeg", genres: ["Хоррор", "Приключение", "Головоломка", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2023', playtime: '23 ч.' },
+      { id: "dsr", title: "Dead Space Remake", developer: "Motive Studio", image: "dsr.jpg", genres: ["Хоррор", "Шутер", "Сюжетная", "Экшен", "Научная фантастика", "Выживание"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2023', playtime: '17 ч.' },
+      { id: "bmw", title: "Black Myth: Wukong", developer: "Game Science", image: "bmw.png", genres: ["Фэнтези", "Сюжетная", "Экшен", "РПГ", "Соулс-лайк"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2024', playtime: '55 ч.' },
+      { id: "bak", title: "Batman: Arkham Knight", developer: "Rocksteady Studios", image: "bak.jpg", genres: ["Приключение", "Открытый мир", "Экшен", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2015', playtime: '31 ч.' },
+      { id: "hev", title: "Heavy Rain", developer: "Quantic Dream", image: "hev.jpg", genres: ["Приключение", "Сюжетная", "Интерактивное кино", "QTE"], ratings: { "story": 10, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2019', playtime: '12 ч.' },
+      { id: "re4", title: "Resident Evil 4 Remake", developer: "Capcom", image: "re4.jpeg", genres: ["Головоломка", "Приключение", "Хоррор", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2023', playtime: '23 ч.' },
       { id: "d16", title: "Doom (2016)", developer: "id Software", image: "d16.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9 }, year: '2016', playtime: '17 ч.' },
       { id: "dete", title: "Doom Eternal", developer: "id Software", image: "dete.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9 }, year: '2020', playtime: '19 ч.' },
       { id: "lim", title: "Limbo", developer: "Playdead", image: "lim.jpg", genres: ["Платформер", "Головоломка", "Инди"], ratings: { "story": 6, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 10, "sound_design": 10 }, year: '2011', playtime: '4 ч.' },
       { id: "ins", title: "Inside", developer: "Playdead", image: "ins.jpg", genres: ["Платформер", "Головоломка", "Инди", "Научная фантастика", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 9, "sound_design": 10 }, year: '2016', playtime: '4 ч.' },
       { id: "crw", title: "Thronebreaker: The Witcher Tales", developer: "CD Projekt Red", image: "crw.jpg", genres: ["РПГ", "Карточная", "Сюжетная", "Фэнтези", "Головоломка"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 9 }, year: '2018', playtime: '36 ч.' },
       { id: "fir", title: "Firewatch", developer: "Campo Santo", image: "fir.png", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2016', playtime: '5 ч.' },
-      { id: "swd", title: "Still Wakes the Deep", developer: "The Chinese Room", image: "swd.jpg", genres: ["Хоррор", "Приключение", "Научная фантастика", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 7 }, year: '2024', playtime: '6 ч.' },
-      { id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", developer: "Quantic Dream", image: "fhr.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика"], ratings: { "story": 8, "graphics": 6, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 9 }, year: '2015', playtime: '9 ч.' },
-      { id: "inc", title: "Inscryption", developer: "Daniel Mullins Games", image: "inc.jpg", genres: ["Карточная", "Хоррор", "Головоломка", "Инди"], ratings: { "story": 9, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 8, "atmosphere": 8, "sound_design": 9 }, year: '2021', playtime: '16 ч.' },
-      { id: "mf2", title: "Mafia II", developer: "2K Czech", image: "mf2.png", genres: ["Экшен", "Сюжетная", "Открытый мир", "Приключение"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 7 }, year: '2010', playtime: '17 ч.' },
-      { id: "hss", title: "Hellblade: Senua's Sacrifice", developer: "Ninja Theory", image: "hss.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2017', playtime: '8 ч.' },
-      { id: "tlou2", title: "The Last of Us Part II", developer: "Naughty Dog", image: "tlou2.jpg", genres: ["Экшен", "Приключение", "Хоррор", "Сюжетная", "Выживание", "Постапокалипсис", "Стелс"], ratings: { "story": 8, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2025', playtime: '29 ч.' },
-      { id: "PTI", title: "A Plague Tale: Innocence", developer: "Asobo Studio", image: "PTI.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2019', playtime: '13 ч.' },
-      { id: "atm", title: "Atomic Heart", developer: "Mundfish", image: "atm.jpg", genres: ["Шутер", "Экшен", "РПГ", "Научная фантастика", "Открытый мир", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 7, "sound_design": 9 }, year: '2023', playtime: '24 ч.' },
+      { id: "swd", title: "Still Wakes the Deep", developer: "The Chinese Room", image: "swd.jpg", genres: ["Сюжетная", "Приключение", "Инди", "Научная фантастика", "Хоррор"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 7 }, year: '2024', playtime: '6 ч.' },
+      { id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", developer: "Quantic Dream", image: "fhr.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "QTE", "Интерактивное кино"], ratings: { "story": 8, "graphics": 6, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 9 }, year: '2015', playtime: '9 ч.' },
+      { id: "inc", title: "Inscryption", developer: "Daniel Mullins Games", image: "inc.jpg", genres: ["Хоррор", "Инди", "Карточная", "Головоломка"], ratings: { "story": 9, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 8, "atmosphere": 8, "sound_design": 9 }, year: '2021', playtime: '16 ч.' },
+      { id: "mf2", title: "Mafia II", developer: "2K Czech", image: "mf2.png", genres: ["Открытый мир", "Приключение", "Экшен", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 7 }, year: '2010', playtime: '17 ч.' },
+      { id: "hss", title: "Hellblade: Senua's Sacrifice", developer: "Ninja Theory", image: "hss.jpg", genres: ["Экшен", "Приключение", "QTE", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2017', playtime: '8 ч.' },
+      { id: "tlou2", title: "The Last of Us Part II", developer: "Naughty Dog", image: "tlou2.jpg", genres: ["Экшен", "Приключение", "QTE", "Постапокалипсис", "Сюжетная", "Выживание", "Стелс", "Хоррор"], ratings: { "story": 8, "graphics": 10, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2025', playtime: '29 ч.' },
+      { id: "PTI", title: "A Plague Tale: Innocence", developer: "Asobo Studio", image: "PTI.jpg", genres: ["Экшен", "Сюжетная", "Стелс", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2019', playtime: '13 ч.' },
+      { id: "atm", title: "Atomic Heart", developer: "Mundfish", image: "atm.jpg", genres: ["Сюжетная", "Экшен", "РПГ", "Научная фантастика", "Шутер", "Открытый мир"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 7, "sound_design": 9 }, year: '2023', playtime: '24 ч.' },
       { id: "jc3", title: "Just Cause 3", developer: "Avalanche Studios", image: "jc3.jpg", genres: ["Экшен", "Открытый мир", "Шутер", "Приключение"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 7, "sound_design": 8 }, year: '2015', playtime: '37 ч.' },
       { id: "out", title: "Outlast", developer: "Red Barrels", image: "out.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2013', playtime: '7 ч.' },
       { id: "out2", title: "Outlast 2", developer: "Red Barrels", image: "out2.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 10, "sound_design": 9 }, year: '2017', playtime: '9 ч.' },
-      { id: "re2", title: "Resident Evil 2 Remake", developer: "Capcom", image: "re2.png", genres: ["Хоррор", "Головоломка", "Приключение", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 8 }, year: '2019', playtime: '15 ч.' },
-      { id: "rev", title: "Resident Evil Village", developer: "Capcom", image: "rev.jpg", genres: ["Хоррор", "Экшен", "Головоломка", "Приключение", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2021', playtime: '14 ч.' },
-      { id: "reb", title: "Resident Evil 7: Biohazard", developer: "Capcom", image: "reb.jpg", genres: ["Хоррор", "Выживание", "Головоломка", "Приключение", "Экшен", "Шутер", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 9 }, year: '2017', playtime: '12 ч.' },
-      { id: "lit1", title: "Little Nightmares", developer: "Tarsier Studios", image: "lit1.jpg", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2017', playtime: '5 ч.' },
-      { id: "lit2", title: "Little Nightmares 2", developer: "Tarsier Studios", image: "lit2.png", genres: ["Платформер", "Хоррор", "Головоломка", "Инди", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2021', playtime: '6 ч.' },
+      { id: "re2", title: "Resident Evil 2 Remake", developer: "Capcom", image: "re2.png", genres: ["Выживание", "Экшен", "Шутер", "Головоломка", "Приключение", "Сюжетная", "Хоррор"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 8 }, year: '2019', playtime: '15 ч.' },
+      { id: "rev", title: "Resident Evil Village", developer: "Capcom", image: "rev.jpg", genres: ["Головоломка", "Приключение", "Хоррор", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2021', playtime: '14 ч.' },
+      { id: "reb", title: "Resident Evil 7: Biohazard", developer: "Capcom", image: "reb.jpg", genres: ["Выживание", "Экшен", "Шутер", "Головоломка", "Приключение", "Сюжетная", "Хоррор"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 9 }, year: '2017', playtime: '12 ч.' },
+      { id: "lit1", title: "Little Nightmares", developer: "Tarsier Studios", image: "lit1.jpg", genres: ["Платформер", "Головоломка", "Хоррор", "Инди", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2017', playtime: '5 ч.' },
+      { id: "lit2", title: "Little Nightmares 2", developer: "Tarsier Studios", image: "lit2.png", genres: ["Платформер", "Головоломка", "Хоррор", "Инди", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2021', playtime: '6 ч.' },
       { id: "ex33", title: "Clair Obscur: Expedition 33", developer: "Sandfall Interactive", image: "ex33.png", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 8, "sound_design": 10 }, year: '2025', playtime: '47 ч.' },
       { id: "ef", title: "What Remains of Edith Finch", developer: "Giant Sparrow", image: "ef.jpg", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2017', playtime: '3 ч.' },
       { id: "p2", title: "Portal 2", developer: "Valve", image: "p2.jpg", genres: ["Головоломка", "Платформер", "Научная фантастика", "Кооператив", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2011', playtime: '14 ч.' },
-      { id: "fc3", title: "Far Cry 3", developer: "Ubisoft Montreal", image: "fc3.jpg", genres: ["Шутер", "Экшен", "Открытый мир", "Приключение", "Сюжетная"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2012', playtime: '26 ч.' },
+      { id: "fc3", title: "Far Cry 3", developer: "Ubisoft Montreal", image: "fc3.jpg", genres: ["Шутер", "Экшен", "Сюжетная", "Открытый мир", "Приключение"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2012', playtime: '26 ч.' },
       { id: "str", title: "Stray", developer: "BlueTwelve Studio", image: "str.jpg", genres: ["Приключение", "Головоломка", "Инди", "Научная фантастика", "Киберпанк", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 8 }, year: '2022', playtime: '7 ч.' },
-      { id: "hk", title: "Hollow Knight", developer: "Team Cherry", image: "hk.jpg", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 }, year: '2017', playtime: '41 ч.' },
-      { id: "drg", title: "DREDGE", developer: "Black Salt Games", image: "drg.png", genres: ["Приключение", "Хоррор", "Инди", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2023', playtime: '13 ч.' },
+      { id: "hk", title: "Hollow Knight", developer: "Team Cherry", image: "hk.jpg", genres: ["Платформер", "Экшен", "Инди", "Соулс-лайк", "Метроидвания", "Фэнтези"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 }, year: '2017', playtime: '41 ч.' },
+      { id: "drg", title: "DREDGE", developer: "Black Salt Games", image: "drg.png", genres: ["Приключение", "Выживание", "Хоррор", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2023', playtime: '13 ч.' },
       { id: "kht", title: "Kholat", developer: "IMGN.PRO", image: "kht.png", genres: ["Хоррор", "Приключение", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 6, "atmosphere": 10, "sound_design": 9 }, year: '2015', playtime: '6 ч.' },
-      { id: "aw", title: "Alan Wake", developer: "Remedy Entertainment", image: "aw.jpg", genres: ["Хоррор", "Приключение", "Сюжетная", "Экшен"], ratings: { "story": 9, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2021', playtime: '15 ч.' },
-      { id: "cp", title: "The Callisto Protocol", developer: "Striking Distance Studios", image: "cp.jpg", genres: ["Хоррор", "Экшен", "Шутер", "Научная фантастика", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2022', playtime: '12 ч.' },
-      { id: "gow", title: "God of War", developer: "Santa Monica Studio", image: "gow.jpg", genres: ["Экшен", "Приключение", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2022', playtime: '33 ч.' },
-      { id: "hl2", title: "Half Life 2", developer: "Valve", image: "hl2.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Приключение", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2004', playtime: '16 ч.' },
-      { id: "hks", title: "Hollow Knight: Silksong", developer: "Team Cherry", image: "hks.png", genres: ["Платформер", "Экшен", "Соулс-лайк", "Метроидвания", "Инди", "Фэнтези"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 }, year: '2025', playtime: '47 ч.' },
+      { id: "aw", title: "Alan Wake", developer: "Remedy Entertainment", image: "aw.jpg", genres: ["Приключение", "Сюжетная", "Хоррор", "Экшен"], ratings: { "story": 9, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2021', playtime: '15 ч.' },
+      { id: "cp", title: "The Callisto Protocol", developer: "Striking Distance Studios", image: "cp.jpg", genres: ["Научная фантастика", "Хоррор", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2022', playtime: '12 ч.' },
+      { id: "gow", title: "God of War", developer: "Santa Monica Studio", image: "gow.jpg", genres: ["Экшен", "Приключение", "QTE", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2022', playtime: '33 ч.' },
+      { id: "hl2", title: "Half Life 2", developer: "Valve", image: "hl2.jpg", genres: ["Шутер", "Головоломка", "Экшен", "Научная фантастика", "Приключение", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2004', playtime: '16 ч.' },
+      { id: "hks", title: "Hollow Knight: Silksong", developer: "Team Cherry", image: "hks.png", genres: ["Платформер", "Экшен", "Инди", "Соулс-лайк", "Метроидвания", "Фэнтези"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 }, year: '2025', playtime: '47 ч.' },
       { id: "lp", title: "Lies of P", developer: "Nough Studio", image: "lp.jpg", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2023', playtime: '36 ч.' },
       { id: "itt", title: "It Takes Two", developer: "Hazelight Studios", image: "itt.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2021', playtime: '14 ч.' },
-      { id: "bts", title: "Beyond: Two Souls", developer: "Quantic Dream", image: "bts.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "Экшен"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2019', playtime: '12 ч.' },
-      { id: "hol", title: "High on Life", developer: "Squanch Games", image: "hol.jpg", genres: ["Шутер", "Экшен", "Научная фантастика", "Метроидвания", "Сюжетная", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2022', playtime: '13 ч.' },
-      { id: "sf", title: "Split Fiction", developer: "Hazelight Studios", image: "sf.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Экшен", "Сюжетная", "Научная фантастика", "Фэнтези"], ratings: { "story": 10, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2025', playtime: '15 ч.' },
-      { id: "awo", title: "A Way Out", developer: "Hazelight Studios", image: "awo.jpg", genres: ["Приключение", "Экшен", "Кооператив", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 7 }, year: '2018', playtime: '6 ч.' },
+      { id: "bts", title: "Beyond: Two Souls", developer: "Quantic Dream", image: "bts.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "Экшен", "Интерактивное кино", "QTE"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2019', playtime: '12 ч.' },
+      { id: "hol", title: "High on Life", developer: "Squanch Games", image: "hol.jpg", genres: ["Шутер", "Экшен", "Сюжетная", "Метроидвания", "Приключение", "Научная фантастика"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2022', playtime: '13 ч.' },
+      { id: "sf", title: "Split Fiction", developer: "Hazelight Studios", image: "sf.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Научная фантастика", "Экшен", "Сюжетная", "Фэнтези"], ratings: { "story": 10, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2025', playtime: '15 ч.' },
+      { id: "awo", title: "A Way Out", developer: "Hazelight Studios", image: "awo.jpg", genres: ["Приключение", "Экшен", "Инди", "Кооператив", "Сюжетная", "QTE"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 7 }, year: '2018', playtime: '6 ч.' },
       { id: "sco", title: "Scorn", developer: "Ebb Software", image: "sco.png", genres: ["Приключение", "Головоломка", "Хоррор", "Выживание"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2022', playtime: '6 ч.' },
       { id: "dtda", title: "Doom: The Dark Ages", developer: "id Software", image: "dtda.png", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2025', playtime: '20 ч.' },
       { id: "w1", title: "The Witcher", developer: "CD Projekt Red", image: "w1.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 9, "atmosphere": 10, "sound_design": 9 }, year: '2007', playtime: '46 ч.' },
-      { id: "w2", title: "The Witcher 2: Assassins of Kings", developer: "CD Projekt Red", image: "w2.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2011', playtime: '35 ч.' },
-      { id: "req", title: "Resident Evil Requiem", developer: "Capcom", image: "req.png", genres: ["Выживание", "Экшен", "Головоломка", "Приключение", "Сюжетная", "Хоррор", "Шутер"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2026', playtime: '14 ч.' },
+      { id: "w2", title: "The Witcher 2: Assassins of Kings", developer: "CD Projekt Red", image: "w2.jpg", genres: ["Сюжетная", "Фэнтези", "Экшен", "РПГ"], ratings: { "story": 10, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2011', playtime: '35 ч.' },
+      { id: "req", title: "Resident Evil Requiem", developer: "Capcom", image: "req.png", genres: ["Выживание", "Экшен", "Шутер", "Головоломка", "Приключение", "Сюжетная", "Хоррор"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2026', playtime: '14 ч.' },
       { id: "mfp", title: "My Friend Pedro", developer: "DeadToast Entertainment", image: "mfp.jpg", genres: ["Инди", "Экшен", "Шутер", "Платформер"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 7, "atmosphere": 8, "sound_design": 8 }, year: '2019', playtime: '5 ч.' },
-      { id: "sotc", title: "Shadow of the Colossus", developer: "Sony Computer Entertainment", image: "sotc.png", genres: ["Головоломка", "Экшен", "Шутер", "Платформер", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 6, "characters": 6, "atmosphere": 8, "sound_design": 8 }, year: '2018', playtime: '9 ч.' },
-      { id: "rea", title: "REANIMAL", developer: "Tarsier Studios", image: "rea.jpg", genres: ["Головоломка", "Хоррор", "Экшен", "Платформер", "Приключение", "Кооператив", "Стелс"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2026', playtime: '5 ч.' },
-      { id: "dos2", title: "Divinity: Original Sin 2", developer: "Larian Studios", image: "dos2.jpg", genres: ["РПГ", "Приключение", "Фэнтези", "Кооператив", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 10 }, year: '2017', playtime: '101 ч.' },
-      { id: "prag", title: "PRAGMATA", developer: "Capcom", image: "prag.png", genres: ["Экшен", "Приключение", "Научная фантастика", "Шутер", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2026', playtime: '16 ч.' },
-      { id: "ded2", title: "Dead Island 2", developer: "Dambuster Studios", image: "ded2.jpg", genres: ["Экшен", "Шутер", "РПГ", "Постапокалипсис", "Приключение"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2024', playtime: '20 ч.' },
+      { id: "sotc", title: "Shadow of the Colossus", developer: "Team Ico", image: "sotc.png", genres: ["Головоломка", "Приключение", "Экшен", "Шутер", "Платформер"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 6, "characters": 6, "atmosphere": 8, "sound_design": 8 }, year: '2018', playtime: '9 ч.' },
+      { id: "rea", title: "REANIMAL", developer: "Tarsier Studios", image: "rea.jpg", genres: ["Головоломка", "Приключение", "Хоррор", "Экшен", "Стелс", "Кооператив", "Платформер"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2026', playtime: '5 ч.' },
+      { id: "dos2", title: "Divinity: Original Sin 2", developer: "Larian Studios", image: "dos2.jpg", genres: ["Приключение", "Кооператив", "Фэнтези", "РПГ", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 10 }, year: '2017', playtime: '101 ч.' },
+      { id: "prag", title: "PRAGMATA", developer: "Capcom", image: "prag.png", genres: ["Сюжетная", "Приключение", "Научная фантастика", "Шутер", "Экшен"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2026', playtime: '16 ч.' },
+      { id: "ded2", title: "Dead Island 2", developer: "Dambuster Studios", image: "ded2.jpg", genres: ["Приключение", "Экшен", "РПГ", "Шутер", "Постапокалипсис"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2024', playtime: '20 ч.' },
       { id: "obf", title: "Ori and the Blind Forest: Definitive Edition", developer: "Moon Studios", image: "obf.png", genres: ["Метроидвания", "Платформер", "Приключение", "Сюжетная", "Фэнтези", "Инди", "Экшен", "Открытый мир", "Головоломка"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 8 }, year: '2016', playtime: '11 ч.' },
-      { id: "sh2r", title: "Silent Hill 2 Remake", developer: "Bloober Team", image: "sh2r.jpg", genres: ["Хоррор", "Сюжетная", "Приключение", "Экшен", "Головоломка", "Шутер"], ratings: { "story": 9, "graphics": 9, "gameplay": 8, "main_character": 9, "characters": 8, "atmosphere": 10, "sound_design": 9 }, year: '2024', playtime: '17 ч.' },
+      { id: "sh2r", title: "Silent Hill 2 Remake", developer: "Bloober Team", image: "sh2r.jpg", genres: ["Приключение", "Головоломка", "Хоррор", "Сюжетная", "Экшен", "Шутер"], ratings: { "story": 9, "graphics": 9, "gameplay": 8, "main_character": 9, "characters": 8, "atmosphere": 10, "sound_design": 9 }, year: '2024', playtime: '17 ч.' },
       { id: "oww", title: "Ori and the Will of the Wisps", developer: "Moon Studios", image: "oww.png", genres: ["Метроидвания", "Платформер", "Приключение", "Сюжетная", "Фэнтези", "Инди", "Экшен", "Открытый мир", "Головоломка"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2020', playtime: '13 ч.' },
+      { id: "twd2", title: "The Walking Dead: Season Two", developer: "Telltale Games", image: "twd2.jpg", genres: ["Экшен", "Постапокалипсис", "Приключение", "Сюжетная", "Хоррор", "Интерактивное кино", "QTE"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2013', playtime: '10 ч.' },
+      { id: "twd", title: "The Walking Dead", developer: "Telltale Games", image: "twd.jpg", genres: ["Экшен", "Постапокалипсис", "Приключение", "Сюжетная", "Хоррор", "Интерактивное кино", "QTE"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2012', playtime: '13 ч.' },
+      { id: "sky", title: "The Elder Scrolls V: Skyrim Special Edition", developer: "Bethesda Game Studios", image: "sky.png", genres: ["Открытый мир", "Приключение", "Фэнтези", "Сюжетная", "Экшен", "Стелс", "РПГ"], ratings: { "story": 9, "graphics": 9, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 10, "sound_design": 9 }, year: '2016', playtime: '50 ч.' },
     ];
 
     const REVIEWS = {
@@ -2659,7 +3250,7 @@
       "itt": `It Takes Two одна из лучших кооп-игр в истории. Пара на грани развода проходит локации, где нужно доверять партнёру. Игра напыщена интересными механиками для обоих игроков.`,
       "bts": `Beyond: Two Souls — одна из легендарных игр Quantic Dream. Геймплей не за одного персонажа: девушка Джуди Холмс и призрак, живущий в ней. История рассказываются в перемешанном порядке. Игру можно пройти вдвоём.`,
       "hol": `High on Life — клёвый комедийный шутер от создателя «Рик и Морти». Присутствуют элементы метроидвании и шутки в стиле вышеупомянутого мультсериала. Сюжет простой - про захват планеты пришельцами, но игровой процесс не заставит скучать, а музыка сохранит быстрый темп.`,
-      "sf": `Split Fiction — игра с уникальным кооперативных геймплеем от создателей It Takes Two, по сюжету персонажи попадают в миры, которые они сами придумали. В игре очень много интересных механик, зависящих от действий обоих игроков.`,
+      "sf": `Split Fiction — игра с уникальным кооперативным геймплеем от создателей It Takes Two, по сюжету персонажи попадают в миры, которые они сами придумали. В игре очень много интересных механик, зависящих от действий обоих игроков.`,
       "w2": `Witcher 2: Assassins of Kings — это история про ведьмака Геральта и его выборы на чьей стороне стоять, пока идет война. Развилка очень сильно влияет на сюжет, что даёт возможность перепройти игру и увидеть новую историю. Игра сделала огромный шаг вперёд по сравнению с первой частью.`,
       "dtda": `Doom: The Dark Ages — это приквел к части 2016 года, здесь раскрывается история Палача, но в средневековом сеттинге. Игра преподносит лучшую графику по сравнению с предыдущими частями, возможность управлять огромный роботом - Атланом, огнедышащим драконом и предлагает отличную музыку и динамичный геймплей.`,
       "w1": `The Witcher — начало саги с мрачной атмосферой и мрачным миром. Наблюдать за историей молодого Геральта интересно, правда, к боевой системе нужно привыкнуть.`,
@@ -2675,12 +3266,64 @@
       "obf": `Ori and the Blind Forest: Definitive Edition — это драматичная история о маленьком существе, которому нужно пройти полосу препятствий, чтобы спасти умирающий лес. Жестокость игры по отношению к ошибкам игрока может быть раздражающей, но в целом геймплей увлекает.`,
       "sh2r": `Silent Hill 2 Remake это психологический хоррор, где главный герой Джеймс Сандерленд ищет свою жену. Особо хочу отметить необычные головоломки и качественную режиссуру в кат-сценах. Из того, что не понравилось - затянутый геймплей и устаревшая боевая система.`,
       "oww": `Ori and the Will of the Wisps сделала огромный прорыв по сравнению с приквелом. Разработчики сильно улучшили боевую систему, добавив новые способности. Также прогресс замечен и в побегах, которые стали кинематографичнее и яснее. На впечатления повлиял и визуал - картинка стала ярче и красочней.`,
+      "twd": `The Walking Dead это интерактивное кино, представленное в оригинальном комиксовом стиле. Игра расскажет про путешествие банды в тяжёлое постапокалиптическое время. У игры отличная реиграбельность с множеством веток сюжета.`,
+      "sky": `The Elder Scrolls V: Skyrim Special Edition — одна из лучших РПГ игр в истории. Скайрим геймплейно крайне разнообразная игра - здесь отличное билдостроение, множество классов, магии, занятий и другого. В основном сюжете главному герою предстоит понять, почему в провинции стали появляться драконы.`,
+      "twd2": `The Walking Dead: Season Two — сиквел первой части, отлично продолжающий одну историю. Интерактивное кино, где каждый выбор действительно несёт последствия. Местами игра кажется жестокой к персонажам, к которым игрок привязывается, но именно это и делает её прохождение эмоциональным.`,
     };
 
     const LABELS = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн", year: "Год выхода", playtime: "Время прохождения" };
     const LABELS_FULL = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Главный герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн", year: "Год выхода", playtime: "Время прохождения" };
     const SORT_SHORT = { rating: "★ Общий", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн", year: "Год", playtime: "Время" };
     const SORT_KEYS = Object.keys(LABELS);
+
+    const RATING_INFO = {
+      title: "Как оцениваются игры",
+      lead: "Итоговая оценка — это среднее арифметическое оценок по семи критериям.",
+      items: [
+        { label: "Шкала", text: "Каждый критерий оценивается по шкале от 1 до 10.\n**7** - удовлетворительно \n**8** - хорошо \n**9** - отлично \n**10** - недостижимо" },
+        { label: "Сюжет", text: "Рассматривается оригинальность истории, её вариативность и реиграбельность." },
+        { label: "Графика", text: "Основное внимание уделяется художественному стилю, детализации и левел-дизайну."},
+        { label: "Геймплей", text: "Оценивается разнообразие механик, баланс ресурсов и органичное вплетение в динамику игры."},
+        { label: "Главный герой", text: "Рассматривается цельность решений персонажа, последовательность действий и харизма."},
+        { label: "Персонажи", text: "Фокус на цельности второстепенных героев, их импонируемости, запоминаемости."},
+        { label: "Атмосфера", text: "Способность игры погружать в мир, удачное применение музыки и точность подобранных локаций."},
+        { label: "Саунд-дизайн", text: "В первую очередь оценивается качество музыки и синергия звуковых эффектов с настроением игры."},
+      ],
+      usage: {
+        title: "Как пользоваться сайтом",
+        text: "Приведённая ниже инструкция будет скорее полезна десктопным пользователям. На мобильных устройствах сайт может немного отличаться, \
+        но общая логика остаётся такой же. Сайт создан для тех, кто не может определиться с выбором игры, но знает, что ищет. \n\nВы можете найти игру по **жанру** (пр. хоррор), \
+        по **рейтингу** (пр. 8.5+), **году выхода** (пр. 2020+) или **студии** (пр. Bethesda) через подвижный **поиск**, расположенный в верхней части сайта. \
+        Жанры также можно исключить из поиска, *поставив* перед ними *минус* (пр. -инди). \n\nПоиск можно открыть через хоткей, нажав *слэш* или *точку* на клавиатуре. \
+        \n\nМожно сменить **вид отображения** игр через \"v\" или открыть окно с жанрами через \"f\". В окне жанров так же можно исключить жанр, кликнув \
+        по нему *ПКМ* или *дабл-клик ЛКМ*. \n\nСайт позволяет **сортировать** игры по различным критериям, включая **год выхода** и **среднее время прохождения**, \
+        которое высчитывается на основе данных сайта HowLongToBeat с возможной корректировкой от автора сайта. Учитывается время, потраченное на основной \
+        сюжет и часть доп-заданий.\n\nМожно **сравнить** несколько игр по параметрам, *зажав карточку* каждой из них, затем кликнуть по кнопке \"Сравнить\", \
+        в открывшемся окне также можно увидеть графическое представление, нажав на 🕸️. \n\nВ левом нижнем углу есть меню, где можно воспользоваться теми \
+        же функциями. \n\nПри нажатии на карточку игры откроется окно с подробной информацией о ней. Слева: критерии в числовом виде, которые \
+        можно преобразовать в график, нажав на кнопку 🕸️. Снизу: небольшое описание-ревью от автора сайта. Справа: инфо-окно с небольшой информацией. \
+        Также под ним есть кнопка, позволяющая найти и отобразить похожие по жанру игры. На каждую из них можно нажать, чтобы открыть её карточку. \
+        Игры ищутся и сортируются исключительно по **количеству совпадающих жанров.**",
+      },
+      note: "Буду рад услышать любые отзывы и предложения по улучшению взаимодействия с сайтом. Телеграм - @zvuxoed.",
+    };
+
+    const InfoFormattedText = ({ className, children }) => {
+      const parts = String(children).split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+      return (
+        <p className={className}>
+          {parts.map((part, index) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return <strong key={index}>{part.slice(2, -2)}</strong>;
+            }
+            if (part.startsWith('*') && part.endsWith('*')) {
+              return <em key={index}>{part.slice(1, -1)}</em>;
+            }
+            return <React.Fragment key={index}>{part}</React.Fragment>;
+          })}
+        </p>
+      );
+    };
 
     const SortDock = ({ value, onChange }) => {
       return (
@@ -2751,14 +3394,33 @@
       { label: "Выживание", aliases: "выжива, выживал, survival" },
       { label: "Карточная", aliases: "карточ, card" },
       { label: "Метроидвания", aliases: "метроид, metroid" },
+      { label: "QTE", aliases: "qte, quick" },
       { label: "Научная фантастика", aliases: "фантасти, scifi, sci-fi, научн, скайфай" },
       { label: "Постапокалипсис", aliases: "постапокалип, постап, postap" },
+      { label: "Интерактивное кино", aliases: "интер, кино, inter" },
     ];
-    const GENRES = GENRE_RULES.map(({ label }) => label);
+    const GENRES = GENRE_RULES
+      .map(({ label }) => label)
+      .sort((a, b) => a.localeCompare(b, 'ru'));
     const GENRE_ALIAS_INDEX = GENRE_RULES.map(({ label, aliases }) => ({
       label,
       aliases: [label, ...aliases.split(",")].map(normalizeSearchPart).filter(Boolean),
     }));
+
+    const SEARCH_SUGGESTIONS = [
+      {
+        query: "capcom хоррор 8.1+",
+        hint: "студия Capcom · жанр хоррор · рейтинг от 8.1",
+      },
+      {
+        query: "-хоррор науч 9+ 2020-",
+        hint: "без хоррора · научная фантастика · рейтинг от 9 · до 2020 года",
+      },
+      {
+        query: "rpg 8+ 2015+",
+        hint: "RPG с рейтингом от 8 · игры с 2015 года",
+      },
+    ];
 
     const { useState, useEffect, useMemo, useRef } = React;
     const { motion, AnimatePresence } = window.Motion;
@@ -2774,6 +3436,7 @@
       });
       const [search, setSearch] = useState("");
       const [debouncedSearch, setDebouncedSearch] = useState("");
+      const [searchFocused, setSearchFocused] = useState(false);
       const [selectedGenres, setSelectedGenres] = useState([]);
       const [excludedGenres, setExcludedGenres] = useState([]);
       const [sortBy, setSortBy] = useState("rating");
@@ -2785,10 +3448,14 @@
       const [showGenrePanel, setShowGenrePanel] = useState(false);
       const [showScrollTop, setShowScrollTop] = useState(false);
       const [speedDialOpen, setSpeedDialOpen] = useState(false);
+      const [ratingInfoOpen, setRatingInfoOpen] = useState(false);
       const [controlsCompact, setControlsCompact] = useState(false);
       const searchInputRef = useRef(null);
+      const searchWrapperRef = useRef(null);
+      const ratingInfoRef = useRef(null);
 
       const activeView = isMobile ? 'list' : view;
+      const searchSuggestionsOpen = searchFocused && !search.trim();
 
       // Keep the mobile layout isolated from the desktop view state.
       useEffect(() => {
@@ -2818,6 +3485,19 @@
         return () => clearTimeout(timer);
       }, [search]);
 
+      useEffect(() => {
+        if (!searchFocused) return;
+        const handleSearchOutside = (event) => {
+          if (!searchWrapperRef.current?.contains(event.target)) setSearchFocused(false);
+        };
+        document.addEventListener('pointerdown', handleSearchOutside);
+        document.addEventListener('focusin', handleSearchOutside);
+        return () => {
+          document.removeEventListener('pointerdown', handleSearchOutside);
+          document.removeEventListener('focusin', handleSearchOutside);
+        };
+      }, [searchFocused]);
+
       // Theme Effect
       useEffect(() => {
         document.body.classList.toggle('dark', theme === 'dark');
@@ -2846,11 +3526,32 @@
         document.body.classList.toggle('sd-open', speedDialOpen);
       }, [speedDialOpen]);
 
-      // Scroll Lock for Modals
+      // Закрываем компактную справку при клике вне неё.
+      useEffect(() => {
+        if (!ratingInfoOpen) return;
+        const handleOutsidePointer = (event) => {
+          if (!ratingInfoRef.current?.contains(event.target)) setRatingInfoOpen(false);
+        };
+        document.addEventListener('pointerdown', handleOutsidePointer);
+        return () => document.removeEventListener('pointerdown', handleOutsidePointer);
+      }, [ratingInfoOpen]);
+
+      // Scroll Lock for full-screen modals
       useEffect(() => {
         document.documentElement.style.overflow =
           (modalGame || compareModalOpen || rouletteOpen) ? 'hidden' : '';
       }, [modalGame, compareModalOpen, rouletteOpen]);
+
+      // Scroll Lock for rating info popover. The root keeps a stable scrollbar gutter,
+      // so locking the body does not change the content width or move the layout.
+      useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        if (ratingInfoOpen) document.body.style.overflow = 'hidden';
+
+        return () => {
+          document.body.style.overflow = previousOverflow;
+        };
+      }, [ratingInfoOpen]);
 
       useEffect(() => {
         const isEditableTarget = (el) => {
@@ -2870,6 +3571,19 @@
             setModalGame(null);
             setCompareModalOpen(false);
             setRouletteOpen(false);
+            return;
+          }
+
+          if (key === 'escape' && ratingInfoOpen) {
+            e.preventDefault();
+            setRatingInfoOpen(false);
+            return;
+          }
+
+          if (key === 'escape' && searchFocused) {
+            e.preventDefault();
+            setSearchFocused(false);
+            searchInputRef.current?.blur();
             return;
           }
 
@@ -2904,7 +3618,7 @@
 
         window.addEventListener('keydown', handleGlobalShortcuts);
         return () => window.removeEventListener('keydown', handleGlobalShortcuts);
-      }, [modalGame, compareModalOpen, rouletteOpen]);
+      }, [modalGame, compareModalOpen, rouletteOpen, ratingInfoOpen, searchFocused]);
 
       // Filter Logic
       const filteredGames = useMemo(() => {
@@ -3145,6 +3859,14 @@
         setSelectedGames([]);
       }
 
+      const applySearchSuggestion = (query) => {
+        setSearch(query);
+        setDebouncedSearch(query);
+        setSearchFocused(false);
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      };
+
       if (gamePage && isMobile) {
         return <GamePage key={gamePage.id} game={gamePage} onBack={closeGamePage} onOpenGame={navigateToGame} />;
       }
@@ -3156,26 +3878,33 @@
 
           {/* Жанровая панель */}
           <div className={`genre-panel ${showGenrePanel ? 'active' : ''}`}>
-            <div className="genre-header">
-              <span>Фильтр по жанрам</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <button onClick={clearGenreFilters} title="Сбросить фильтр" style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: '1rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>⟳</button>
-                <button onClick={() => setShowGenrePanel(false)} title="Закрыть" style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.85)', fontSize: '1.2rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1, fontWeight: 300 }}>×</button>
+            <div className="genre-filter-tools">
+              <div className="genre-helper">
+                <span className="genre-helper-key">+</span>
+                <span>включить жанр</span>
+                <span className="genre-helper-key">−</span>
+                <span>исключить жанр</span>
+                <span className="genre-helper-spacer" aria-hidden="true" />
+                <button className="genre-icon-btn" onClick={clearGenreFilters} title="Сбросить фильтр" aria-label="Сбросить фильтр">⟳</button>
+                <button className="genre-icon-btn" onClick={() => setShowGenrePanel(false)} title="Закрыть" aria-label="Закрыть">×</button>
               </div>
             </div>
+
             <div className="genre-list">
               {GENRES.map(g => (
-                <div
+                <button
                   key={g}
+                  type="button"
                   className={`genre-tag ${selectedGenres.includes(g) ? 'active' : ''} ${excludedGenres.includes(g) ? 'excluded' : ''}`}
                   onClick={() => handleGenreClickEvent(g)}
                   onPointerUp={(e) => handleGenrePointerUp(g, e)}
                   onDoubleClick={() => handleGenreDoubleClickEvent(g)}
                   onContextMenu={(e) => handleGenreContextMenu(g, e)}
+                  aria-pressed={selectedGenres.includes(g)}
                   title={excludedGenres.includes(g) ? 'Жанр исключён (клик/ПКМ чтобы вернуть)' : 'ПКМ или 2-й клик: исключить жанр'}
                 >
                   {g}
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -3226,13 +3955,51 @@
           {/* Оверлей закрывает веер */}
           <div className="speed-dial-overlay" onClick={() => setSpeedDialOpen(false)} />
 
+          <AnimatePresence>
+            {ratingInfoOpen && (
+              <motion.div
+                className="rating-info-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                onClick={() => setRatingInfoOpen(false)}
+                aria-hidden="true"
+              />
+            )}
+          </AnimatePresence>
+
           {/* ═══ ШАПКА ═══ */}
-          <div className="site-header">
+          <div className={`site-header ${ratingInfoOpen ? 'rating-info-active' : ''}`}>
             <div className="site-header-left">
               <div className="page-title">Zvux Good Games</div>
               <div className="page-subtitle">{filteredGames.length} игр · сортировка: {LABELS[sortBy]}</div>
             </div>
-            <div className="site-header-right">
+            <div className="site-header-right" ref={ratingInfoRef}>
+              <button
+                type="button"
+                className="rating-info-trigger"
+                aria-label="Как оцениваются игры"
+                aria-expanded={ratingInfoOpen}
+                onClick={() => setRatingInfoOpen(open => !open)}
+              >
+                ⓘ
+              </button>
+              {ratingInfoOpen && (
+                <div className="rating-info-popover" role="dialog" aria-label={RATING_INFO.title}>
+                  <h2>{RATING_INFO.title}</h2>
+                  <InfoFormattedText className="rating-info-lead">{RATING_INFO.lead}</InfoFormattedText>
+                  {RATING_INFO.items.map(item => (
+                    <div className="rating-info-item" key={item.label}>
+                      <span className="rating-info-label">{item.label}</span>
+                      <InfoFormattedText className="rating-info-text">{item.text}</InfoFormattedText>
+                    </div>
+                  ))}
+                  <h3 className="rating-info-subtitle">{RATING_INFO.usage.title}</h3>
+                  <InfoFormattedText className="rating-info-text rating-info-usage-text">{RATING_INFO.usage.text}</InfoFormattedText>
+                  <InfoFormattedText className="rating-info-note">{RATING_INFO.note}</InfoFormattedText>
+                </div>
+              )}
               <label htmlFor="themeToggle" className="themeToggle st-sunMoonThemeToggleBtn">
                 <input
                   type="checkbox"
@@ -3261,15 +4028,66 @@
           </div>
 
           {/* ═══ ПАНЕЛЬ УПРАВЛЕНИЯ ═══ */}
-          <div className={`controls-bar ${controlsCompact ? 'compact' : ''}`}>
-            <div className="search-wrapper" style={{ flex: 1 }}>
-              <input ref={searchInputRef} type="text" id="search" placeholder={isMobile ? "Поиск по играм, студиям и многому другому..." : "Поиск по играм, жанрам, годам, оценкам или компаниям..."} value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
+          <div className={`controls-bar search-only ${controlsCompact ? 'compact' : ''}`}>
+            <div
+              className="search-wrapper"
+              ref={searchWrapperRef}
+              style={{ flex: 1 }}
+              onFocus={() => setSearchFocused(true)}
+            >
+              <input
+                ref={searchInputRef}
+                type="text"
+                id="search"
+                placeholder={isMobile ? "Поиск по играм, студиям и многому другому..." : "Поиск по играм, жанрам, годам, оценкам или компаниям..."}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-expanded={searchSuggestionsOpen}
+                aria-controls="search-suggestions"
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
               {search && <span id="clear-search" onClick={() => { setSearch(""); setDebouncedSearch(""); }} title="Очистить">×</span>}
+              <AnimatePresence initial={false}>
+                {searchSuggestionsOpen && (
+                  <motion.div
+                    key="search-suggestions"
+                    id="search-suggestions"
+                    className="search-suggestions"
+                    role="listbox"
+                    aria-label="Примеры поисковых запросов"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {SEARCH_SUGGESTIONS.map(({ query, hint }) => (
+                      <button
+                        key={query}
+                        type="button"
+                        className="search-suggestion"
+                        role="option"
+                        aria-label={`Подставить запрос: ${query}`}
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          applySearchSuggestion(query);
+                        }}
+                        onClick={() => applySearchSuggestion(query)}
+                      >
+                        <span className="search-suggestion-body">
+                          <span className="search-suggestion-query">{query}</span>
+                          <span className="search-suggestion-separator" aria-hidden="true">|</span>
+                          <span className="search-suggestion-hint">{hint}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             {compareMode && (
               <>
                 <div className="controls-separator" />
-                <button className="btn btn-green" onClick={handleCompareConfirm}>✓ Сравнить ({selectedGames.length})</button>
+                <button className="btn btn-green compare-confirm-btn" onClick={handleCompareConfirm}>Сравнить {selectedGames.length}</button>
                 <button className="btn btn-red" onClick={cancelCompare}>✕</button>
               </>
             )}
@@ -3338,6 +4156,8 @@
       const longPressTimerRef = useRef(null);
       const longPressTriggeredRef = useRef(false);
       const pointerStartRef = useRef({ x: 0, y: 0 });
+      const previousSelectedRef = useRef(selected);
+      const [isDeselecting, setIsDeselecting] = useState(false);
 
       const clearLongPressTimer = () => {
         if (longPressTimerRef.current) {
@@ -3349,6 +4169,21 @@
       useEffect(() => {
         return () => clearLongPressTimer();
       }, []);
+
+      useEffect(() => {
+        if (selected) {
+          previousSelectedRef.current = true;
+          setIsDeselecting(false);
+          return;
+        }
+
+        if (!previousSelectedRef.current) return;
+
+        previousSelectedRef.current = false;
+        setIsDeselecting(true);
+        const timer = setTimeout(() => setIsDeselecting(false), 300);
+        return () => clearTimeout(timer);
+      }, [selected]);
 
       const handleMouseMove = (e) => {
         if (view === 'grid') return;
@@ -3432,7 +4267,7 @@
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.38, ease: "easeOut" } }}
-          className={`card-wrap ${selected ? 'selected' : ''}`}
+          className={`card-wrap ${selected ? 'selected' : ''} ${isDeselecting ? 'deselecting' : ''}`}
           onClick={handleClick}
           onPointerDown={startLongPress}
           onPointerUp={cancelLongPress}
@@ -4200,8 +5035,10 @@
           <motion.div
             className="modal-content compare-mode"
             onClick={e => e.stopPropagation()}
-            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: "spring", duration: 0.5 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
             <span className="close-btn" onClick={onClose}>×</span>
             <h2>Сравнение игр</h2>
@@ -4214,8 +5051,20 @@
                     <table className="compare-table">
                       <thead>
                         <tr>
-                          <th>Критерий</th>
-                          {gamesToCompare.map(g => <th key={g.id}>{g.title}</th>)}
+                          <th>
+                            <div className="compare-header-cell">
+                              <div className="compare-header-title">Критерий</div>
+                              <div className="compare-header-criteria-icon" aria-hidden="true">⚖️</div>
+                            </div>
+                          </th>
+                          {gamesToCompare.map(g => (
+                            <th key={g.id} title={g.title}>
+                              <div className="compare-header-cell">
+                                <div className="compare-header-title">{g.title}</div>
+                                <img src={`imgs/${g.image}`} alt={g.title} className="compare-header-img" loading="lazy" />
+                              </div>
+                            </th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody>
