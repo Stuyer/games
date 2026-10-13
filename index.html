@@ -13,6 +13,9 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./game-submission.js?v=20261013-edit3"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,6 +42,8 @@
       --surface-border: rgba(0, 0, 0, 0.08);
       --pill-bg: rgba(0, 0, 0, 0.06);
       --pill-border: rgba(0, 0, 0, 0.12);
+      --muted-text: rgba(26, 26, 26, 0.62);
+      --input-bg: rgba(255, 255, 255, 0.72);
     }
 
     body.dark {
@@ -51,6 +56,8 @@
       --surface-border: rgba(255, 255, 255, 0.08);
       --pill-bg: rgba(255, 255, 255, 0.07);
       --pill-border: rgba(255, 255, 255, 0.12);
+      --muted-text: rgba(232, 230, 225, 0.62);
+      --input-bg: rgba(255, 255, 255, 0.06);
     }
 
     /* Modern filter palette: shared tokens keep both themes visually related. */
@@ -58,6 +65,7 @@
       --genre-accent: #9a5d32;
       --genre-accent-strong: #7b431f;
       --genre-accent-soft: rgba(154, 93, 50, 0.12);
+      --on-accent: #fff;
       --genre-panel-bg: rgba(255, 250, 243, 0.96);
       --genre-panel-muted: rgba(38, 29, 24, 0.58);
       --genre-panel-shadow: 0 24px 70px rgba(62, 34, 15, 0.22);
@@ -67,6 +75,7 @@
       --genre-accent: #d6a875;
       --genre-accent-strong: #f0c58f;
       --genre-accent-soft: rgba(214, 168, 117, 0.15);
+      --on-accent: #111113;
       --genre-panel-bg: rgba(28, 27, 30, 0.97);
       --genre-panel-muted: rgba(232, 230, 225, 0.58);
       --genre-panel-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
@@ -89,26 +98,893 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      max-width: calc(var(--card-w) + 40px);
-      margin: 0 auto 28px;
+      box-sizing: border-box;
+      width: 100%;
+      margin: 0 auto 20px;
       text-align: center;
+      min-height: 175px;
     }
 
     .site-header-left {
+      position: relative;
+      width: 100%;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      min-height: 175px;
     }
 
-    .site-header-right {
+    .site-header-actions {
       position: absolute;
-      right: 0;
+      left: 0;
       top: 50%;
       transform: translateY(-50%);
       display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      width: 210px;
+    }
+
+    .site-header-copy {
+      min-width: 0;
+      text-align: center;
+      padding: 0 clamp(16px, 16vw, 230px);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .site-header-right {
+      position: fixed;
+      right: 20px;
+      top: 20px;
+      z-index: 2200;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       gap: 10px;
+    }
+
+    .add-game-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: auto;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .2s ease;
+    }
+
+    .add-game-trigger:hover {
+      background: transparent;
+      opacity: 0.82;
+      transform: translateY(-2px);
+    }
+
+    .add-game-trigger:active {
+      transform: scale(0.97);
+    }
+
+    .add-game-svg {
+      height: 75px;
+      width: auto;
+      max-width: 100%;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .find-libraries-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: auto;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .2s ease;
+    }
+
+    .find-libraries-trigger:hover {
+      background: transparent;
+      opacity: 0.82;
+      transform: translateY(-2px);
+    }
+
+    .find-libraries-trigger:active {
+      transform: scale(0.97);
+    }
+
+    .find-libraries-svg {
+      width: 140px;
+      height: auto;
+      max-width: 100%;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .comments-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: auto;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .2s ease;
+    }
+
+    .comments-trigger:hover {
+      background: transparent;
+      opacity: 0.82;
+      transform: translateY(-2px);
+    }
+
+    .comments-trigger:active {
+      transform: scale(0.97);
+    }
+
+    .comments-svg {
+      width: 140px;
+      height: auto;
+      max-width: 100%;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .catalog-back-link {
+      display: inline-block;
+      margin-left: 10px;
+      padding: 2px 9px;
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      background: var(--pill-bg);
+      color: var(--primary-color);
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      vertical-align: middle;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    }
+
+    .catalog-back-link:hover {
+      background: var(--pill-border);
+      border-color: var(--primary-color);
+      transform: translateY(-1px);
+    }
+
+    .library-drawer-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 2700;
+    }
+
+    .library-drawer-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, .52);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    .library-drawer {
+      position: absolute;
+      inset: 0 auto 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: min(370px, calc(100vw - 28px));
+      box-sizing: border-box;
+      padding: 22px 18px max(22px, env(safe-area-inset-bottom));
+      border-right: 1px solid var(--surface-border);
+      background: var(--solid-surface);
+      color: var(--text);
+      box-shadow: 18px 0 48px rgba(0, 0, 0, .26);
+      user-select: text;
+    }
+
+    .library-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--surface-border);
+    }
+
+    .library-drawer-header h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .library-drawer-close {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      border: 1px solid var(--surface-border);
+      border-radius: 50%;
+      background: var(--pill-bg);
+      color: inherit;
+      font: inherit;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .library-drawer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+    }
+
+    .library-person {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--surface-border);
+      border-radius: 11px;
+      background: var(--pill-bg);
+      color: var(--text);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .16s, background .16s;
+    }
+
+    .library-person:hover {
+      border-color: #348be0;
+      background: rgba(52, 139, 224, .1);
+      transform: none;
+    }
+
+    .library-person-avatar {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      border-radius: 50%;
+      background: var(--solid-surface);
+    }
+
+    .library-person-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .library-person-name {
+      min-width: 0;
+    }
+
+    .library-person-name strong,
+    .library-person-name small {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .library-person-name strong {
+      font-size: .88rem;
+    }
+
+    .library-person-name small {
+      margin-top: 2px;
+      font-size: .72rem;
+      opacity: .62;
+    }
+
+    .library-person-count {
+      font-size: .78rem;
+      font-weight: 700;
+      color: #3185d5;
+      white-space: nowrap;
+    }
+
+    .library-drawer-message {
+      margin: 8px 2px;
+      font-size: .86rem;
+      opacity: .7;
+    }
+
+    .comments-drawer {
+      position: absolute;
+      inset: 0 auto 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: min(430px, calc(100vw - 28px));
+      box-sizing: border-box;
+      padding: 22px 18px max(22px, env(safe-area-inset-bottom));
+      border-right: 1px solid var(--surface-border);
+      background: var(--solid-surface);
+      color: var(--text);
+      box-shadow: 18px 0 48px rgba(0, 0, 0, .26);
+      user-select: text;
+    }
+
+    .comments-drawer-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--surface-border);
+    }
+
+    .comments-drawer-heading {
+      min-width: 0;
+    }
+
+    .comments-drawer-header h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .comments-drawer-profile {
+      margin: 4px 0 0;
+      overflow: hidden;
+      color: var(--muted-text);
+      font-size: .78rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .comments-drawer-close {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      border: 1px solid var(--surface-border);
+      border-radius: 50%;
+      background: var(--pill-bg);
+      color: inherit;
+      font: inherit;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .comments-drawer-content {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
+      gap: 12px;
+    }
+
+    .comments-list {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 9px;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .profile-comment {
+      padding: 10px 11px;
+      border: 1px solid var(--surface-border);
+      border-radius: 11px;
+      background: var(--pill-bg);
+    }
+
+    .profile-comment-meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .profile-comment-author {
+      min-width: 0;
+      overflow: hidden;
+      font-size: .78rem;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .profile-comment-date {
+      flex: 0 0 auto;
+      color: var(--muted-text);
+      font-size: .68rem;
+    }
+
+    .profile-comment-body {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: .84rem;
+      line-height: 1.4;
+    }
+
+    .profile-comment-game-link {
+      display: inline;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: #3185d5;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .profile-comment-game-link:hover {
+      color: #1d67ac;
+    }
+
+    .profile-comment-delete {
+      display: block;
+      margin: 7px 0 0 auto;
+      padding: 2px 0;
+      border: none;
+      background: transparent;
+      color: #c75959;
+      font: inherit;
+      font-size: .7rem;
+      cursor: pointer;
+    }
+
+    .profile-comment-delete:hover {
+      text-decoration: underline;
+    }
+
+    .comments-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--surface-border);
+    }
+
+    .comments-form textarea {
+      width: 100%;
+      min-height: 76px;
+      box-sizing: border-box;
+      resize: vertical;
+      border: 1px solid var(--surface-border);
+      border-radius: 9px;
+      background: var(--input-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: .84rem;
+      line-height: 1.35;
+      padding: 9px 10px;
+    }
+
+    .comments-form-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .comments-form-limit {
+      color: var(--muted-text);
+      font-size: .68rem;
+    }
+
+    .comments-form-submit {
+      padding: 7px 11px;
+      border: 1px solid #348be0;
+      border-radius: 8px;
+      background: #348be0;
+      color: #fff;
+      font: inherit;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .comments-form-submit:disabled {
+      cursor: default;
+      opacity: .55;
+    }
+
+    .comments-form-message {
+      margin: 0;
+      color: var(--muted-text);
+      font-size: .8rem;
+      line-height: 1.4;
+    }
+
+    .comments-form-message.error {
+      color: #c75959;
+    }
+
+    .add-game-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      display: grid;
+      place-items: center;
+      padding: 24px 18px;
+      background: rgba(0, 0, 0, .68);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .add-game-dialog {
+      box-sizing: border-box;
+      width: 720px;
+      max-width: 100%;
+      max-height: min(94vh, calc(100vh - 48px));
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+      padding: 24px;
+      border: 1px solid var(--surface-border);
+      border-radius: 18px;
+      background: var(--solid-surface);
+      color: var(--text);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .42);
+      user-select: text;
+    }
+
+    .add-game-dialog>.form-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .add-game-dialog>.form-title h2 {
+      margin: 0;
+      font-size: 1.35rem;
+    }
+
+    .add-game-dialog form {
+      display: grid;
+      gap: 22px;
+    }
+
+    .add-game-dialog fieldset {
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .add-game-dialog legend {
+      margin-bottom: 8px;
+      font-weight: 650;
+    }
+
+    .add-game-dialog .add-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .add-game-dialog .add-fields.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .add-game-dialog label.add-field {
+      display: grid;
+      min-width: 0;
+      gap: 6px;
+      font-size: .8rem;
+      opacity: .86;
+    }
+
+    .add-game-dialog input[type=text],
+    .add-game-dialog input[type=number],
+    .add-game-dialog textarea {
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--surface-border);
+      border-radius: 10px;
+      background: var(--pill-bg);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .add-game-dialog textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .add-game-dialog input:focus,
+    .add-game-dialog textarea:focus {
+      outline: 2px solid var(--genre-accent);
+      outline-offset: 1px;
+    }
+
+    .add-game-drop {
+      min-height: 150px;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      text-align: center;
+      border: 2px dashed var(--pill-border);
+      border-radius: 14px;
+      background: var(--pill-bg);
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+
+    .add-game-drop:hover,
+    .add-game-drop.dragging {
+      border-color: var(--genre-accent);
+      background: var(--genre-accent-soft);
+    }
+
+    .add-game-drop input {
+      display: none;
+    }
+
+    .add-game-cover {
+      display: block;
+      max-width: 180px;
+      max-height: 220px;
+      margin: 0 auto 8px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .add-game-hint {
+      margin: 0;
+      font-size: .76rem;
+      opacity: .6;
+    }
+
+    .add-game-genres {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .add-game-genre {
+      padding: 5px 11px;
+      border: 1px solid var(--pill-border);
+      border-radius: 99px;
+      background: var(--pill-bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .add-game-genre.selected {
+      border-color: var(--genre-accent);
+      background: var(--genre-accent);
+      color: var(--on-accent);
+    }
+
+    .add-game-ratings {
+      display: grid;
+      gap: 10px;
+    }
+
+    .add-game-rate {
+      display: grid;
+      grid-template-columns: 150px 1fr 32px;
+      align-items: center;
+      gap: 12px;
+      font-size: .86rem;
+    }
+
+    .add-game-rate input {
+      width: 100%;
+      accent-color: var(--genre-accent);
+    }
+
+    .add-game-rate output {
+      text-align: right;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .add-game-average {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid var(--surface-border);
+      padding-top: 10px;
+    }
+
+    .add-game-average strong {
+      color: var(--genre-accent);
+      font-size: 1.1rem;
+    }
+
+    .add-game-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .add-game-status {
+      margin: 0;
+      color: var(--genre-accent-strong);
+    }
+
+    .add-game-status.error {
+      color: #c34a43;
+    }
+
+    .add-game-preview-fieldset {
+      gap: 14px;
+    }
+
+    .add-game-preview-toolbar,
+    .add-game-preview-position {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .add-game-preview-toolbar {
+      justify-content: space-between;
+    }
+
+    .add-game-preview-switcher {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--surface-border);
+      border-radius: 10px;
+      background: var(--pill-bg);
+    }
+
+    .add-game-preview-switcher button,
+    .add-game-preview-scale-btn {
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 6px 10px;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .add-game-preview-switcher button.active,
+    .add-game-preview-switcher button:hover,
+    .add-game-preview-scale-btn:hover {
+      border-color: var(--surface-border);
+      background: var(--solid-surface-hover);
+    }
+
+    .add-game-preview-scale-btn {
+      border-color: var(--surface-border);
+      background: var(--pill-bg);
+    }
+
+    .add-game-preview-position {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .add-game-preview-position label {
+      display: grid;
+      gap: 5px;
+      color: var(--text);
+      font-size: .76rem;
+    }
+
+    .add-game-preview-position input {
+      width: 100%;
+      accent-color: var(--genre-accent);
+    }
+
+    .add-game-preview-stage {
+      padding: 12px;
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      background: var(--pill-bg);
+      overflow: hidden;
+    }
+
+    .card-preview-frame {
+      container-type: inline-size;
+      width: min(100%, var(--card-w));
+      aspect-ratio: 1000 / 280;
+      margin: 0 auto;
+    }
+
+    .card-preview-frame.grid {
+      width: min(100%, 270px);
+      height: 220px;
+      aspect-ratio: 270 / 220;
+    }
+
+    .card-preview-frame .card {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    .card-preview-frame .card .title {
+      font-size: clamp(1.02rem, 3.2cqw, 2rem);
+      padding: clamp(6px, 1cqw, 10px) clamp(8px, 1.4cqw, 14px);
+    }
+
+    .card-preview-frame .card .badge {
+      top: clamp(8px, 1.2cqw, 12px);
+      right: clamp(8px, 1.2cqw, 12px);
+      padding: clamp(6px, .8cqw, 8px) clamp(8px, 1.2cqw, 12px);
+      border-radius: clamp(9px, 1.2cqw, 12px);
+      font-size: clamp(.78rem, 1.8cqw, 18px);
+    }
+
+    .card-preview-frame.grid .card {
+      padding: 0;
+      justify-content: flex-end;
+      align-items: flex-end;
+    }
+
+    .card-bg-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-color: var(--solid-surface-hover);
+      background-repeat: no-repeat;
+      background-size: cover;
+      pointer-events: none;
+    }
+
+    .card > :not(.card-bg-layer) {
+      z-index: 1;
+    }
+
+    @media (max-width: 560px) {
+      .add-game-backdrop {
+        padding: 16px 12px;
+      }
+
+      .add-game-dialog {
+        max-height: calc(100vh - 32px);
+        padding: 18px;
+      }
+
+      .add-game-dialog .add-fields,
+      .add-game-dialog .add-fields.three {
+        grid-template-columns: 1fr;
+      }
+
+      .add-game-rate {
+        grid-template-columns: 110px 1fr 28px;
+        gap: 8px;
+      }
+
+      .add-game-preview-position {
+        grid-template-columns: 1fr;
+      }
+
+      .add-game-actions>button {
+        flex: 1;
+      }
     }
 
     .site-header.rating-info-active {
@@ -196,7 +1072,7 @@
       margin-bottom: 14px;
     }
 
-    .rating-info-item + .rating-info-item {
+    .rating-info-item+.rating-info-item {
       margin-top: 11px;
     }
 
@@ -220,6 +1096,371 @@
       border-top: 1px solid var(--surface-border);
       font-size: 0.72rem;
       opacity: 0.58;
+    }
+
+    /* ── Поповер профиля ── */
+    .profile-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(1px);
+      -webkit-backdrop-filter: blur(1px);
+    }
+
+    .profile-popover {
+      position: fixed;
+      top: 70px;
+      right: 80px;
+      z-index: 2100;
+      width: min(420px, calc(100vw - 40px));
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      box-sizing: border-box;
+      padding: 20px;
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      background: var(--solid-surface);
+      color: var(--text);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      user-select: text;
+    }
+
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .profile-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      min-width: 0;
+    }
+
+    .profile-name-row h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .profile-name-edit-btn {
+      background: none;
+      border: none;
+      padding: 2px 5px;
+      color: inherit;
+      opacity: 0.55;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border-radius: 4px;
+      line-height: 1;
+      transition: opacity 0.18s, color 0.18s;
+      flex-shrink: 0;
+    }
+
+    .profile-name-edit-btn:hover {
+      opacity: 1;
+      color: var(--primary-color);
+    }
+
+    .profile-name-edit-form {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      width: 100%;
+    }
+
+    .profile-name-input {
+      flex: 1;
+      min-width: 0;
+      padding: 4px 8px;
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      background: var(--pill-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    .profile-name-input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .profile-name-save-btn,
+    .profile-name-cancel-btn {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      font: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      background: var(--pill-bg);
+      color: var(--text);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .profile-name-save-btn:hover {
+      background: rgba(63, 155, 107, 0.2);
+      border-color: #3f9b6b;
+      color: #3f9b6b;
+    }
+
+    .profile-name-cancel-btn:hover {
+      background: rgba(220, 20, 60, 0.15);
+      border-color: crimson;
+      color: crimson;
+    }
+
+    .profile-info p {
+      margin: 0;
+      font-size: 0.8rem;
+      opacity: 0.72;
+      line-height: 1.4;
+    }
+
+    .profile-avatar-preview {
+      width: 56px;
+      height: 56px;
+      flex: 0 0 56px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      border-radius: 50%;
+      background: var(--pill-bg);
+      color: var(--text);
+      padding: 0;
+      position: relative;
+      cursor: pointer;
+      transition: border-color .16s, opacity .16s;
+    }
+
+    .profile-avatar-preview:hover {
+      border-color: var(--primary-color);
+    }
+
+    .profile-avatar-preview:disabled {
+      opacity: .65;
+      cursor: wait;
+    }
+
+    .profile-avatar-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-avatar-edit-icon {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      place-items: center;
+      width: 19px;
+      height: 19px;
+      border: 1px solid var(--solid-surface);
+      border-radius: 50%;
+      background: var(--pill-border);
+      font-size: 11px;
+    }
+
+    .profile-avatar-file {
+      display: none;
+    }
+
+    .profile-close {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid var(--surface-border);
+      border-radius: 50%;
+      background: var(--pill-bg);
+      color: var(--text);
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .profile-close:hover {
+      background: var(--pill-border);
+      border-color: var(--primary-color);
+    }
+
+    .profile-section {
+      margin-top: 18px;
+    }
+
+    .profile-section h3 {
+      margin: 0 0 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      opacity: 0.88;
+    }
+
+    .profile-submission {
+      padding: 10px 0;
+      border-top: 1px solid var(--surface-border);
+      font-size: 0.82rem;
+    }
+
+    .profile-submission:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .profile-submission strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.88rem;
+    }
+
+    .profile-status {
+      display: inline-block;
+      padding: 2px 8px;
+      margin: 4px 0;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      background: var(--pill-bg);
+      color: var(--text);
+      opacity: 0.85;
+    }
+
+    .profile-moderation-link {
+      width: 100%;
+      margin-top: 4px;
+      padding: 10px 12px;
+      border: 1px solid rgba(214, 168, 117, 0.45);
+      border-radius: 10px;
+      background: rgba(214, 168, 117, 0.12);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .profile-moderation-link:hover {
+      border-color: var(--primary-color);
+      background: rgba(214, 168, 117, 0.22);
+    }
+
+    .delete-game-section {
+      margin-top: 18px;
+      padding: 12px;
+      border: 1px solid rgba(195, 74, 67, 0.3);
+      border-radius: 12px;
+      background: rgba(220, 20, 60, 0.08);
+    }
+
+    .delete-game-section h3 {
+      margin: 0 0 10px;
+      font-size: 0.86rem;
+      color: #c34a43;
+    }
+
+    .delete-game-form {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .delete-game-form input {
+      flex: 1;
+      padding: 7px 10px;
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      background: var(--pill-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.8rem;
+    }
+
+    .delete-game-form button {
+      padding: 7px 12px;
+      border: 1px solid #c34a43;
+      border-radius: 8px;
+      background: rgba(220, 20, 60, 0.12);
+      color: #c34a43;
+      font: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .delete-game-form button:hover {
+      background: rgba(220, 20, 60, 0.2);
+    }
+
+    .delete-game-form button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .profile-actions {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .profile-actions button {
+      padding: 7px 14px;
+      border: 1px solid var(--surface-border);
+      border-radius: 9px;
+      background: var(--pill-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .profile-actions button:hover {
+      background: var(--pill-border);
+      border-color: var(--primary-color);
+    }
+
+    .profile-message {
+      margin: 12px 0 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.76rem;
+      line-height: 1.4;
+      background: var(--genre-accent-soft);
+      color: var(--genre-accent-strong);
+    }
+
+    .profile-message.error {
+      background: rgba(220, 20, 60, 0.12);
+      color: #c34a43;
     }
 
     /* ── Панель управления ── */
@@ -428,26 +1669,22 @@
     }
 
     .page-title {
-      font-size: 2.2rem;
-      font-weight: 700;
-      margin-bottom: 2px;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
       user-select: none;
-      color: #b5b5b5a4;
-      background: linear-gradient(120deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 60%);
-      background-size: 200% 100%;
-      -webkit-background-clip: text;
-      background-clip: text;
-      animation: shine 5s linear infinite;
-      transition: background 0.5s ease;
+      line-height: 1;
     }
 
-    body:not(.dark) .page-title {
-      color: rgba(140, 140, 130, 0.9);
-      background: linear-gradient(120deg, rgba(210, 180, 140, 0) 40%, rgba(33, 26, 26, 0.9) 50%, rgba(210, 180, 140, 0) 60%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      background-size: 200% 100%;
+    .site-title-svg {
+      height: 230px;
+      width: auto;
+      max-width: min(460px, 92vw);
+      display: block;
+      object-fit: contain;
+      user-select: none;
+      pointer-events: none;
     }
 
     .page-subtitle {
@@ -625,7 +1862,287 @@
       background: rgba(220, 20, 60, 0.22);
     }
 
-    /* ── Переключатель темы (встроен в шапку) ── */
+    /* ── Кнопки правой панели ── */
+    .account-icon-button {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      overflow: hidden;
+      background: transparent;
+      color: inherit;
+      opacity: 0.9;
+      cursor: pointer;
+      transition: opacity 0.2s, background 0.2s;
+    }
+
+    .account-avatar-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .account-icon-button:hover {
+      opacity: 1;
+      background: var(--pill-bg);
+    }
+
+    .signin-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 14px;
+      min-height: 32px;
+      border: 1px solid var(--surface-border);
+      border-radius: 999px;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: var(--text);
+      background: var(--pill-bg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      text-decoration: none;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .signin-link:hover {
+      background: var(--pill-border);
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .signin-link:active {
+      transform: scale(0.97);
+    }
+
+    .signin-link-icon {
+      flex-shrink: 0;
+      opacity: 0.85;
+      transition: opacity 0.2s ease;
+    }
+
+    .signin-link:hover .signin-link-icon {
+      opacity: 1;
+    }
+
+    /* ── Начальный спиннер загрузки каталога ── */
+    .catalog-loader-container {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      z-index: 9999;
+    }
+
+    .catalog-spinner {
+      width: 46px;
+      height: 46px;
+      box-sizing: border-box;
+      border: 3.5px solid var(--pill-border);
+      border-top-color: var(--primary-color);
+      border-right-color: var(--primary-color);
+      border-radius: 50%;
+      animation: catalogSpin 0.75s linear infinite;
+    }
+
+    @keyframes catalogSpin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── Модальное окно авторизации и регистрации ── */
+    .auth-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 2800;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .auth-modal {
+      position: fixed;
+      top: 42%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2850;
+      width: min(420px, calc(100vw - 32px));
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding: 22px 20px 24px;
+      border: 1px solid var(--surface-border);
+      border-radius: 18px;
+      background: var(--solid-surface);
+      color: var(--text);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      user-select: text;
+      box-sizing: border-box;
+    }
+
+    .auth-modal-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      flex: 1;
+      gap: 6px;
+      background: var(--pill-bg);
+      padding: 4px;
+      border-radius: 12px;
+      margin: 0;
+      border: 1px solid var(--surface-border);
+    }
+
+    .auth-close-btn {
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      border: 1px solid var(--surface-border);
+      border-radius: 50%;
+      background: var(--pill-bg);
+      color: inherit;
+      font: inherit;
+      font-size: 1.15rem;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      line-height: 1;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .auth-close-btn:hover {
+      background: var(--pill-border);
+      border-color: var(--primary-color);
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, opacity 0.2s;
+      opacity: 0.65;
+    }
+
+    .auth-tab-btn.active {
+      background: var(--solid-surface);
+      color: var(--primary-color);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      opacity: 1;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .auth-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      text-align: left;
+    }
+
+    .auth-field label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      opacity: 0.82;
+    }
+
+    .auth-field input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--surface-border);
+      border-radius: 9px;
+      background: var(--pill-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.94rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .auth-field input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .auth-field small {
+      font-size: 0.72rem;
+      opacity: 0.58;
+      line-height: 1.3;
+    }
+
+    .auth-submit-btn {
+      width: 100%;
+      margin-top: 6px;
+      padding: 11px 16px;
+      border: 1px solid var(--primary-color);
+      border-radius: 10px;
+      background: var(--primary-color);
+      color: var(--bg);
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .auth-submit-btn:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    .auth-submit-btn:hover:not(:disabled) {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    .auth-message {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: #3f9b6b;
+      min-height: 18px;
+      text-align: left;
+    }
+
+    .auth-message.error {
+      color: #e05252;
+    }
+
+    /* ── Переключатель темы (встроен в правую панель) ── */
     .themeToggle {
       color: var(--text-light);
       width: 32px;
@@ -970,8 +2487,6 @@
       overflow: hidden;
       position: relative;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-      background-size: cover;
-      background-position: center;
       display: flex;
       align-items: flex-end;
       padding: 18px;
@@ -987,6 +2502,7 @@
       from {
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 0 rgba(0, 0, 0, 0);
       }
+
       to {
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 4px var(--primary-color);
       }
@@ -996,12 +2512,19 @@
       from {
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 4px var(--primary-color);
       }
+
       to {
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 0 0 0 rgba(0, 0, 0, 0);
       }
     }
 
     .card .title {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      z-index: 1;
+      max-width: calc(100% - 36px);
+      box-sizing: border-box;
       font-size: 2rem;
       padding: 6px 10px;
       border-radius: 8px;
@@ -1119,14 +2642,19 @@
       margin: 0;
     }
 
-    body.grid-view .card {
+    body.grid-view .card-wrap .card {
       justify-content: flex-end;
       align-items: flex-end;
       padding: 0;
     }
 
-    body.grid-view .card .title {
+    body.grid-view .card-wrap .card .title {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: none;
       width: 100%;
+      box-sizing: border-box;
       background: rgba(0, 0, 0, 0.6);
       font-size: 1.1rem;
       padding: 8px;
@@ -1135,11 +2663,11 @@
       transition: opacity 0.3s;
     }
 
-    body.grid-view .card-wrap:hover .title {
+    body.grid-view .card-wrap:hover .card .title {
       opacity: 1;
     }
 
-    body.grid-view .badge {
+    body.grid-view .card-wrap .card .badge {
       top: 8px;
       right: 8px;
       opacity: 0;
@@ -1148,139 +2676,18 @@
       transition: opacity 0.3s, transform 0.3s;
     }
 
-    body.grid-view .card-wrap:hover .badge {
+    body.grid-view .card-wrap:hover .card .badge {
       opacity: 1;
       transform: translateY(0);
     }
 
     /* Hide details in grid view to prevent clutter */
-    body.grid-view .popup {
+    body.grid-view .card-wrap .popup {
       display: none !important;
     }
 
-    body.grid-view .genres-popup {
+    body.grid-view .card-wrap .genres-popup {
       display: none !important;
-    }
-
-    /* Позиции карточек */
-    body.grid-view .card-wrap[data-id="rdr2"] .card {
-      background-position: 70%;
-    }
-
-    body.grid-view .card-wrap[data-id="hev"] .card {
-      background-position: 80%;
-    }
-
-    body.grid-view .card-wrap[data-id="gtaV"] .card {
-      background-position: 80%;
-    }
-
-    body.grid-view .card-wrap[data-id="hol"] .card {
-      background-position: 80%;
-    }
-
-    body.grid-view .card-wrap[data-id="atm"] .card {
-      background-position: 90%;
-    }
-
-    body.grid-view .card-wrap[data-id="out"] .card {
-      background-position: 90%;
-    }
-
-    body.grid-view .card-wrap[data-id="fc3"] .card {
-      background-position: 30%;
-    }
-
-    body.grid-view .card-wrap[data-id="jc3"] .card {
-      background-position: 70%;
-    }
-
-    .card-wrap[data-id="tlou"] .card {
-      background-position: center 25%;
-    }
-
-    .card-wrap[data-id="hk"] .card {
-      background-position: center 100%;
-    }
-
-    .card-wrap[data-id="cp"] .card {
-      background-position: center 30%;
-    }
-
-    .card-wrap[data-id="hev"] .card {
-      background-position: center 70%;
-    }
-
-    .card-wrap[data-id="lit2"] .card {
-      background-position: center 90%;
-    }
-
-    .card-wrap[data-id="lit1"] .card {
-      background-position: center 80%;
-    }
-
-    .card-wrap[data-id="out"] .card {
-      background-position: center 20%;
-    }
-
-    .card-wrap[data-id="awo"] .card {
-      background-position: center 20%;
-    }
-
-    .card-wrap[data-id="bts"] .card {
-      background-position: center 70%;
-    }
-
-    .card-wrap[data-id="swd"] .card {
-      background-position: center 20%;
-    }
-
-    .card-wrap[data-id="fc3"] .card {
-      background-position: center 60%;
-    }
-
-    .card-wrap[data-id="str"] .card {
-      background-position: center 80%;
-    }
-
-    .card-wrap[data-id="lp"] .card {
-      background-position: center 80%;
-    }
-
-    .card-wrap[data-id="jc3"] .card {
-      background-position: center 20%;
-    }
-
-    .card-wrap[data-id="drg"] .card {
-      background-position: center 80%;
-    }
-
-    .card-wrap[data-id="rdr2"] .card {
-      background-position: center 80%;
-    }
-
-    .card-wrap[data-id="dos2"] .card {
-      background-position: center 25%;
-    }
-
-    .card-wrap[data-id="sh2r"] .card {
-      background-position: center 75%;
-    }
-
-    .card-wrap[data-id="oww"] .card {
-      background-position: center 75%;
-    }
-
-    .card-wrap[data-id="twd"] .card {
-      background-position: center 10%;
-    }
-
-    .card-wrap[data-id="aw"] .card {
-      background-position: center 80%;
-    }
-
-    .card-wrap[data-id="twd2"] .card {
-      background-position: center 35%;
     }
 
     #game-modal {
@@ -2054,6 +3461,27 @@
       color: #fff;
     }
 
+    #game-modal .modal-edit-btn {
+      position: absolute;
+      top: 55px;
+      right: 20px;
+      z-index: 3;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 1.55rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    #game-modal .modal-edit-btn:hover,
+    #game-modal .modal-edit-btn:focus-visible {
+      color: #fff;
+      outline: none;
+    }
+
     .modal-nav-hint {
       position: absolute;
       bottom: 14px;
@@ -2334,17 +3762,81 @@
 
       .site-header {
         margin-bottom: 16px;
-        padding: 0 38px;
+        padding: 0 44px 0 2px;
+        justify-content: flex-start;
+        min-height: auto;
+      }
+
+      .site-header-left {
+        position: static;
+        width: 100%;
+        min-width: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        min-height: auto;
+        gap: 7px;
+      }
+
+      .site-header-actions {
+        position: static;
+        transform: none;
+        width: auto;
+        flex: 0 0 132px;
+        flex-basis: 132px;
+        gap: 6px;
+      }
+
+      .site-header-copy {
+        text-align: left;
+        padding: 0;
       }
 
       .page-title {
-        font-size: 1.42rem;
+        font-size: clamp(1rem, 4.5vw, 1.32rem);
         line-height: 1.18;
+        white-space: nowrap;
+      }
+
+      .add-game-trigger,
+      .find-libraries-trigger,
+      .comments-trigger {
+        min-height: auto;
+        padding: 0;
+        border: none;
+        background: transparent;
+      }
+
+      .signin-link {
+        padding: 5px 10px;
+        min-height: 28px;
+        font-size: 0.76rem;
+        gap: 4px;
+      }
+
+      .add-game-svg {
+        height: 52px;
+      }
+
+      .find-libraries-svg {
+        width: 110px;
+      }
+
+      .site-title-svg {
+        height: 75px;
       }
 
       .page-subtitle {
         font-size: 0.68rem;
         line-height: 1.35;
+      }
+
+      .profile-popover {
+        right: 14px;
+      }
+
+      .profile-info h2 {
+        overflow-wrap: anywhere;
       }
 
       .site-header-right {
@@ -2865,6 +4357,33 @@
         font-size: 1rem !important;
       }
     }
+
+    @media (max-width: 360px) {
+      .page-title {
+        font-size: 0.9rem;
+      }
+
+      .site-header-left {
+        gap: 5px;
+      }
+
+      .site-header-actions {
+        flex-basis: 118px;
+      }
+
+      .add-game-trigger,
+      .find-libraries-trigger,
+      .comments-trigger {
+        padding-right: 6px;
+        padding-left: 6px;
+        font-size: 0.68rem;
+      }
+
+      .add-game-svg {
+        height: 24px;
+      }
+    }
+
     /* Genre palette refresh */
     .genre-panel {
       left: 24px;
@@ -3042,7 +4561,7 @@
       color: var(--text);
     }
 
-    #game-modal .modal-content.compare-mode > h2 {
+    #game-modal .modal-content.compare-mode>h2 {
       margin-left: 8px;
       color: var(--text);
       background: none;
@@ -3109,12 +4628,18 @@
         border-radius: 20px;
       }
     }
-
   </style>
 </head>
 
 <body>
-  <div id="root"></div>
+  <script>
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+  </script>
+  <div id="root">
+    <div class="catalog-loader-container" role="status" aria-label="Загрузка каталога">
+      <div class="catalog-spinner"></div>
+    </div>
+  </div>
 
   <script>
     Babel.registerPreset('classic-jsx', {
@@ -3123,154 +4648,120 @@
   </script>
   <script type="text/babel" data-presets="classic-jsx">
     // --- DATA ---
-    const GAMES = [
-      { id: "w3", title: "The Witcher 3: Wild Hunt", developer: "CD Projekt Red", image: "w3.jpg", genres: ["Открытый мир", "Приключение", "Сюжетная", "Фэнтези", "Экшен", "РПГ"], ratings: { "story": 10, "graphics": 9, "gameplay": 9, "main_character": 10, "characters": 10, "atmosphere": 10, "sound_design": 10 }, year: '2015', playtime: '103 ч.' },
-      { id: "rdr2", title: "Red Dead Redemption 2", developer: "Rockstar Games", image: "rdr2.png", genres: ["Открытый мир", "Приключение", "Экшен", "Сюжетная", "Шутер"], ratings: { "story": 9, "graphics": 10, "gameplay": 10, "main_character": 10, "characters": 10, "atmosphere": 9, "sound_design": 10 }, year: '2018', playtime: '84 ч.' },
-      { id: "tlou", title: "The Last of Us Part I", developer: "Naughty Dog", image: "tlou.jpg", genres: ["Экшен", "Приключение", "QTE", "Хоррор", "Выживание", "Стелс", "Сюжетная", "Постапокалипсис"], ratings: { "story": 9, "graphics": 10, "gameplay": 10, "main_character": 9, "characters": 8, "atmosphere": 9, "sound_design": 10 }, year: '2023', playtime: '18 ч.' },
-      { id: "cyb", title: "Cyberpunk 2077", developer: "CD Projekt Red", image: "cyb.png", genres: ["Научная фантастика", "Экшен", "РПГ", "Шутер", "Открытый мир", "Сюжетная", "Киберпанк"], ratings: { "story": 10, "graphics": 10, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2020', playtime: '59 ч.' },
-      { id: "gtaV", title: "Grand Theft Auto V", developer: "Rockstar Games", image: "gtaV.jpg", genres: ["Приключение", "Открытый мир", "Сюжетная", "Экшен", "Шутер"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2013', playtime: '49 ч.' },
-      { id: "alw2", title: "Alan Wake 2", developer: "Remedy Entertainment", image: "alw2.jpg", genres: ["Приключение", "Сюжетная", "Хоррор", "Выживание", "Экшен"], ratings: { "story": 10, "graphics": 10, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2023', playtime: '27 ч.' },
-      { id: "det", title: "Detroit: Become Human", developer: "Quantic Dream", image: "det.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "QTE", "Интерактивное кино"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 10 }, year: '2018', playtime: '15 ч.' },
-      { id: "eld", title: "Elden Ring", developer: "FromSoftware", image: "eld.jpg", genres: ["РПГ", "Экшен", "Открытый мир", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 10 }, year: '2022', playtime: '100 ч.' },
-      { id: "dsr", title: "Dead Space Remake", developer: "Motive Studio", image: "dsr.jpg", genres: ["Хоррор", "Шутер", "Сюжетная", "Экшен", "Научная фантастика", "Выживание"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2023', playtime: '17 ч.' },
-      { id: "bmw", title: "Black Myth: Wukong", developer: "Game Science", image: "bmw.png", genres: ["Фэнтези", "Сюжетная", "Экшен", "РПГ", "Соулс-лайк"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2024', playtime: '55 ч.' },
-      { id: "bak", title: "Batman: Arkham Knight", developer: "Rocksteady Studios", image: "bak.jpg", genres: ["Приключение", "Открытый мир", "Экшен", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2015', playtime: '31 ч.' },
-      { id: "hev", title: "Heavy Rain", developer: "Quantic Dream", image: "hev.jpg", genres: ["Приключение", "Сюжетная", "Интерактивное кино", "QTE"], ratings: { "story": 10, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2019', playtime: '12 ч.' },
-      { id: "re4", title: "Resident Evil 4 Remake", developer: "Capcom", image: "re4.jpeg", genres: ["Головоломка", "Приключение", "Хоррор", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2023', playtime: '23 ч.' },
-      { id: "d16", title: "Doom (2016)", developer: "id Software", image: "d16.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9 }, year: '2016', playtime: '17 ч.' },
-      { id: "dete", title: "Doom Eternal", developer: "id Software", image: "dete.jpg", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 9 }, year: '2020', playtime: '19 ч.' },
-      { id: "lim", title: "Limbo", developer: "Playdead", image: "lim.jpg", genres: ["Платформер", "Головоломка", "Инди"], ratings: { "story": 6, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 10, "sound_design": 10 }, year: '2011', playtime: '4 ч.' },
-      { id: "ins", title: "Inside", developer: "Playdead", image: "ins.jpg", genres: ["Платформер", "Головоломка", "Инди", "Научная фантастика", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 6, "atmosphere": 9, "sound_design": 10 }, year: '2016', playtime: '4 ч.' },
-      { id: "crw", title: "Thronebreaker: The Witcher Tales", developer: "CD Projekt Red", image: "crw.jpg", genres: ["РПГ", "Карточная", "Сюжетная", "Фэнтези", "Головоломка"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 9 }, year: '2018', playtime: '36 ч.' },
-      { id: "fir", title: "Firewatch", developer: "Campo Santo", image: "fir.png", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2016', playtime: '5 ч.' },
-      { id: "swd", title: "Still Wakes the Deep", developer: "The Chinese Room", image: "swd.jpg", genres: ["Сюжетная", "Приключение", "Инди", "Научная фантастика", "Хоррор"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 7 }, year: '2024', playtime: '6 ч.' },
-      { id: "fhr", title: "Fahrenheit: Indigo Prophecy Remastered", developer: "Quantic Dream", image: "fhr.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "QTE", "Интерактивное кино"], ratings: { "story": 8, "graphics": 6, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 9 }, year: '2015', playtime: '9 ч.' },
-      { id: "inc", title: "Inscryption", developer: "Daniel Mullins Games", image: "inc.jpg", genres: ["Хоррор", "Инди", "Карточная", "Головоломка"], ratings: { "story": 9, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 8, "atmosphere": 8, "sound_design": 9 }, year: '2021', playtime: '16 ч.' },
-      { id: "mf2", title: "Mafia II", developer: "2K Czech", image: "mf2.png", genres: ["Открытый мир", "Приключение", "Экшен", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 8, "sound_design": 7 }, year: '2010', playtime: '17 ч.' },
-      { id: "hss", title: "Hellblade: Senua's Sacrifice", developer: "Ninja Theory", image: "hss.jpg", genres: ["Экшен", "Приключение", "QTE", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2017', playtime: '8 ч.' },
-      { id: "tlou2", title: "The Last of Us Part II", developer: "Naughty Dog", image: "tlou2.jpg", genres: ["Экшен", "Приключение", "QTE", "Постапокалипсис", "Сюжетная", "Выживание", "Стелс", "Хоррор"], ratings: { "story": 8, "graphics": 10, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2025', playtime: '29 ч.' },
-      { id: "PTI", title: "A Plague Tale: Innocence", developer: "Asobo Studio", image: "PTI.jpg", genres: ["Экшен", "Сюжетная", "Стелс", "Приключение"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2019', playtime: '13 ч.' },
-      { id: "atm", title: "Atomic Heart", developer: "Mundfish", image: "atm.jpg", genres: ["Сюжетная", "Экшен", "РПГ", "Научная фантастика", "Шутер", "Открытый мир"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 7, "sound_design": 9 }, year: '2023', playtime: '24 ч.' },
-      { id: "jc3", title: "Just Cause 3", developer: "Avalanche Studios", image: "jc3.jpg", genres: ["Экшен", "Открытый мир", "Шутер", "Приключение"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 7, "sound_design": 8 }, year: '2015', playtime: '37 ч.' },
-      { id: "out", title: "Outlast", developer: "Red Barrels", image: "out.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2013', playtime: '7 ч.' },
-      { id: "out2", title: "Outlast 2", developer: "Red Barrels", image: "out2.jpg", genres: ["Хоррор", "Выживание", "Инди", "Стелс", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 8, "atmosphere": 10, "sound_design": 9 }, year: '2017', playtime: '9 ч.' },
-      { id: "re2", title: "Resident Evil 2 Remake", developer: "Capcom", image: "re2.png", genres: ["Выживание", "Экшен", "Шутер", "Головоломка", "Приключение", "Сюжетная", "Хоррор"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 9, "sound_design": 8 }, year: '2019', playtime: '15 ч.' },
-      { id: "rev", title: "Resident Evil Village", developer: "Capcom", image: "rev.jpg", genres: ["Головоломка", "Приключение", "Хоррор", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2021', playtime: '14 ч.' },
-      { id: "reb", title: "Resident Evil 7: Biohazard", developer: "Capcom", image: "reb.jpg", genres: ["Выживание", "Экшен", "Шутер", "Головоломка", "Приключение", "Сюжетная", "Хоррор"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 9 }, year: '2017', playtime: '12 ч.' },
-      { id: "lit1", title: "Little Nightmares", developer: "Tarsier Studios", image: "lit1.jpg", genres: ["Платформер", "Головоломка", "Хоррор", "Инди", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2017', playtime: '5 ч.' },
-      { id: "lit2", title: "Little Nightmares 2", developer: "Tarsier Studios", image: "lit2.png", genres: ["Платформер", "Головоломка", "Хоррор", "Инди", "Сюжетная", "Стелс"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2021', playtime: '6 ч.' },
-      { id: "ex33", title: "Clair Obscur: Expedition 33", developer: "Sandfall Interactive", image: "ex33.png", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 9, "atmosphere": 8, "sound_design": 10 }, year: '2025', playtime: '47 ч.' },
-      { id: "ef", title: "What Remains of Edith Finch", developer: "Giant Sparrow", image: "ef.jpg", genres: ["Приключение", "Сюжетная", "Инди"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2017', playtime: '3 ч.' },
-      { id: "p2", title: "Portal 2", developer: "Valve", image: "p2.jpg", genres: ["Головоломка", "Платформер", "Научная фантастика", "Кооператив", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2011', playtime: '14 ч.' },
-      { id: "fc3", title: "Far Cry 3", developer: "Ubisoft Montreal", image: "fc3.jpg", genres: ["Шутер", "Экшен", "Сюжетная", "Открытый мир", "Приключение"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2012', playtime: '26 ч.' },
-      { id: "str", title: "Stray", developer: "BlueTwelve Studio", image: "str.jpg", genres: ["Приключение", "Головоломка", "Инди", "Научная фантастика", "Киберпанк", "Сюжетная"], ratings: { "story": 7, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 8 }, year: '2022', playtime: '7 ч.' },
-      { id: "hk", title: "Hollow Knight", developer: "Team Cherry", image: "hk.jpg", genres: ["Платформер", "Экшен", "Инди", "Соулс-лайк", "Метроидвания", "Фэнтези"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 }, year: '2017', playtime: '41 ч.' },
-      { id: "drg", title: "DREDGE", developer: "Black Salt Games", image: "drg.png", genres: ["Приключение", "Выживание", "Хоррор", "Инди", "Сюжетная"], ratings: { "story": 8, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2023', playtime: '13 ч.' },
-      { id: "kht", title: "Kholat", developer: "IMGN.PRO", image: "kht.png", genres: ["Хоррор", "Приключение", "Инди"], ratings: { "story": 7, "graphics": 7, "gameplay": 7, "main_character": 6, "characters": 6, "atmosphere": 10, "sound_design": 9 }, year: '2015', playtime: '6 ч.' },
-      { id: "aw", title: "Alan Wake", developer: "Remedy Entertainment", image: "aw.jpg", genres: ["Приключение", "Сюжетная", "Хоррор", "Экшен"], ratings: { "story": 9, "graphics": 8, "gameplay": 7, "main_character": 8, "characters": 7, "atmosphere": 10, "sound_design": 8 }, year: '2021', playtime: '15 ч.' },
-      { id: "cp", title: "The Callisto Protocol", developer: "Striking Distance Studios", image: "cp.jpg", genres: ["Научная фантастика", "Хоррор", "Экшен", "Шутер", "Выживание", "Сюжетная"], ratings: { "story": 8, "graphics": 10, "gameplay": 9, "main_character": 9, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2022', playtime: '12 ч.' },
-      { id: "gow", title: "God of War", developer: "Santa Monica Studio", image: "gow.jpg", genres: ["Экшен", "Приключение", "QTE", "Сюжетная", "Фэнтези"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2022', playtime: '33 ч.' },
-      { id: "hl2", title: "Half Life 2", developer: "Valve", image: "hl2.jpg", genres: ["Шутер", "Головоломка", "Экшен", "Научная фантастика", "Приключение", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2004', playtime: '16 ч.' },
-      { id: "hks", title: "Hollow Knight: Silksong", developer: "Team Cherry", image: "hks.png", genres: ["Платформер", "Экшен", "Инди", "Соулс-лайк", "Метроидвания", "Фэнтези"], ratings: { "story": 9, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 10 }, year: '2025', playtime: '47 ч.' },
-      { id: "lp", title: "Lies of P", developer: "Nough Studio", image: "lp.jpg", genres: ["РПГ", "Экшен", "Соулс-лайк", "Фэнтези", "Сюжетная"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2023', playtime: '36 ч.' },
-      { id: "itt", title: "It Takes Two", developer: "Hazelight Studios", image: "itt.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Сюжетная"], ratings: { "story": 9, "graphics": 8, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2021', playtime: '14 ч.' },
-      { id: "bts", title: "Beyond: Two Souls", developer: "Quantic Dream", image: "bts.jpg", genres: ["Приключение", "Сюжетная", "Научная фантастика", "Экшен", "Интерактивное кино", "QTE"], ratings: { "story": 9, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2019', playtime: '12 ч.' },
-      { id: "hol", title: "High on Life", developer: "Squanch Games", image: "hol.jpg", genres: ["Шутер", "Экшен", "Сюжетная", "Метроидвания", "Приключение", "Научная фантастика"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 9, "atmosphere": 8, "sound_design": 9 }, year: '2022', playtime: '13 ч.' },
-      { id: "sf", title: "Split Fiction", developer: "Hazelight Studios", image: "sf.jpg", genres: ["Приключение", "Платформер", "Кооператив", "Головоломка", "Научная фантастика", "Экшен", "Сюжетная", "Фэнтези"], ratings: { "story": 10, "graphics": 9, "gameplay": 10, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2025', playtime: '15 ч.' },
-      { id: "awo", title: "A Way Out", developer: "Hazelight Studios", image: "awo.jpg", genres: ["Приключение", "Экшен", "Инди", "Кооператив", "Сюжетная", "QTE"], ratings: { "story": 8, "graphics": 7, "gameplay": 8, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 7 }, year: '2018', playtime: '6 ч.' },
-      { id: "sco", title: "Scorn", developer: "Ebb Software", image: "sco.png", genres: ["Приключение", "Головоломка", "Хоррор", "Выживание"], ratings: { "story": 8, "graphics": 8, "gameplay": 7, "main_character": 7, "characters": 7, "atmosphere": 9, "sound_design": 9 }, year: '2022', playtime: '6 ч.' },
-      { id: "dtda", title: "Doom: The Dark Ages", developer: "id Software", image: "dtda.png", genres: ["Шутер", "Экшен", "Научная фантастика"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 9 }, year: '2025', playtime: '20 ч.' },
-      { id: "w1", title: "The Witcher", developer: "CD Projekt Red", image: "w1.jpg", genres: ["РПГ", "Экшен", "Фэнтези", "Сюжетная"], ratings: { "story": 9, "graphics": 7, "gameplay": 7, "main_character": 8, "characters": 9, "atmosphere": 10, "sound_design": 9 }, year: '2007', playtime: '46 ч.' },
-      { id: "w2", title: "The Witcher 2: Assassins of Kings", developer: "CD Projekt Red", image: "w2.jpg", genres: ["Сюжетная", "Фэнтези", "Экшен", "РПГ"], ratings: { "story": 10, "graphics": 8, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2011', playtime: '35 ч.' },
-      { id: "req", title: "Resident Evil Requiem", developer: "Capcom", image: "req.png", genres: ["Выживание", "Экшен", "Шутер", "Головоломка", "Приключение", "Сюжетная", "Хоррор"], ratings: { "story": 8, "graphics": 9, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 9 }, year: '2026', playtime: '14 ч.' },
-      { id: "mfp", title: "My Friend Pedro", developer: "DeadToast Entertainment", image: "mfp.jpg", genres: ["Инди", "Экшен", "Шутер", "Платформер"], ratings: { "story": 7, "graphics": 7, "gameplay": 9, "main_character": 6, "characters": 7, "atmosphere": 8, "sound_design": 8 }, year: '2019', playtime: '5 ч.' },
-      { id: "sotc", title: "Shadow of the Colossus", developer: "Team Ico", image: "sotc.png", genres: ["Головоломка", "Приключение", "Экшен", "Шутер", "Платформер"], ratings: { "story": 8, "graphics": 8, "gameplay": 9, "main_character": 6, "characters": 6, "atmosphere": 8, "sound_design": 8 }, year: '2018', playtime: '9 ч.' },
-      { id: "rea", title: "REANIMAL", developer: "Tarsier Studios", image: "rea.jpg", genres: ["Головоломка", "Приключение", "Хоррор", "Экшен", "Стелс", "Кооператив", "Платформер"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 10 }, year: '2026', playtime: '5 ч.' },
-      { id: "dos2", title: "Divinity: Original Sin 2", developer: "Larian Studios", image: "dos2.jpg", genres: ["Приключение", "Кооператив", "Фэнтези", "РПГ", "Сюжетная"], ratings: { "story": 10, "graphics": 8, "gameplay": 9, "main_character": 8, "characters": 9, "atmosphere": 8, "sound_design": 10 }, year: '2017', playtime: '101 ч.' },
-      { id: "prag", title: "PRAGMATA", developer: "Capcom", image: "prag.png", genres: ["Сюжетная", "Приключение", "Научная фантастика", "Шутер", "Экшен"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 8, "sound_design": 8 }, year: '2026', playtime: '16 ч.' },
-      { id: "ded2", title: "Dead Island 2", developer: "Dambuster Studios", image: "ded2.jpg", genres: ["Приключение", "Экшен", "РПГ", "Шутер", "Постапокалипсис"], ratings: { "story": 7, "graphics": 9, "gameplay": 9, "main_character": 8, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2024', playtime: '20 ч.' },
-      { id: "obf", title: "Ori and the Blind Forest: Definitive Edition", developer: "Moon Studios", image: "obf.png", genres: ["Метроидвания", "Платформер", "Приключение", "Сюжетная", "Фэнтези", "Инди", "Экшен", "Открытый мир", "Головоломка"], ratings: { "story": 8, "graphics": 8, "gameplay": 8, "main_character": 7, "characters": 7, "atmosphere": 8, "sound_design": 8 }, year: '2016', playtime: '11 ч.' },
-      { id: "sh2r", title: "Silent Hill 2 Remake", developer: "Bloober Team", image: "sh2r.jpg", genres: ["Приключение", "Головоломка", "Хоррор", "Сюжетная", "Экшен", "Шутер"], ratings: { "story": 9, "graphics": 9, "gameplay": 8, "main_character": 9, "characters": 8, "atmosphere": 10, "sound_design": 9 }, year: '2024', playtime: '17 ч.' },
-      { id: "oww", title: "Ori and the Will of the Wisps", developer: "Moon Studios", image: "oww.png", genres: ["Метроидвания", "Платформер", "Приключение", "Сюжетная", "Фэнтези", "Инди", "Экшен", "Открытый мир", "Головоломка"], ratings: { "story": 8, "graphics": 9, "gameplay": 9, "main_character": 7, "characters": 8, "atmosphere": 9, "sound_design": 8 }, year: '2020', playtime: '13 ч.' },
-      { id: "twd2", title: "The Walking Dead: Season Two", developer: "Telltale Games", image: "twd2.jpg", genres: ["Экшен", "Постапокалипсис", "Приключение", "Сюжетная", "Хоррор", "Интерактивное кино", "QTE"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2013', playtime: '10 ч.' },
-      { id: "twd", title: "The Walking Dead", developer: "Telltale Games", image: "twd.jpg", genres: ["Экшен", "Постапокалипсис", "Приключение", "Сюжетная", "Хоррор", "Интерактивное кино", "QTE"], ratings: { "story": 9, "graphics": 8, "gameplay": 8, "main_character": 9, "characters": 9, "atmosphere": 9, "sound_design": 8 }, year: '2012', playtime: '13 ч.' },
-      { id: "sky", title: "The Elder Scrolls V: Skyrim Special Edition", developer: "Bethesda Game Studios", image: "sky.png", genres: ["Открытый мир", "Приключение", "Фэнтези", "Сюжетная", "Экшен", "Стелс", "РПГ"], ratings: { "story": 9, "graphics": 9, "gameplay": 8, "main_character": 8, "characters": 9, "atmosphere": 10, "sound_design": 9 }, year: '2016', playtime: '50 ч.' },
-    ];
+    const supabaseConfig = window.SUPABASE_CONFIG || {};
+    const siteSupabase = window.supabase && supabaseConfig.url && supabaseConfig.publishableKey
+      ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.publishableKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      })
+      : null;
+    window.siteSupabase = siteSupabase;
 
-    const REVIEWS = {
-      "w3": `Ведьмак 3 — это потрясающая RPG с огромным впечатляющим лором. Каждый квест в игре построен с вниманием к деталям, атфосфера локаций разная, но одинаково убедительная, а саундтрек стоит в ряду лучших в истории видеоигр.`,
-      "rdr2": `Red Dead Redemption 2 — одна из немногих вестерн-игр, да ещё и с интересным сюжетом, красивыми видами, живыми героями и NPC и невообразимым вниманием к деталям.`,
-      "cyb": `Cyberpunk 2077 — огромный мегаполис будущего, красивый, шумный и опасный. В игре есть выбор, кем стать и гибкий геймплей, позволящий быть хакером или бойцом.`,
-      "tlou": `The Last of Us 1 это путешествие двух героев в постапокалиптическом мире. Здесь отлично реализован стелс и реалистичные бои. Ресурсов всегда хватает в обрез, что создает новую атмосферу.`,
-      "alw2": `Alan Wake 2 это вторая часть истории Алана Вейка - писателя, который стал участником своих историй. Алан пытается выбраться из кошмара, буквально печатая свою историю. Графика настолько реалистичная, что порой кажется, будто смотришь фильм.`,
-      "gtaV": `GTA 5 расскажет про трёх преступников в сеттинге современного мира. Сюжет динамичный и с юмором, геймплей не даст заскучать.`,
-      "tlou2": `The Last of Us 2 сиквел, который намеренно разрушает то, что ты любил в прошлой части, и заставляет смотреть на ту же историю с другой стороны. Принять это сложно, и это, скорее всего, так и задумано. Зато геймплей стал богаче и разнообразнее.`,
-      "det": `Detroit: Become Human про будущее, где люди и андроиды живут бок о бок. Выборов в продвижении сюжета так много, что повтороное прохождение подарит новую игру. Одна из лучших игр в жанре «Интерактивное кино».`,
-      "eld": `Elden Ring — самый масштабный проект FromSoftware. Боссы впечатляют своим дизайном, атаками и механиками, а открытый мир наполнен секретами.`,
-      "dsr": `Dead Space Remake — хоррор в космическом сеттинге, где можно стрелять из режущих оружий по некроморфам, отрубая им конечности.`,
-      "hev": `Heavy Rain — это драматическая история, мрачная атмосфера. Сюжет раскрывается вокруг трёх детективов, которым нужно раскрыть тайну.`,
-      "rev": `Resident Evil Village — один из лучших «резидентов» настоящего времени с тягостной атмосферой и элементами экшена и головоломки. В этой игре точно будет страшно и интересно.`,
-      "bmw": `Black Myth: Wukong отлично сделанная соулс-лайк игра, мифологический сюжет с главным героем - обезьяной, быстрая боёвка, которая несколько отличается от других игр в том же жанре. Также есть система построения билда и скиллов.`,
-      "bak": `Batman: Arkham Knight это история про всеми известных Бэтмена и Джокера, который подаётся весьма интересно. Про ночной Готэм и топовые драки с бандитами.`,
-      "dete": `Doom Eternal усложнила DOOM 2016 года до предела, ресурсы тут постоянно заканчиваются, из-за чего приходится убивать демонов всеми оружиями и постоянно двигаться, чтобы не умереть.`,
-      "crw": `Thronebreaker: The Witcher Tales — карточная игра с загадками во вселенной Ведьмака с интересным игровым процессом на основе механик Гвинта и сюжетом, который раскрывает историю королевы Мевы. Это не спин-офф для галочки - это полноценная история.`,
-      "out2": `Outlast 2 это ещё более жуткая и мерзкая игра, чем первая часть, много мяса, беззащитный главный герой, обезумевшие культисты в глуши и удручающая атмосфера.`,
-      "reb": `Resident Evil 7: Biohazard — страх, страдания, ужас, паника, тревожность - всё, что ощущает проходящий на протяжении всей истории. Игра от первого лица с небольшим особняком. История про Итана Уинтерса, который ищет свою пропавшую жену.`,
-      "re4": `Resident Evil 4 Remake — отличный ремейк с Леоном в главной роли, который спасает дочь президента. В игре присутствуют головоломки в стиле RE и зрелищные бои с боссами.`,
-      "d16": `Doom 16 — легендарная часть великого DOOM'a, постоянное движение здесь необходимость, Палач уничтожит всё на своём пути под отличную музыку Гордона.`,
-      "PTI": `A Plague Tale: Innocence — это трогающая история брата и сестры с интересным сюжетом, события происходят в средневековье во Франции, здесь придётся скрываться от инквизиции и крыс, разносящих чуму.`,
-      "lim": `Limbo — эталон в жанре 2D-платформеров, спокойная, вписывающаяся в игру, музыка, приятные саунды, простое управление, мягкая ЧБ-графика с глубиной размытия, пронизывающая атмосфера, простенькие, но отлично дополняющие игру головоломки. Слабое место - сюжет, его здесь почти нет.`,
-      "hss": `Hellblade: Senua's Sacrifice это необычная игра про девушку, которая борется с голосами в голове, они преследуют её и не дают покоя. Можно похвалить игру за оригинальные головоломки и визуальный стиль.`,
-      "atm": `Atomic Heart — это про роботов во время СССР, которые вышли из под контроля. Сеттинг оригинальный и неповторимый, множество необычных пушек и способностей. Красивая картинка, но локации здесь скудные, в основном сюжете игры однотипные.`,
-      "out": `Outlast это в первую очередь хоррор, где можно встретить много скримеров и напряжённых моментов, он имеет крутую задумку с камерой, на которую надо снимать все «странности». Больница давит своей атмосферой, а беззащитность главного героя усиливает напряжение.`,
-      "fir": `Firewatch — это игра, проходить которую надо неспеша, наслаждаясь окружающими локациями. Она успокаивает и погружает в себя, сопровождая отличной музыкой, здесь есть сюжет, лес и пожарная вышка.`,
-      "swd": `Still Wakes the Deep это survival-horror про электрика, который пытается выжить на нефтяной платформе, здесь можно повстречать персонажей, которые хоть и мало раскрыты, но импонируют.`,
-      "jc3": `Just Cause 3 — это третья часть игры про легендарного Рико Родригеза, сюжет здесь для галочки, базы однотипны, но их всё равно увлекательно зачищать. Сильная сторона - отличный геймплей с эпичной разрушаемостью и превосходный крюк-кошка, которым пользоваться одно удовольствие.`,
-      "mf2": `Mafia 2 это история про всеми известного члена мафии под именем Вито Скалетта, он связал свою жизнь с криминальной деятельностью и пытается выжить со своим другом Джо. В сюжете происходит много событий, которые долго не выходят из памяти.`,
-      "ins": `Inside — наследник Limbo с более населённым миром, игра про мальчика, у которого есть своя цель.`,
-      "inc": `Inscyption — карточный рогалик, который несколько раз меняет правила прямо во время игры. Хочется порекомендовать эту игру к собственному прохождению, не зная ничего о ней.`,
-      "fhr": `Fahrenheit: Indigo Prophecy Remastered это игра про обычного парня Лукаса Кейна, который совершает убийство в ресторане, но не помнит как это произошло. Истину откроют два детектива, которые взялись за это дело.`,
-      "lit1": `Little Nightmares — атмосферный платформер, где главной героине - маленькой девочке предстоит выбраться из страшного мира, наполненного огромными и опасными существами.`,
-      "lit2": `Little Nightmares 2 это вторая часть превосходных «Маленьких кошмаров», игра добавляет в мир напарника, включая Шестую(ГГ первой части), но уже в качестве компаньона, всё те же интересные головоломки и более опасные враги.`,
-      "ex33": `Clair Obscur: Expedition 33 — отличная игра с неотразимым визуальным стилем и очень захватывающим сюжетом, который не выглядит как обычная клишированная история, отдельного внимания заслуживает музыка, которая используется с большим мастерством.`,
-      "ef": `What Remains of Edith Finch это трогательная история, где субтитры ведут игрока по пути, игра сделана креативно и предлагает необычный игровой процесс за своё небольшое время прохождения.`,
-      "p2": `Portal 2 отличная головоломка с интересной идеей и сюжетом, можно играть как одному, так и в кооперативе, много бросающих вызов уровней и загадок.`,
-      "fc3": `Far Cry 3 помнят ради Вааса - и это не удивительно, ведь он один из лучших игровых антагонистов. Появляется ненадолго, но задаёт тон всей игре. Зачистка аванпостов рутинная, но стелс и красивый остров удержат игрока.`,
-      "str": `Stray — игра в стиле киберпанк про милого котика, который остался один, он попадает в населённые роботами города и решает головоломки, чтобы выбраться. В Stray встречаются опасности и испытания, эта увлекательная игра скрасит пару вечеров.`,
-      "hk": `Hollow Knight — прекрасная игра про Рыцаря, который исследует руины королевства насекомых Халлоунест, тайтл обладает глубоким лором и приятной музыкой Кристофера Ларкина. Это метроидвания с элементами соулс-лайк.`,
-      "drg": `DREDGE это место, где игровой процесс заключается в ловле рыбы и последующем апгрейде корабля, здесь загадочный мир, который хочется исследовать и разгадывать его загадки. На первый взгляд игра выглядит другой, но поиграв в неё, понимаешь, что был не прав. К сожалению, геймплей слегка утомляет из-за своего однообразия.`,
-      "kht": `Kholat — история о загадочной трагедии, произошедшей на Перевале Дятлова. В игре предстоит расследовать дело исчезновения группы российских студентов в суровом зимнем климате и без казуальных подсказок. Прохождение не займёт много времени, но точно успеет испугать и увлечь.`,
-      "re2": `Resident Evil 2 Remake — неплохой ремейк, где Леон и Клэр пытаются сбежать из города Раккун-Сити, избегая заражённых. Игра наполнена головоломками и узкими коридорами. Здесь придётся экономить ресурсы и больше прятаться от преследующих мутантов.`,
-      "aw": `Alan Wake это история о писателе, который решил сделать себе отпуск и отправился на остров Брайт-Фоллс, но там встретился со своими собственно написанными кошмарами. Очень атмосферная игра, но однообразный геймплей.`,
-      "cp": `The Callisto Protocol это игра в стиле Dead Space с динамичной боёвкой и фотореалистичной графикой. Тюрьма на спутнике Юпитера - грязное и опасное место.`,
-      "gow": `God of War преподносит историю бога Кратоса и его сына Атрея, вместе они сражаются с сильными противниками в разных мирах, в игре хороший сюжет и красивые пейзажи.`,
-      "hl2": `Half Life 2 это атмосферная игра с интересной историей Гордона Фримена, где игроку предстоит сразиться с кучами пришельцев и Альянсом, захватившим Землю.`,
-      "hks": `Hollow Knight: Silksong — вторая часть дилогии Полого Рыцаря с Хорнет в главной роли, новая часть богаче первой: больше квестов, гибче геймплей, выше локации и больше боссов, а также такой же прекрасный саунд-дизайн.`,
-      "lp": `Lies of P это несколько противоречивая игра. С одной стороны - красивые локации, хороший, но без изюминки сюжет, с другой - нелучший соулс-лайк геймплей, неудобные и частично несправедливые бои с боссами. Цепляющее исследование, но не всегда оправданное.`,
-      "itt": `It Takes Two одна из лучших кооп-игр в истории. Пара на грани развода проходит локации, где нужно доверять партнёру. Игра напыщена интересными механиками для обоих игроков.`,
-      "bts": `Beyond: Two Souls — одна из легендарных игр Quantic Dream. Геймплей не за одного персонажа: девушка Джуди Холмс и призрак, живущий в ней. История рассказываются в перемешанном порядке. Игру можно пройти вдвоём.`,
-      "hol": `High on Life — клёвый комедийный шутер от создателя «Рик и Морти». Присутствуют элементы метроидвании и шутки в стиле вышеупомянутого мультсериала. Сюжет простой - про захват планеты пришельцами, но игровой процесс не заставит скучать, а музыка сохранит быстрый темп.`,
-      "sf": `Split Fiction — игра с уникальным кооперативным геймплеем от создателей It Takes Two, по сюжету персонажи попадают в миры, которые они сами придумали. В игре очень много интересных механик, зависящих от действий обоих игроков.`,
-      "w2": `Witcher 2: Assassins of Kings — это история про ведьмака Геральта и его выборы на чьей стороне стоять, пока идет война. Развилка очень сильно влияет на сюжет, что даёт возможность перепройти игру и увидеть новую историю. Игра сделала огромный шаг вперёд по сравнению с первой частью.`,
-      "dtda": `Doom: The Dark Ages — это приквел к части 2016 года, здесь раскрывается история Палача, но в средневековом сеттинге. Игра преподносит лучшую графику по сравнению с предыдущими частями, возможность управлять огромный роботом - Атланом, огнедышащим драконом и предлагает отличную музыку и динамичный геймплей.`,
-      "w1": `The Witcher — начало саги с мрачной атмосферой и мрачным миром. Наблюдать за историей молодого Геральта интересно, правда, к боевой системе нужно привыкнуть.`,
-      "awo": `A Way Out это кооперативная игра с драматической историей о двух заключённых, которые пытаются сбежать из тюрьмы, действуя сообща. Было интересно узнать о жизни обоих героев.`,
-      "sco": `Scorn — это атмосферный биопанк-хоррор от первого лица с необычным визуальным стилем, вдохновлённым творчеством Гигера. Присутствуют элементы головоломки, жуткие враги и крайне необычный сюжет.`,
-      "req": `Resident Evil Requiem — грандиозное продолжение серии, которое совместило в себе жуткий survival-геймплей за новую героиню Грейс Эшкрофт и экшен за легендарного Леона. Игра представляет совокупность лучших решений из прошлых частей, а также ещё больший саспенс и проработку деталей.`,
-      "mfp": `My Friend Pedro — это динамичный платформер с возможностью замедлять время и стрелять с разных оружий. Игра разбита на уровни, связанные сюжетно и с юмором.`,
-      "sotc": `Shadow of the Colossus это эксклюзивная для PlayStation игра, которая предлагает исключительный геймплей в виде сражения с огромными боссами. В битвах придётся использовать паркур на самих противниках.`,
-      "rea": `REANIMAL это кооперативный хоррор-платформер с элементами стелса на пару вечеров, цепляет необычным геймдизайном и атмосферой одиночества. Игра от разработчиков первой и второй частей Little Nightmares.`,
-      "dos2": `Divinity: Original Sin 2 это ролевая пошаговая игра в изометрической перспективе с сюжетом, который позволит делать выборы и геймплеем с 10 школами навыков, которые можно комбинировать.`,
-      "prag": `PRAGMATA это драматичная история Хью - космического инженера и Дианы - андроида, умеющего взламывать. Им вместе предстоит пройти через массу роботов и отправиться с Луны на Землю. Игра предоставляет комфортный геймплей, совмещающий способности обоих героев.`,
-      "ded2": `Dead Island 2 в первую очередь привлекает реалистичной системой расчленения зомби и необычным для своего жанра геймдизайном. События происходят в лакшери отелях, домах селебрити и на улицах дорогого Лос-Анджелеса. Мне особенно понравились проработка интерьера и разновидность оружия.`,
-      "obf": `Ori and the Blind Forest: Definitive Edition — это драматичная история о маленьком существе, которому нужно пройти полосу препятствий, чтобы спасти умирающий лес. Жестокость игры по отношению к ошибкам игрока может быть раздражающей, но в целом геймплей увлекает.`,
-      "sh2r": `Silent Hill 2 Remake это психологический хоррор, где главный герой Джеймс Сандерленд ищет свою жену. Особо хочу отметить необычные головоломки и качественную режиссуру в кат-сценах. Из того, что не понравилось - затянутый геймплей и устаревшая боевая система.`,
-      "oww": `Ori and the Will of the Wisps сделала огромный прорыв по сравнению с приквелом. Разработчики сильно улучшили боевую систему, добавив новые способности. Также прогресс замечен и в побегах, которые стали кинематографичнее и яснее. На впечатления повлиял и визуал - картинка стала ярче и красочней.`,
-      "twd": `The Walking Dead это интерактивное кино, представленное в оригинальном комиксовом стиле. Игра расскажет про путешествие банды в тяжёлое постапокалиптическое время. У игры отличная реиграбельность с множеством веток сюжета.`,
-      "sky": `The Elder Scrolls V: Skyrim Special Edition — одна из лучших РПГ игр в истории. Скайрим геймплейно крайне разнообразная игра - здесь отличное билдостроение, множество классов, магии, занятий и другого. В основном сюжете главному герою предстоит понять, почему в провинции стали появляться драконы.`,
-      "twd2": `The Walking Dead: Season Two — сиквел первой части, отлично продолжающий одну историю. Интерактивное кино, где каждый выбор действительно несёт последствия. Местами игра кажется жестокой к персонажам, к которым игрок привязывается, но именно это и делает её прохождение эмоциональным.`,
-    };
+    let loadedSessionUserId = null;
+    let viewedCatalogProfile = null;
+    const gameDataPromise = (async () => {
+      if (!siteSupabase) throw new Error('Заполните URL проекта и publishable key в supabase-config.js.');
+      // getSession restores the persisted browser session without requiring an
+      // immediate Auth network request (which may fail behind an unstable proxy).
+      const { data: authData, error: authError } = await siteSupabase.auth.getSession();
+      if (authError) throw authError;
+      const user = authData.session && authData.session.user;
+      loadedSessionUserId = user ? user.id : null;
+      try { localStorage.removeItem('site_active_profile'); } catch (_) { }
+      const navEntry = window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation')[0];
+      const isReload = navEntry ? navEntry.type === 'reload' : (window.performance && window.performance.navigation && window.performance.navigation.type === 1);
 
+      const urlParams = new URLSearchParams(window.location.search);
+      let requestedUsername = isReload ? null : urlParams.get('profile');
+
+      if (isReload && urlParams.has('profile')) {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('profile');
+        window.history.replaceState(null, '', cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : ''));
+      }
+
+      let targetProfile = null;
+
+      if (requestedUsername) {
+        const { data: profile, error: profileError } = await siteSupabase.from('profiles')
+          .select('id, username, display_name, avatar_path')
+          .eq('username', requestedUsername)
+          .maybeSingle();
+        if (profileError) throw profileError;
+        if (profile) {
+          targetProfile = profile;
+        }
+      }
+
+      if (!targetProfile && user) {
+        const { data: myProfile, error: myProfileError } = await siteSupabase.from('profiles')
+          .select('id, username, display_name, avatar_path')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (!myProfileError && myProfile) {
+          targetProfile = myProfile;
+        }
+      }
+
+      if (targetProfile) {
+        viewedCatalogProfile = targetProfile;
+      } else if (!user) {
+        return { GAMES: [], REVIEWS: {}, catalogProfile: null };
+      }
+
+      const catalogOwnerId = targetProfile ? targetProfile.id : (user ? user.id : null);
+
+      const { data: rows, error } = await siteSupabase
+        .from('games')
+        .select('id, title, developer, release_year, playtime_hours, genres, ratings, review, image_path, background_position_list_x, background_position_list_y, background_scale_list, background_position_grid_x, background_position_grid_y, background_scale_grid')
+        .eq('owner_id', catalogOwnerId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      if (!rows.length) return { GAMES: [], REVIEWS: {}, catalogProfile: viewedCatalogProfile };
+
+      const { data: signedImages, error: imageError } = await siteSupabase.storage
+        .from('game-covers')
+        .createSignedUrls(rows.map(game => game.image_path), 604800);
+      if (imageError) throw imageError;
+      const imageByPath = new Map((signedImages || []).map(item => [item.path, item.signedUrl]));
+      const games = rows.map(game => {
+        const playtimeHours = game.playtime_hours == null ? null : Math.round(Number(game.playtime_hours));
+        return {
+          id: game.id,
+          title: game.title,
+          developer: game.developer,
+          image: imageByPath.get(game.image_path) || '',
+          imagePath: game.image_path,
+          genres: game.genres || [],
+          ratings: game.ratings || {},
+          year: game.release_year == null ? '' : String(game.release_year),
+          playtime: playtimeHours == null ? '' : `${playtimeHours} ч.`,
+          releaseYear: game.release_year == null ? '' : String(game.release_year),
+          playtimeHours: playtimeHours == null ? '' : String(playtimeHours),
+          review: game.review || '',
+          cardDisplay: {
+            list: {
+              x: game.background_position_list_x,
+              y: game.background_position_list_y,
+              scale: game.background_scale_list
+            },
+            grid: {
+              x: game.background_position_grid_x,
+              y: game.background_position_grid_y,
+              scale: game.background_scale_grid
+            }
+          }
+        };
+      });
+      const reviews = Object.fromEntries(rows.map(game => [game.id, game.review || '']));
+      return { GAMES: games, REVIEWS: reviews, catalogProfile: viewedCatalogProfile };
+    })();
+
+    let GAMES = [];
+    let REVIEWS = {};
     const LABELS = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн", year: "Год выхода", playtime: "Время прохождения" };
     const LABELS_FULL = { rating: "Общий рейтинг", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Главный герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн", year: "Год выхода", playtime: "Время прохождения" };
     const SORT_SHORT = { rating: "★ Общий", story: "Сюжет", graphics: "Графика", gameplay: "Геймплей", main_character: "Герой", characters: "Персонажи", atmosphere: "Атмосфера", sound_design: "Саунд-дизайн", year: "Год", playtime: "Время" };
@@ -3282,12 +4773,12 @@
       items: [
         { label: "Шкала", text: "Каждый критерий оценивается по шкале от 1 до 10.\n**7** - удовлетворительно \n**8** - хорошо \n**9** - отлично \n**10** - недостижимо" },
         { label: "Сюжет", text: "Рассматривается оригинальность истории, её вариативность и реиграбельность." },
-        { label: "Графика", text: "Основное внимание уделяется художественному стилю, детализации и левел-дизайну."},
-        { label: "Геймплей", text: "Оценивается разнообразие механик, баланс ресурсов и органичное вплетение в динамику игры."},
-        { label: "Главный герой", text: "Рассматривается цельность решений персонажа, последовательность действий и харизма."},
-        { label: "Персонажи", text: "Фокус на цельности второстепенных героев, их импонируемости, запоминаемости."},
-        { label: "Атмосфера", text: "Способность игры погружать в мир, удачное применение музыки и точность подобранных локаций."},
-        { label: "Саунд-дизайн", text: "В первую очередь оценивается качество музыки и синергия звуковых эффектов с настроением игры."},
+        { label: "Графика", text: "Основное внимание уделяется художественному стилю, детализации и левел-дизайну." },
+        { label: "Геймплей", text: "Оценивается разнообразие механик, баланс ресурсов и органичное вплетение в динамику игры." },
+        { label: "Главный герой", text: "Рассматривается цельность решений персонажа, последовательность действий и харизма." },
+        { label: "Персонажи", text: "Фокус на цельности второстепенных героев, их импонируемости, запоминаемости." },
+        { label: "Атмосфера", text: "Способность игры погружать в мир, удачное применение музыки и точность подобранных локаций." },
+        { label: "Саунд-дизайн", text: "В первую очередь оценивается качество музыки и синергия звуковых эффектов с настроением игры." },
       ],
       usage: {
         title: "Как пользоваться сайтом",
@@ -3324,6 +4815,1178 @@
         </p>
       );
     };
+
+    const prepareAvatarImage = async (file) => {
+      if (!file || !file.type.startsWith('image/')) throw new Error('Выберите файл изображения.');
+      const bitmap = await createImageBitmap(file);
+      const maxSide = 512;
+      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Браузер не смог обработать изображение.');
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close?.();
+
+      for (let quality = 0.88; quality >= 0.4; quality -= 0.08) {
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+        if (blob && blob.type === 'image/webp' && blob.size <= 400 * 1024) return blob;
+      }
+      throw new Error('Не удалось сжать изображение до 400 КБ. Выберите картинку попроще.');
+    };
+
+    let memoryLibrariesCache = null;
+    try {
+      const stored = sessionStorage.getItem('site_cached_libraries');
+      if (stored) memoryLibrariesCache = JSON.parse(stored);
+    } catch (_) { }
+
+    let memoryProfileCache = new Map();
+    const getCachedProfile = (userId) => {
+      if (memoryProfileCache.has(userId)) return memoryProfileCache.get(userId);
+      try {
+        const stored = sessionStorage.getItem('site_cached_profile_' + userId);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          memoryProfileCache.set(userId, parsed);
+          return parsed;
+        }
+      } catch (_) { }
+      return null;
+    };
+    const setCachedProfile = (userId, data) => {
+      memoryProfileCache.set(userId, data);
+      try { sessionStorage.setItem('site_cached_profile_' + userId, JSON.stringify(data)); } catch (_) { }
+    };
+
+    const clearLocalAuthState = () => {
+      let authKeyPrefix = 'sb-';
+      try {
+        const projectUrl = window.SUPABASE_CONFIG?.url;
+        if (projectUrl) {
+          const projectRef = new URL(projectUrl).hostname.split('.')[0];
+          if (projectRef) authKeyPrefix = `sb-${projectRef}-`;
+        }
+      } catch (_) { }
+
+      for (const storage of [window.localStorage, window.sessionStorage]) {
+        try {
+          Object.keys(storage)
+            .filter(key => key.startsWith(authKeyPrefix))
+            .forEach(key => storage.removeItem(key));
+          Object.keys(storage)
+            .filter(key => key === 'site_active_profile' || key === 'site_cached_avatar' || key === 'site_cached_libraries' || key.startsWith('site_cached_profile_'))
+            .forEach(key => storage.removeItem(key));
+        } catch (_) { }
+      }
+      memoryProfileCache.clear();
+      memoryLibrariesCache = null;
+    };
+
+    const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
+      const [tab, setTab] = useState(initialTab);
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [username, setUsername] = useState('');
+      const [displayName, setDisplayName] = useState('');
+      const [busy, setBusy] = useState(false);
+      const [message, setMessage] = useState('');
+      const [messageError, setMessageError] = useState(false);
+
+      useEffect(() => {
+        if (isOpen) {
+          setTab(initialTab);
+          setMessage('');
+          setMessageError(false);
+        }
+      }, [isOpen, initialTab]);
+
+      useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e) => {
+          if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [isOpen, onClose]);
+
+      const normalizeAuthError = (error) => {
+        const text = (error && error.message) || 'Неизвестная ошибка.';
+        if (/invalid login credentials/i.test(text)) return 'Неверная почта или пароль.';
+        if (/username|profiles_username_format|duplicate key/i.test(text)) return 'Этот логин уже занят или имеет неверный формат.';
+        if (/already registered|User already registered/i.test(text)) return 'Пользователь с такой почтой уже зарегистрирован.';
+        if (/email rate limit/i.test(text)) return 'Слишком много писем подтверждения. Попробуйте позже.';
+        if (/password should be at least/i.test(text)) return 'Пароль должен содержать минимум 8 символов.';
+        return text;
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setMessage('');
+        setMessageError(false);
+        const client = window.siteSupabase;
+        if (!client) {
+          setMessage('Supabase не подключен.');
+          setMessageError(true);
+          return;
+        }
+
+        const cleanEmail = email.trim();
+        if (!cleanEmail || !password) {
+          setMessage('Заполните все обязательные поля.');
+          setMessageError(true);
+          return;
+        }
+
+        setBusy(true);
+        try {
+          if (tab === 'signup') {
+            const cleanUsername = username.trim().toLowerCase();
+            const cleanDisplayName = displayName.trim() || cleanUsername;
+            if (!cleanUsername || !/^[A-Za-z0-9_]{3,24}$/.test(cleanUsername)) {
+              setMessage('Логин: 3–24 символа (латиница, цифры, _).');
+              setMessageError(true);
+              setBusy(false);
+              return;
+            }
+            if (password.length < 8) {
+              setMessage('Пароль должен быть не менее 8 символов.');
+              setMessageError(true);
+              setBusy(false);
+              return;
+            }
+
+            const { data, error } = await client.auth.signUp({
+              email: cleanEmail,
+              password,
+              options: {
+                data: {
+                  username: cleanUsername,
+                  display_name: cleanDisplayName
+                }
+              }
+            });
+            if (error) throw error;
+
+            if (!data.session) {
+              setMessage('Письмо с подтверждением отправлено на почту. После подтверждения войдите.');
+              setMessageError(false);
+              setTab('signin');
+            } else {
+              onClose();
+              if (onSuccess) onSuccess(data.user);
+            }
+          } else {
+            const { data, error } = await client.auth.signInWithPassword({
+              email: cleanEmail,
+              password
+            });
+            if (error) throw error;
+            onClose();
+            if (onSuccess) onSuccess(data.user);
+          }
+        } catch (err) {
+          console.error('Auth error:', err);
+          setMessage(normalizeAuthError(err));
+          setMessageError(true);
+        } finally {
+          setBusy(false);
+        }
+      };
+
+      if (!isOpen) return null;
+
+      return (
+        <>
+          <div className="auth-modal-backdrop" onClick={onClose} aria-hidden="true" />
+          <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+            <div className="auth-modal-top">
+              <div className="auth-tabs" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === 'signin'}
+                  className={`auth-tab-btn ${tab === 'signin' ? 'active' : ''}`}
+                  onClick={() => { setTab('signin'); setMessage(''); }}
+                >
+                  Войти
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === 'signup'}
+                  className={`auth-tab-btn ${tab === 'signup' ? 'active' : ''}`}
+                  onClick={() => { setTab('signup'); setMessage(''); }}
+                >
+                  Регистрация
+                </button>
+              </div>
+              <button type="button" className="auth-close-btn" onClick={onClose} aria-label="Закрыть">×</button>
+            </div>
+
+            <form className="auth-form" onSubmit={handleSubmit}>
+              {tab === 'signup' && (
+                <>
+                  <div className="auth-field">
+                    <label htmlFor="auth-username">Логин *</label>
+                    <input
+                      id="auth-username"
+                      type="text"
+                      required
+                      minLength={3}
+                      maxLength={24}
+                      pattern="[A-Za-z0-9_]+"
+                      placeholder="Только латиница, цифры и _"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      autoComplete="username"
+                      disabled={busy}
+                    />
+                    <small>Будет ссылкой на вашу публичную библиотеку</small>
+                  </div>
+                  <div className="auth-field">
+                    <label htmlFor="auth-display-name">Имя профиля</label>
+                    <input
+                      id="auth-display-name"
+                      type="text"
+                      maxLength={48}
+                      placeholder="Как вас показывать в профиле"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      autoComplete="nickname"
+                      disabled={busy}
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="auth-field">
+                <label htmlFor="auth-email">Электронная почта *</label>
+                <input
+                  id="auth-email"
+                  type="email"
+                  required
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  disabled={busy}
+                />
+              </div>
+
+              <div className="auth-field">
+                <label htmlFor="auth-password">Пароль *</label>
+                <input
+                  id="auth-password"
+                  type="password"
+                  required
+                  minLength={8}
+                  placeholder={tab === 'signup' ? 'Минимум 8 символов' : 'Ваш пароль'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
+                  disabled={busy}
+                />
+              </div>
+
+              {message && (
+                <div className={`auth-message ${messageError ? 'error' : ''}`} role="status">
+                  {message}
+                </div>
+              )}
+
+              <button type="submit" className="auth-submit-btn" disabled={busy}>
+                {busy ? 'Подождите…' : (tab === 'signup' ? 'Создать аккаунт' : 'Войти')}
+              </button>
+            </form>
+          </div>
+        </>
+      );
+    };
+
+    const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
+      const [libraries, setLibraries] = useState(() => memoryLibrariesCache || []);
+      const [loading, setLoading] = useState(() => !memoryLibrariesCache || memoryLibrariesCache.length === 0);
+      const [error, setError] = useState('');
+
+      useEffect(() => {
+        if (!isOpen) return;
+        let active = true;
+        const previousOverflow = document.body.style.overflow;
+        const handleKeyDown = event => { if (event.key === 'Escape') onClose(); };
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', handleKeyDown);
+
+        if (memoryLibrariesCache && memoryLibrariesCache.length > 0) {
+          setLibraries(memoryLibrariesCache);
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
+
+        const loadLibraries = async () => {
+          setError('');
+          try {
+            const client = window.siteSupabase;
+            if (!client) throw new Error('Не удалось подключиться к Supabase.');
+            const [{ data, error: listError }, { data: modData }] = await Promise.all([
+              client.rpc('list_public_libraries'),
+              client.from('profiles').select('id').eq('is_moderator', true)
+            ]);
+            if (listError) throw listError;
+            const entries = data || [];
+            const modIdSet = new Set((modData || []).map(m => m.id));
+            const avatarPaths = entries.map(item => item.avatar_path).filter(Boolean);
+            let avatarByPath = new Map();
+            if (avatarPaths.length) {
+              const { data: signed, error: avatarError } = await client.storage
+                .from('profile-avatars').createSignedUrls(avatarPaths, 604800);
+              if (avatarError) console.warn('Не удалось загрузить некоторые аватары:', avatarError);
+              avatarByPath = new Map((signed || []).map(item => [item.path, item.signedUrl]));
+            }
+            const mapped = entries.map(item => ({
+              ...item,
+              is_moderator: modIdSet.has(item.profile_id),
+              avatarUrl: item.avatar_path ? avatarByPath.get(item.avatar_path) || '' : ''
+            }));
+
+            // Sort: moderator always at top, then by game_count descending, then alphabetical
+            mapped.sort((a, b) => {
+              if (a.is_moderator && !b.is_moderator) return -1;
+              if (!a.is_moderator && b.is_moderator) return 1;
+              const countA = Number(a.game_count || 0);
+              const countB = Number(b.game_count || 0);
+              if (countB !== countA) return countB - countA;
+              return (a.display_name || a.username || '').localeCompare(b.display_name || b.username || '', 'ru');
+            });
+
+            memoryLibrariesCache = mapped;
+            try { sessionStorage.setItem('site_cached_libraries', JSON.stringify(mapped)); } catch (_) { }
+            if (active) {
+              setLibraries(mapped);
+              setLoading(false);
+            }
+          } catch (loadError) {
+            console.error('Load public libraries error:', loadError);
+            if (active && (!memoryLibrariesCache || memoryLibrariesCache.length === 0)) {
+               setError('Не удалось загрузить список. Проверьте применение миграции 202610120009_public_libraries.sql и доступность RPC list_public_libraries.');
+            }
+          } finally {
+            if (active) setLoading(false);
+          }
+        };
+        loadLibraries();
+        return () => {
+          active = false;
+          document.body.style.overflow = previousOverflow;
+          window.removeEventListener('keydown', handleKeyDown);
+        };
+      }, [isOpen, onClose]);
+
+      return (
+        <AnimatePresence>
+          {isOpen && <motion.div
+            className="library-drawer-layer"
+            key="library-drawer-layer"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="library-drawer-backdrop" onClick={onClose} aria-hidden="true" />
+            <motion.aside
+              className="library-drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="library-drawer-title"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 360, damping: 36 }}
+            >
+              <div className="library-drawer-header">
+                <h2 id="library-drawer-title">Библиотеки пользователей</h2>
+                <button type="button" className="library-drawer-close" onClick={onClose} aria-label="Закрыть">×</button>
+              </div>
+              <div className="library-drawer-list">
+                {loading && <p className="library-drawer-message">Загружаю список…</p>}
+                {!loading && error && <p className="library-drawer-message" role="status">{error}</p>}
+                {!loading && !error && libraries.length === 0 && <p className="library-drawer-message">Пока нет публичных библиотек.</p>}
+                {!loading && !error && libraries.map(item => (
+                  <button
+                    type="button"
+                    className="library-person"
+                    key={item.profile_id}
+                    onClick={() => onSelectProfile(item.username)}
+                    aria-label={`Открыть библиотеку ${item.display_name}, ${formatGameCount(item.game_count)}`}
+                  >
+                    <span className="library-person-avatar">
+                      {item.avatarUrl
+                        ? <img src={item.avatarUrl} alt="" />
+                        : <svg aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
+                    </span>
+                    <span className="library-person-name">
+                      <strong>{item.display_name || item.username}</strong>
+                      <small>@{item.username}</small>
+                    </span>
+                    <span className="library-person-count">{formatGameCount(item.game_count)}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.aside>
+          </motion.div>}
+        </AnimatePresence>
+      );
+    };
+
+    const CommentBody = ({ text, games, onOpenGame }) => {
+      const source = String(text || '');
+      const candidates = (games || [])
+        .map(game => ({
+          game,
+          token: `@${String(game.title || '').trim()}`
+        }))
+        .filter(item => item.token.length > 1)
+        .sort((a, b) => b.token.length - a.token.length)
+        .map(item => ({ ...item, lowerToken: item.token.toLocaleLowerCase() }));
+
+      if (!source || !candidates.length || !onOpenGame) return source;
+      const lowerSource = source.toLocaleLowerCase();
+      const parts = [];
+      let cursor = 0;
+      let mentionKey = 0;
+
+      while (cursor < source.length) {
+        let match = null;
+        candidates.forEach(candidate => {
+          let searchFrom = cursor;
+          while (searchFrom < source.length) {
+            const index = lowerSource.indexOf(candidate.lowerToken, searchFrom);
+            if (index < 0) break;
+            const previous = index > 0 ? source[index - 1] : '';
+            const next = source[index + candidate.token.length] || '';
+            const isWord = value => /[A-Za-zА-Яа-яЁё0-9_]/.test(value);
+            if (!isWord(previous) && !isWord(next)) {
+              if (!match || index < match.index || (index === match.index && candidate.token.length > match.candidate.token.length)) {
+                match = { index, candidate };
+              }
+              break;
+            }
+            searchFrom = index + 1;
+          }
+        });
+
+        if (!match) {
+          parts.push(source.slice(cursor));
+          break;
+        }
+        if (match.index > cursor) parts.push(source.slice(cursor, match.index));
+        parts.push(
+          <button
+            type="button"
+            className="profile-comment-game-link"
+            key={`comment-game-${mentionKey++}`}
+            onClick={() => onOpenGame(match.candidate.game)}
+            title={`Открыть игру «${match.candidate.game.title}»`}
+          >
+            {source.slice(match.index, match.index + match.candidate.token.length)}
+          </button>
+        );
+        cursor = match.index + match.candidate.token.length;
+      }
+
+      return parts;
+    };
+
+    const CommentsDrawer = ({ isOpen, onClose, profile, currentUser, games, onOpenGame, onRequestAuth }) => {
+      const [comments, setComments] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [message, setMessage] = useState('');
+      const [messageError, setMessageError] = useState(false);
+      const [commentBody, setCommentBody] = useState('');
+      const [saving, setSaving] = useState(false);
+      const [actionId, setActionId] = useState('');
+      const [isModerator, setIsModerator] = useState(false);
+      const [refreshKey, setRefreshKey] = useState(0);
+
+      useEffect(() => {
+        if (!isOpen) return;
+        let active = true;
+        const previousOverflow = document.body.style.overflow;
+        const handleKeyDown = event => { if (event.key === 'Escape') onClose(); };
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', handleKeyDown);
+
+        const loadComments = async () => {
+          setLoading(true);
+          setMessage('');
+          setMessageError(false);
+          setIsModerator(false);
+          try {
+            const client = window.siteSupabase;
+            if (!client) throw new Error('Не удалось подключиться к Supabase.');
+            if (!profile?.id) {
+              if (active) setComments([]);
+              return;
+            }
+
+            const [{ data: rows, error: commentsError }, moderatorResult] = await Promise.all([
+              client.from('profile_comments')
+                .select('id, profile_id, author_id, body, created_at')
+                .eq('profile_id', profile.id)
+                .order('created_at', { ascending: false }),
+              currentUser
+                ? client.from('profiles').select('is_moderator').eq('id', currentUser.id).maybeSingle()
+                : Promise.resolve({ data: null })
+            ]);
+            if (commentsError) throw commentsError;
+
+            const authorIds = [...new Set((rows || []).map(item => item.author_id).filter(Boolean))];
+            let authorById = new Map();
+            if (authorIds.length) {
+              const { data: authors, error: authorsError } = await client.from('profiles')
+                .select('id, username, display_name')
+                .in('id', authorIds);
+              if (authorsError) console.warn('Не удалось загрузить имена авторов комментариев:', authorsError);
+              authorById = new Map((authors || []).map(author => [author.id, author]));
+            }
+
+            if (active) {
+              setComments((rows || []).map(item => ({
+                ...item,
+                author: authorById.get(item.author_id) || null
+              })));
+              setIsModerator(Boolean(moderatorResult?.data?.is_moderator));
+            }
+          } catch (loadError) {
+            console.error('Load profile comments error:', loadError);
+            if (active) {
+              setComments([]);
+              setMessage('Не удалось загрузить комментарии. Проверьте применение миграции 202610130004_profile_comments.sql.');
+              setMessageError(true);
+            }
+          } finally {
+            if (active) setLoading(false);
+          }
+        };
+
+        loadComments();
+        return () => {
+          active = false;
+          document.body.style.overflow = previousOverflow;
+          window.removeEventListener('keydown', handleKeyDown);
+        };
+      }, [isOpen, profile?.id, currentUser?.id, refreshKey]);
+
+      const submitComment = async event => {
+        event.preventDefault();
+        const body = commentBody.trim();
+        if (!body || !currentUser || !profile?.id || saving) return;
+        setSaving(true);
+        setMessage('');
+        setMessageError(false);
+        try {
+          const { error } = await window.siteSupabase.from('profile_comments').insert({
+            profile_id: profile.id,
+            author_id: currentUser.id,
+            body
+          });
+          if (error) throw error;
+          setCommentBody('');
+          setRefreshKey(value => value + 1);
+        } catch (saveError) {
+          console.error('Save profile comment error:', saveError);
+          setMessage(saveError?.message || 'Не удалось отправить комментарий.');
+          setMessageError(true);
+        } finally {
+          setSaving(false);
+        }
+      };
+
+      const deleteComment = async comment => {
+        if (!currentUser || (!isModerator && comment.author_id !== currentUser.id) || actionId) return;
+        setActionId(comment.id);
+        setMessage('');
+        setMessageError(false);
+        try {
+          const { error } = await window.siteSupabase.from('profile_comments').delete().eq('id', comment.id);
+          if (error) throw error;
+          setRefreshKey(value => value + 1);
+        } catch (deleteError) {
+          console.error('Delete profile comment error:', deleteError);
+          setMessage(deleteError?.message || 'Не удалось удалить комментарий.');
+          setMessageError(true);
+        } finally {
+          setActionId('');
+        }
+      };
+
+      const profileLabel = profile
+        ? `${profile.display_name || profile.username || 'Профиль'}${profile.username ? ` · @${profile.username}` : ''}`
+        : 'Профиль не выбран';
+
+      return (
+        <AnimatePresence>
+          {isOpen && <motion.div
+            className="library-drawer-layer"
+            key="comments-drawer-layer"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="library-drawer-backdrop" onClick={onClose} aria-hidden="true" />
+            <motion.aside
+              className="comments-drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="comments-drawer-title"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 360, damping: 36 }}
+            >
+              <div className="comments-drawer-header">
+                <div className="comments-drawer-heading">
+                  <h2 id="comments-drawer-title">Комментарии</h2>
+                  <p className="comments-drawer-profile">{profileLabel}</p>
+                </div>
+                <button type="button" className="comments-drawer-close" onClick={onClose} aria-label="Закрыть">×</button>
+              </div>
+
+              <div className="comments-drawer-content">
+                {!profile && <p className="comments-form-message">Откройте профиль, чтобы посмотреть его комментарии.</p>}
+                {profile && <>
+                  <div className="comments-list" aria-live="polite">
+                    {loading && <p className="comments-form-message">Загружаю комментарии…</p>}
+                    {!loading && !comments.length && <p className="comments-form-message">Комментариев пока нет.</p>}
+                    {!loading && comments.map(comment => {
+                      const canDelete = currentUser && (isModerator || comment.author_id === currentUser.id);
+                      const authorName = comment.author?.display_name || comment.author?.username || 'Пользователь';
+                      const dateLabel = comment.created_at
+                        ? new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(comment.created_at))
+                        : '';
+                      return (
+                        <article className="profile-comment" key={comment.id}>
+                          <div className="profile-comment-meta">
+                            <span className="profile-comment-author">{authorName}</span>
+                            <time className="profile-comment-date" dateTime={comment.created_at}>{dateLabel}</time>
+                          </div>
+                          <p className="profile-comment-body"><CommentBody text={comment.body} games={games} onOpenGame={onOpenGame} /></p>
+                          {canDelete && <button
+                            type="button"
+                            className="profile-comment-delete"
+                            onClick={() => deleteComment(comment)}
+                            disabled={actionId === comment.id}
+                          >
+                            {actionId === comment.id ? 'Удаляю…' : 'Удалить'}
+                          </button>}
+                        </article>
+                      );
+                    })}
+                  </div>
+
+                  {message && <p className={`comments-form-message ${messageError ? 'error' : ''}`} role="status">{message}</p>}
+                  {currentUser ? <form className="comments-form" onSubmit={submitComment}>
+                    <textarea
+                      value={commentBody}
+                      maxLength={1000}
+                      placeholder="Оставьте комментарий…"
+                      onChange={event => setCommentBody(event.target.value)}
+                      disabled={saving}
+                    />
+                    <div className="comments-form-footer">
+                      <span className="comments-form-limit">До 1000 символов</span>
+                      <button type="submit" className="comments-form-submit" disabled={saving || !commentBody.trim()}>
+                        {saving ? 'Отправляю…' : 'Оставить комментарий'}
+                      </button>
+                    </div>
+                  </form> : <div className="comments-form">
+                    <p className="comments-form-message">Войдите, чтобы оставить комментарий.</p>
+                    <button type="button" className="comments-form-submit" onClick={onRequestAuth}>Войти</button>
+                  </div>}
+                </>}
+              </div>
+            </motion.aside>
+          </motion.div>}
+        </AnimatePresence>
+      );
+    };
+
+    const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
+      const [profile, setProfile] = useState(null);
+      const [submissions, setSubmissions] = useState([]);
+      const [moderationCount, setModerationCount] = useState(0);
+      const [message, setMessage] = useState('');
+      const [messageError, setMessageError] = useState(false);
+      const [deleteTitle, setDeleteTitle] = useState('');
+      const [deleteLoading, setDeleteLoading] = useState(false);
+      const [avatarLoading, setAvatarLoading] = useState(false);
+      const [isEditingName, setIsEditingName] = useState(false);
+      const [nameInput, setNameInput] = useState('');
+      const [nameSaving, setNameSaving] = useState(false);
+      const renderVersionRef = useRef(0);
+      const avatarInputRef = useRef(null);
+      const nameInputRef = useRef(null);
+
+      useEffect(() => {
+        if (!isOpen || !user) {
+          setProfile(null);
+          setIsEditingName(false);
+          return;
+        }
+        setIsEditingName(false);
+        const cached = getCachedProfile(user.id);
+        if (cached) {
+          setProfile(cached);
+          setNameInput(cached.display_name || '');
+          if (cached.avatarUrl) onAvatarChange(cached.avatarUrl);
+        }
+        const version = Date.now();
+        renderVersionRef.current = version;
+        loadProfile(version);
+      }, [isOpen, user]);
+
+      const loadProfile = async (version) => {
+        const client = window.siteSupabase;
+        if (!client) {
+          setMessage('Supabase не подключен.');
+          setMessageError(true);
+          return;
+        }
+
+        try {
+          const { data: profileData, error: profileError } = await client
+            .from('profiles')
+            .select('username, display_name, is_moderator')
+            .eq('id', user.id)
+            .single();
+
+          if (version !== renderVersionRef.current) return;
+
+          if (profileError) {
+            console.error('Profile error:', profileError);
+            setMessage('Не удалось загрузить профиль.');
+            setMessageError(true);
+            return;
+          }
+
+          const { data: avatarData, error: avatarError } = await client.from('profiles')
+            .select('avatar_path').eq('id', user.id).single();
+          if (avatarError) console.warn('Фото профиля недоступно до применения миграции 008:', avatarError);
+          profileData.avatar_path = avatarError ? null : avatarData?.avatar_path || null;
+
+          let avatarUrl = '';
+          if (profileData.avatar_path) {
+            const { data: signed } = await client.storage.from('profile-avatars')
+              .createSignedUrl(profileData.avatar_path, 604800);
+            avatarUrl = signed?.signedUrl || '';
+          }
+          if (version !== renderVersionRef.current) return;
+          const updatedProfile = { ...profileData, avatarUrl };
+          setCachedProfile(user.id, updatedProfile);
+          setProfile(updatedProfile);
+          onAvatarChange(avatarUrl);
+
+          // Фоновая очистка старых/осиротевших аватаров пользователя в бакете:
+          (async () => {
+            try {
+              const { data: fileList } = await client.storage.from('profile-avatars').list(user.id);
+              if (fileList && fileList.length > 1) {
+                const activeName = profileData.avatar_path ? profileData.avatar_path.split('/').pop() : '';
+                const orphans = fileList
+                  .filter(f => f.name && f.name !== activeName && !f.name.startsWith('.'))
+                  .map(f => `${user.id}/${f.name}`);
+                if (orphans.length > 0) {
+                  await client.storage.from('profile-avatars').remove(orphans);
+                }
+              }
+            } catch (_) { }
+          })();
+
+          if (profileData.is_moderator) {
+            await loadModerationCount(version);
+          } else {
+            await loadSubmissions(version);
+          }
+        } catch (err) {
+          console.error('Load profile error:', err);
+          setMessage('Ошибка загрузки профиля.');
+          setMessageError(true);
+        }
+      };
+
+      const loadSubmissions = async (version) => {
+        const client = window.siteSupabase;
+        try {
+          // Сначала очищаем старые просмотренные заявки
+          await client.rpc('cleanup_old_viewed_submissions');
+
+          // Загружаем только последние 3 заявки
+          const { data, error } = await client
+            .from('game_submissions')
+            .select('id, title, status, moderator_note, created_at, viewed_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+          if (version !== renderVersionRef.current) return;
+          if (!error) {
+            setSubmissions(data || []);
+            // Помечаем непросмотренные заявки как просмотренные
+            (data || []).forEach(async (submission) => {
+              if (!submission.viewed_at && submission.status !== 'pending') {
+                await client.rpc('mark_submission_as_viewed', { p_submission_id: submission.id });
+              }
+            });
+          }
+        } catch (err) {
+          console.error('Load submissions error:', err);
+        }
+      };
+
+      const loadModerationCount = async (version) => {
+        const client = window.siteSupabase;
+        try {
+          const { count, error } = await client
+            .from('game_submissions')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'pending');
+
+          if (version !== renderVersionRef.current) return;
+          if (error) throw error;
+          setModerationCount(count || 0);
+        } catch (err) {
+          console.error('Load moderation count error:', err);
+        }
+      };
+
+      const handleDeleteGame = async (e) => {
+        e.preventDefault();
+        const title = deleteTitle.trim();
+        if (!title) return;
+        if (!window.confirm('Карточка игры будет удалена без возможности восстановления. Продолжить?')) return;
+
+        setDeleteLoading(true);
+        const client = window.siteSupabase;
+        try {
+          const { data: imagePath, error } = await client.rpc('delete_catalog_game', {
+            p_title: title,
+            p_confirmation: title
+          });
+          if (error) throw error;
+
+          if (imagePath) {
+            await client.storage.from('game-covers').remove([imagePath]);
+            setMessage('Карточка и обложка удалены безвозвратно.');
+          } else {
+            setMessage('Карточка удалена. Обложка сохранена, так как используется другой карточкой.');
+          }
+          setMessageError(false);
+          setDeleteTitle('');
+        } catch (error) {
+          setMessage(error.message || 'Ошибка удаления.');
+          setMessageError(true);
+        } finally {
+          setDeleteLoading(false);
+        }
+      };
+
+      const handleSignOut = async () => {
+        const client = window.siteSupabase;
+        const { error } = client ? await client.auth.signOut({ scope: 'local' }) : { error: null };
+        if (error) {
+          setMessage(error.message);
+          setMessageError(true);
+        } else {
+          clearLocalAuthState();
+          window.location.href = './index.html';
+        }
+      };
+
+      const handleResetAuth = () => {
+        clearLocalAuthState();
+        window.location.href = './index.html';
+      };
+
+      const handleAvatarUpload = async (event) => {
+        const input = event.currentTarget;
+        const file = input.files && input.files[0];
+        input.value = '';
+        if (!file || !user) return;
+
+        setAvatarLoading(true);
+        setMessage('');
+        let uploadedPath = '';
+        try {
+          const image = await prepareAvatarImage(file);
+          const client = window.siteSupabase;
+          const nextPath = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+          const { error: uploadError } = await client.storage.from('profile-avatars').upload(nextPath, image, {
+            contentType: 'image/webp',
+            cacheControl: '3600',
+            upsert: false
+          });
+          if (uploadError) throw uploadError;
+          uploadedPath = nextPath;
+
+          // Сначала обновляем avatar_path в profiles — это разблокирует политику SELECT
+          // для profile-avatars (migration 009 проверяет p.avatar_path = name).
+          const oldPath = profile?.avatar_path;
+          const { error: updateError } = await client.from('profiles')
+            .update({ avatar_path: nextPath }).eq('id', user.id).select('id').single();
+          if (updateError) throw updateError;
+
+          // Теперь создаём signed URL — политика SELECT уже пропустит файл
+          const { data: signed, error: signedError } = await client.storage.from('profile-avatars')
+            .createSignedUrl(nextPath, 604800);
+          if (signedError) throw signedError;
+
+          const avatarUrl = signed?.signedUrl || '';
+          setProfile(current => {
+            const next = current ? { ...current, avatar_path: nextPath, avatarUrl } : current;
+            if (next) setCachedProfile(user.id, next);
+            return next;
+          });
+          onAvatarChange(avatarUrl);
+          setMessage('Фото профиля обновлено.');
+          setMessageError(false);
+
+          // Надежная очистка: удаляем старый аватар и любые другие накопившиеся файлы
+          try {
+            if (oldPath && oldPath !== nextPath) {
+              const { error: oldRemoveError } = await client.storage.from('profile-avatars').remove([oldPath]);
+              if (oldRemoveError) console.warn('Ошибка удаления oldPath:', oldRemoveError);
+            }
+            const { data: fileList } = await client.storage.from('profile-avatars').list(user.id);
+            if (fileList && fileList.length > 0) {
+              const currentFileName = nextPath.split('/').pop();
+              const staleFiles = fileList
+                .filter(item => item.name && item.name !== currentFileName && !item.name.startsWith('.'))
+                .map(item => `${user.id}/${item.name}`);
+              if (staleFiles.length > 0) {
+                const { error: removeError } = await client.storage.from('profile-avatars').remove(staleFiles);
+                if (removeError) console.warn('Ошибка удаления старых аватаров из списка:', removeError);
+              }
+            }
+          } catch (cleanErr) {
+            console.warn('Ошибка очистки старых аватаров:', cleanErr);
+          }
+        } catch (error) {
+          // Откатываем загруженный файл при ошибке
+          if (uploadedPath) await window.siteSupabase.storage.from('profile-avatars').remove([uploadedPath]).catch(() => { });
+          setMessage(error.message || 'Не удалось загрузить фото профиля.');
+          setMessageError(true);
+        } finally {
+          setAvatarLoading(false);
+        }
+      };
+
+      const handleStartEditName = () => {
+        setNameInput(profile?.display_name || '');
+        setIsEditingName(true);
+        setMessage('');
+        setTimeout(() => nameInputRef.current?.focus(), 50);
+      };
+
+      const handleCancelEditName = () => {
+        setIsEditingName(false);
+        setNameInput(profile?.display_name || '');
+      };
+
+      const handleSaveName = async (e) => {
+        if (e) e.preventDefault();
+        const trimmed = (nameInput || '').trim();
+        if (!trimmed) {
+          setMessage('Имя не может быть пустым.');
+          setMessageError(true);
+          return;
+        }
+        if (trimmed.length > 48) {
+          setMessage('Имя не должно превышать 48 символов.');
+          setMessageError(true);
+          return;
+        }
+        if (trimmed === profile?.display_name) {
+          setIsEditingName(false);
+          return;
+        }
+
+        setNameSaving(true);
+        setMessage('');
+        const client = window.siteSupabase;
+        try {
+          const { error: updateError } = await client
+            .from('profiles')
+            .update({ display_name: trimmed })
+            .eq('id', user.id);
+
+          if (updateError) {
+            console.error('Update display_name error:', updateError);
+            setMessage('Не удалось обновить имя.');
+            setMessageError(true);
+            return;
+          }
+
+          setProfile(prev => {
+            const next = prev ? { ...prev, display_name: trimmed } : prev;
+            if (next) setCachedProfile(user.id, next);
+            return next;
+          });
+          setIsEditingName(false);
+          setMessage('Имя успешно обновлено.');
+          setMessageError(false);
+        } catch (err) {
+          console.error('Save name error:', err);
+          setMessage('Ошибка при сохранении имени.');
+          setMessageError(true);
+        } finally {
+          setNameSaving(false);
+        }
+      };
+
+      if (!isOpen) return null;
+
+      return (
+        <>
+          <div className="profile-backdrop" onClick={onClose} />
+          <div className="profile-popover">
+            <div className="profile-header">
+              <button
+                type="button"
+                className="profile-avatar-preview"
+                title={avatarLoading ? 'Обработка фото…' : 'Нажмите, чтобы добавить или заменить фото'}
+                aria-label={avatarLoading ? 'Фото профиля обрабатывается' : 'Добавить или заменить фото профиля'}
+                disabled={avatarLoading}
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                {profile?.avatarUrl
+                  ? <img src={profile.avatarUrl} alt="" />
+                  : <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
+                <span className="profile-avatar-edit-icon" aria-hidden="true">✎</span>
+              </button>
+              <input ref={avatarInputRef} className="profile-avatar-file" type="file" accept="image/*" disabled={avatarLoading} onChange={handleAvatarUpload} />
+              <div className="profile-info">
+                {isEditingName ? (
+                  <form className="profile-name-edit-form" onSubmit={handleSaveName}>
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      className="profile-name-input"
+                      value={nameInput}
+                      onChange={(e) => setNameInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') handleCancelEditName();
+                      }}
+                      maxLength={48}
+                      placeholder="Имя профиля"
+                      disabled={nameSaving}
+                      aria-label="Имя профиля"
+                    />
+                    <button type="submit" className="profile-name-save-btn" disabled={nameSaving || !nameInput.trim()} title="Сохранить" aria-label="Сохранить">✓</button>
+                    <button type="button" className="profile-name-cancel-btn" disabled={nameSaving} onClick={handleCancelEditName} title="Отмена" aria-label="Отмена">✕</button>
+                  </form>
+                ) : (
+                  <div className="profile-name-row">
+                    <h2>{profile?.display_name || 'Загрузка...'}</h2>
+                    {profile && (
+                      <button
+                        type="button"
+                        className="profile-name-edit-btn"
+                        title="Изменить имя"
+                        aria-label="Изменить имя профиля"
+                        onClick={handleStartEditName}
+                      >
+                        ✎
+                      </button>
+                    )}
+                  </div>
+                )}
+                <p>@{profile?.username || '...'}</p>
+                <p>Почта: {user?.email || 'не указана'}</p>
+              </div>
+              <button className="profile-close" onClick={onClose} aria-label="Закрыть">×</button>
+            </div>
+
+            {profile && (
+              <>
+                {profile.is_moderator ? (
+                  <div className="profile-section">
+                    <h3>Модерация заявок</h3>
+                    <p style={{ margin: '0 0 10px', fontSize: '0.82rem', opacity: 0.68 }}>
+                      Ожидающих заявок: {moderationCount}
+                    </p>
+                    <button
+                      type="button"
+                      className="profile-moderation-link"
+                      onClick={() => { window.location.href = './moderation/moderation.html'; }}
+                    >
+                      Открыть список заявок
+                    </button>
+                  </div>
+                ) : (
+                  <div className="profile-section">
+                    <h3>Мои заявки</h3>
+                    {submissions.length === 0 ? (
+                      <p style={{ margin: 0, fontSize: '0.82rem', opacity: 0.68 }}>Заявок пока нет.</p>
+                    ) : (
+                      submissions.map(item => (
+                        <div key={item.id} className="profile-submission">
+                          <strong>{item.title}</strong>
+                          <div className="profile-status">
+                            {item.status === 'pending' ? 'Ожидает проверки' : item.status === 'approved' ? 'Одобрена' : 'Отклонена'}
+                          </div>
+                          {item.moderator_note && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', opacity: 0.68 }}>{item.moderator_note}</p>}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                <div className="delete-game-section">
+                  <h3>Удаление своей игры</h3>
+                  <form className="delete-game-form" onSubmit={handleDeleteGame}>
+                    <input
+                      type="text"
+                      placeholder="Название игры"
+                      value={deleteTitle}
+                      onChange={(e) => setDeleteTitle(e.target.value)}
+                      maxLength={120}
+                      autoComplete="off"
+                    />
+                    <button type="submit" disabled={deleteLoading || !deleteTitle.trim()}>
+                      {deleteLoading ? 'Удаление...' : 'Удалить'}
+                    </button>
+                  </form>
+                </div>
+
+                <div className="profile-actions">
+                  <button onClick={handleSignOut}>Выйти</button>
+                </div>
+
+                {message && (
+                  <div className={`profile-message ${messageError ? 'error' : ''}`}>
+                    {message}
+                  </div>
+                )}
+              </>
+            )}
+
+            {!profile && (
+              <>
+                <div className="profile-message error">
+                  {message || 'Профиль не найден. Можно выйти из аккаунта или сбросить локальную сессию.'}
+                </div>
+                <div className="profile-actions">
+                  <button onClick={handleSignOut}>Выйти</button>
+                  <button className="secondary" onClick={handleResetAuth}>Сбросить сессию</button>
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      );
+    };
+
 
     const SortDock = ({ value, onChange }) => {
       return (
@@ -3372,6 +6035,16 @@
 
     const normalizeSearchPart = (value) =>
       value.toLowerCase().replace(/ё/g, "е").trim();
+
+    const formatGameCount = (value) => {
+      const count = Number(value) || 0;
+      const remainder100 = count % 100;
+      const remainder10 = count % 10;
+      const word = remainder100 >= 11 && remainder100 <= 14
+        ? 'игр'
+        : remainder10 === 1 ? 'игра' : remainder10 >= 2 && remainder10 <= 4 ? 'игры' : 'игр';
+      return `${count} ${word}`;
+    };
 
     // Каждый жанр хранит только каноническое имя и список слов-синонимов через запятую.
     // Это упрощает расширение: добавляем новый жанр или уточняем его слова в одном месте.
@@ -3425,9 +6098,347 @@
     const { useState, useEffect, useMemo, useRef } = React;
     const { motion, AnimatePresence } = window.Motion;
 
+    const ADD_GAME_RATINGS = [
+      ['story', 'Сюжет'], ['graphics', 'Графика'], ['gameplay', 'Геймплей'],
+      ['main_character', 'Главный герой'], ['characters', 'Персонажи'],
+      ['atmosphere', 'Атмосфера'], ['sound_design', 'Саунд-дизайн']
+    ];
+
+    const ADD_GAME_GENRES = [
+      'Выживание', 'Головоломка', 'Инди', 'Интерактивное кино', 'Карточная', 'Киберпанк',
+      'Кооператив', 'Метроидвания', 'Научная фантастика', 'Открытый мир', 'Платформер',
+      'Постапокалипсис', 'Приключение', 'РПГ', 'Соулс-лайк', 'Стелс', 'Сюжетная', 'Фэнтези',
+      'Хоррор', 'Шутер', 'Экшен', 'QTE'
+    ];
+
+    const DEFAULT_CARD_DISPLAY = {
+      list: { x: 50, y: 50, scale: 100 },
+      grid: { x: 50, y: 50, scale: 100 }
+    };
+
+    const clampCardDisplayValue = (value, min, max, fallback) => {
+      const number = Number(value);
+      return Number.isFinite(number) ? Math.min(max, Math.max(min, Math.round(number))) : fallback;
+    };
+
+    const normalizeCardDisplay = (display) => ({
+      list: {
+        x: clampCardDisplayValue(display?.list?.x, 0, 100, DEFAULT_CARD_DISPLAY.list.x),
+        y: clampCardDisplayValue(display?.list?.y, 0, 100, DEFAULT_CARD_DISPLAY.list.y),
+        scale: clampCardDisplayValue(display?.list?.scale, 100, 200, DEFAULT_CARD_DISPLAY.list.scale)
+      },
+      grid: {
+        x: clampCardDisplayValue(display?.grid?.x, 0, 100, DEFAULT_CARD_DISPLAY.grid.x),
+        y: clampCardDisplayValue(display?.grid?.y, 0, 100, DEFAULT_CARD_DISPLAY.grid.y),
+        scale: clampCardDisplayValue(display?.grid?.scale, 100, 200, DEFAULT_CARD_DISPLAY.grid.scale)
+      }
+    });
+
+    const getCardDisplay = (game, view) => normalizeCardDisplay(game?.cardDisplay)[view];
+
+    const CardBackground = ({ game, view }) => {
+      const display = getCardDisplay(game, view);
+      return (
+        <div
+          className="card-bg-layer"
+          style={{
+            backgroundImage: game?.image ? `url("${game.image}")` : 'none',
+            backgroundPosition: `${display.x}% ${display.y}%`,
+            transform: `scale(${display.scale / 100})`,
+            transformOrigin: `${display.x}% ${display.y}%`
+          }}
+          aria-hidden="true"
+        />
+      );
+    };
+
+    const CardPreview = ({ game, view }) => (
+      <div className={`card-preview-frame ${view}`}>
+        <div className="card">
+          <CardBackground game={game} view={view} />
+          {view === 'list' && (
+            <>
+              <div className="badge">
+                <span style={{ color: 'white', marginRight: 6 }}>#1</span>
+                <span style={{ color: 'gold' }}>{calcRating(game.ratings)}</span>
+              </div>
+              <div className="title">{game.title || 'Название игры'}</div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+
+    const AddGameDialog = ({ game = null, onClose, onComplete }) => {
+      const isEdit = Boolean(game);
+      const [fields, setFields] = useState(() => ({
+        title: game?.title || '',
+        developer: game?.developer || '',
+        releaseYear: game?.releaseYear || game?.year || '',
+        playtimeHours: game?.playtimeHours || '',
+        review: game?.review || REVIEWS[game?.id] || ''
+      }));
+      const [ratings, setRatings] = useState(() => ({
+        ...Object.fromEntries(ADD_GAME_RATINGS.map(([key]) => [key, 7])),
+        ...(game?.ratings || {})
+      }));
+      const [selectedGenres, setSelectedGenres] = useState(() => game?.genres || []);
+      const [cardDisplay, setCardDisplay] = useState(() => normalizeCardDisplay(game?.cardDisplay));
+      const [previewView, setPreviewView] = useState('list');
+      const [coverFile, setCoverFile] = useState(null);
+      const [coverBlob, setCoverBlob] = useState(null);
+      const [coverPreview, setCoverPreview] = useState(() => game?.image || '');
+      const [coverSize, setCoverSize] = useState('');
+      const [compressing, setCompressing] = useState(false);
+      const [dragging, setDragging] = useState(false);
+      const [busy, setBusy] = useState(false);
+      const [status, setStatus] = useState('');
+      const [statusError, setStatusError] = useState(false);
+      const [moderatorMode, setModeratorMode] = useState(null);
+      const previewUrlRef = useRef('');
+      const coverTaskRef = useRef(0);
+      const submitLockRef = useRef(false);
+      const averageRating = (Object.values(ratings).reduce((sum, value) => sum + Number(value), 0) / ADD_GAME_RATINGS.length).toFixed(1);
+
+      useEffect(() => {
+        const onKeyDown = event => { if (event.key === 'Escape' && !busy && !compressing) onClose(); };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+      }, [onClose, busy, compressing]);
+
+      useEffect(() => {
+        window.siteSupabase.auth.getSession().then(async ({ data }) => {
+          const user = data.session && data.session.user;
+          if (!user) return;
+          const { data: profile } = await window.siteSupabase.from('profiles')
+            .select('is_moderator').eq('id', user.id).single();
+          setModeratorMode(Boolean(profile && profile.is_moderator));
+        }).catch(() => setModeratorMode(false));
+      }, []);
+
+      useEffect(() => () => {
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      }, []);
+
+      const setValue = (key, value) => setFields(current => ({ ...current, [key]: value }));
+
+      const chooseCover = async file => {
+        if (!file) return;
+        const taskId = ++coverTaskRef.current;
+        setCoverFile(null);
+        setCoverBlob(null);
+        setCoverSize('');
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = '';
+        setCoverPreview('');
+        if (!file.type.startsWith('image/')) {
+          setCompressing(false);
+          setStatus('Выберите файл изображения.');
+          setStatusError(true);
+          return;
+        }
+        setCoverFile(file);
+        setCoverBlob(null);
+        setCompressing(true);
+        setCoverSize('Сжимаю изображение…');
+        setStatus('');
+        setStatusError(false);
+        try {
+          const compressed = await window.GameSubmission.compressCover(file);
+          if (taskId !== coverTaskRef.current) return;
+          const previewUrl = URL.createObjectURL(compressed);
+          previewUrlRef.current = previewUrl;
+          setCoverBlob(compressed);
+          setCoverPreview(previewUrl);
+          setCoverSize(compressed === file
+            ? `Исходный файл сохранён без изменений: ${(compressed.size / 1024).toFixed(0)} КБ.`
+            : `После сжатия: ${(compressed.size / 1024).toFixed(0)} КБ из 400 КБ.`);
+        } catch (error) {
+          if (taskId !== coverTaskRef.current) return;
+          setCoverFile(null);
+          setCoverSize('');
+          setStatus(error.message || 'Не удалось обработать обложку.');
+          setStatusError(true);
+        } finally {
+          if (taskId === coverTaskRef.current) setCompressing(false);
+        }
+      };
+
+      const submit = async event => {
+        event.preventDefault();
+        if (submitLockRef.current) return;
+        if (!coverBlob && !isEdit) {
+          setStatus('Добавьте обложку игры.');
+          setStatusError(true);
+          return;
+        }
+        submitLockRef.current = true;
+        setBusy(true);
+        setStatus(isEdit ? 'Сохраняю изменения…' : 'Отправляю карточку…');
+        setStatusError(false);
+        try {
+          const result = await window.GameSubmission.submit(window.siteSupabase, {
+            ...fields,
+            genres: selectedGenres,
+            ratings,
+            cardDisplay
+          }, coverBlob, isEdit ? game : null);
+          onComplete(result);
+        } catch (error) {
+          setStatus(error.message || 'Не удалось отправить карточку.');
+          setStatusError(true);
+          submitLockRef.current = false;
+          setBusy(false);
+        }
+      };
+
+      const currentPreviewDisplay = cardDisplay[previewView];
+      const previewGame = {
+        title: fields.title,
+        image: coverPreview,
+        ratings,
+        cardDisplay,
+      };
+
+      const updatePreviewDisplay = (key, value) => {
+        setCardDisplay(current => ({
+          ...current,
+          [previewView]: {
+            ...current[previewView],
+            [key]: Number(value)
+          }
+        }));
+      };
+
+      const cyclePreviewScale = () => {
+        const nextScale = currentPreviewDisplay.scale >= 200 ? 100 : currentPreviewDisplay.scale + 25;
+        updatePreviewDisplay('scale', nextScale);
+      };
+
+      return (
+        <div className="add-game-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy && !compressing) onClose(); }}>
+          <section className="add-game-dialog" role="dialog" aria-modal="true" aria-labelledby="add-game-title">
+            <div className="form-title">
+              <h2 id="add-game-title">{isEdit ? 'Изменить игру' : 'Новая игра'}</h2>
+              <button type="button" className="rating-info-trigger" aria-label="Закрыть" onClick={onClose} disabled={busy || compressing}>×</button>
+            </div>
+            <form onSubmit={submit}>
+              <fieldset>
+                <legend>Основное</legend>
+                <div className="add-fields">
+                  <label className="add-field">Название *
+                    <input type="text" maxLength="120" required value={fields.title} onChange={event => setValue('title', event.target.value)} placeholder="Название игры" />
+                  </label>
+                  <label className="add-field">Разработчик
+                    <input type="text" maxLength="120" value={fields.developer} onChange={event => setValue('developer', event.target.value)} placeholder="Студия-разработчик" />
+                  </label>
+                </div>
+                <div className="add-fields three">
+                  <label className="add-field">Год выхода
+                    <input type="number" min="1950" max="2100" value={fields.releaseYear} onChange={event => setValue('releaseYear', event.target.value)} placeholder="Например, 2015" />
+                  </label>
+                  <label className="add-field">Время прохождения, ч.
+                    <input type="number" min="0" max="999999" step="1" value={fields.playtimeHours} onChange={event => setValue('playtimeHours', event.target.value)} placeholder="Например, 40" />
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Обложка</legend>
+                <label className={`add-game-drop ${dragging ? 'dragging' : ''}`}
+                  onDragOver={event => { event.preventDefault(); setDragging(true); }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={event => { event.preventDefault(); setDragging(false); chooseCover(event.dataTransfer.files[0]); }}>
+                  <input type="file" accept="image/*" onChange={event => chooseCover(event.target.files[0])} />
+                  {coverPreview && <img className="add-game-cover" src={coverPreview} alt="Предпросмотр сжатой обложки" />}
+                  <span>{coverPreview ? 'Нажмите или перетащите другую картинку' : 'Нажмите или перетащите картинку сюда'}</span>
+                </label>
+                <p className="add-game-hint">{isEdit ? 'Оставьте текущую обложку или выберите новую. Файл до 400 КБ сохранится без изменений, больший файл будет сжат до 400 КБ.' : 'Файл до 400 КБ сохранится без изменений, больший файл будет сжат до 400 КБ.'}</p>
+                {coverSize && <p className="add-game-hint">{coverSize}</p>}
+              </fieldset>
+
+              <fieldset>
+                <legend>Жанры</legend>
+                <div className="add-game-genres">
+                  {ADD_GAME_GENRES.map(genre => (
+                    <button key={genre} type="button" className={`add-game-genre ${selectedGenres.includes(genre) ? 'selected' : ''}`}
+                      aria-pressed={selectedGenres.includes(genre)}
+                      onClick={() => setSelectedGenres(current => current.includes(genre) ? current.filter(item => item !== genre) : [...current, genre])}>
+                      {genre}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Оценки</legend>
+                <div className="add-game-ratings">
+                  {ADD_GAME_RATINGS.map(([key, label]) => (
+                    <label className="add-game-rate" key={key}>
+                      <span>{label}</span>
+                      <input type="range" min="1" max="10" value={ratings[key]}
+                        onChange={event => setRatings(current => ({ ...current, [key]: Number(event.target.value) }))} />
+                      <output>{ratings[key]}</output>
+                    </label>
+                  ))}
+                </div>
+                <div className="add-game-average"><span>Средняя оценка</span><strong>{averageRating}</strong></div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Обзор</legend>
+                <textarea maxLength="8000" value={fields.review} onChange={event => setValue('review', event.target.value)} placeholder="Ваш обзор игры" />
+              </fieldset>
+
+              <fieldset className="add-game-preview-fieldset">
+                <legend>Предпросмотр карточки</legend>
+                <div className="add-game-preview-toolbar">
+                  <div className="add-game-preview-switcher" role="group" aria-label="Режим предпросмотра карточки">
+                    <button type="button" className={previewView === 'list' ? 'active' : ''} onClick={() => setPreviewView('list')} aria-pressed={previewView === 'list'}>Список</button>
+                    <button type="button" className={previewView === 'grid' ? 'active' : ''} onClick={() => setPreviewView('grid')} aria-pressed={previewView === 'grid'}>Сетка</button>
+                  </div>
+                  <button type="button" className="add-game-preview-scale-btn" onClick={cyclePreviewScale} title="Увеличить масштаб до 200%">
+                    Масштаб: {currentPreviewDisplay.scale}%
+                  </button>
+                </div>
+                <div className="add-game-preview-position">
+                  <label>Позиция по горизонтали: {currentPreviewDisplay.x}%
+                    <input type="range" min="0" max="100" value={currentPreviewDisplay.x} onChange={event => updatePreviewDisplay('x', event.target.value)} />
+                  </label>
+                  <label>Позиция по вертикали: {currentPreviewDisplay.y}%
+                    <input type="range" min="0" max="100" value={currentPreviewDisplay.y} onChange={event => updatePreviewDisplay('y', event.target.value)} />
+                  </label>
+                </div>
+                <div className="add-game-preview-stage">
+                  <CardPreview game={previewGame} view={previewView} />
+                </div>
+                <p className="add-game-hint">Позиция и масштаб сохраняются отдельно для списка и сетки. Кнопка масштаба переключает значения от 100% до 200%. Старайтесь сохранить масштаб на 100%.</p>
+              </fieldset>
+
+              {status && <p className={`add-game-status ${statusError ? 'error' : ''}`} role="status">{status}</p>}
+              <div className="add-game-actions">
+                <button type="button" className="btn" onClick={onClose} disabled={busy || compressing}>Отмена</button>
+                <button type="submit" className="btn primary" disabled={busy || compressing || (!coverBlob && !isEdit)}>{busy ? (isEdit ? 'Сохраняю…' : 'Отправка…') : compressing ? 'Сжимаю обложку…' : isEdit ? (moderatorMode ? 'Сохранить изменения' : 'Отправить изменения на проверку') : moderatorMode ? 'Добавить в каталог' : 'Отправить на проверку'}</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      );
+    };
+
     const App = () => {
       const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
       const [view, setView] = useState(localStorage.getItem('view') || 'list');
+      const [isSignedIn, setIsSignedIn] = useState(false);
+      const [currentUser, setCurrentUser] = useState(null);
+      const [profileAvatarUrl, setProfileAvatarUrl] = useState(() => {
+        try { return sessionStorage.getItem('site_cached_avatar') || ''; } catch (_) { return ''; }
+      });
+      const [authModalOpen, setAuthModalOpen] = useState(false);
+      const [authModalTab, setAuthModalTab] = useState('signin');
+      const [addGameOpen, setAddGameOpen] = useState(false);
+      const [editingGame, setEditingGame] = useState(null);
+      const [catalogNotice, setCatalogNotice] = useState('');
       const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
       const [gamePage, setGamePage] = useState(() => {
         if (!window.matchMedia('(max-width: 640px)').matches) return null;
@@ -3449,13 +6460,67 @@
       const [showScrollTop, setShowScrollTop] = useState(false);
       const [speedDialOpen, setSpeedDialOpen] = useState(false);
       const [ratingInfoOpen, setRatingInfoOpen] = useState(false);
+      const [profileOpen, setProfileOpen] = useState(false);
+      const [libraryDrawerOpen, setLibraryDrawerOpen] = useState(false);
+      const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
       const [controlsCompact, setControlsCompact] = useState(false);
       const searchInputRef = useRef(null);
       const searchWrapperRef = useRef(null);
       const ratingInfoRef = useRef(null);
 
       const activeView = isMobile ? 'list' : view;
+      const canEditCatalog = !viewedCatalogProfile || Boolean(currentUser && currentUser.id === viewedCatalogProfile.id);
       const searchSuggestionsOpen = searchFocused && !search.trim();
+
+      useEffect(() => {
+        const client = window.siteSupabase;
+        if (!client) return;
+        client.auth.getSession().then(({ data }) => {
+          const user = data.session && data.session.user ? data.session.user : null;
+          const userId = user ? user.id : null;
+          setIsSignedIn(Boolean(userId));
+          setCurrentUser(user);
+          if (userId !== loadedSessionUserId) {
+            loadedSessionUserId = userId;
+            window.location.reload();
+          }
+        });
+        const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+          const user = session && session.user ? session.user : null;
+          const userId = user ? user.id : null;
+          if (userId !== loadedSessionUserId) {
+            loadedSessionUserId = userId;
+            window.location.reload();
+            return;
+          }
+          setIsSignedIn(Boolean(session));
+          setCurrentUser(user);
+        });
+        return () => subscription.unsubscribe();
+      }, []);
+
+      useEffect(() => {
+        let active = true;
+        const loadAvatar = async () => {
+          if (!currentUser || !window.siteSupabase) {
+            setProfileAvatarUrl('');
+            try { sessionStorage.removeItem('site_cached_avatar'); } catch (_) { }
+            return;
+          }
+          const client = window.siteSupabase;
+          const { data: profile, error } = await client.from('profiles')
+            .select('avatar_path').eq('id', currentUser.id).single();
+          if (error || !profile?.avatar_path || !active) return;
+          const { data: signed } = await client.storage.from('profile-avatars')
+            .createSignedUrl(profile.avatar_path, 604800);
+          if (active && signed?.signedUrl) {
+            setProfileAvatarUrl(signed.signedUrl);
+            try { sessionStorage.setItem('site_cached_avatar', signed.signedUrl); } catch (_) { }
+          }
+        };
+        loadAvatar().catch(error => console.warn('Не удалось загрузить фото профиля:', error));
+        return () => { active = false; };
+      }, [currentUser?.id]);
 
       // Keep the mobile layout isolated from the desktop view state.
       useEffect(() => {
@@ -3538,9 +6603,21 @@
 
       // Scroll Lock for full-screen modals
       useEffect(() => {
-        document.documentElement.style.overflow =
-          (modalGame || compareModalOpen || rouletteOpen) ? 'hidden' : '';
-      }, [modalGame, compareModalOpen, rouletteOpen]);
+        const shouldLockScroll = Boolean(modalGame || compareModalOpen || rouletteOpen || addGameOpen);
+        const previousDocumentOverflow = document.documentElement.style.overflow;
+        const previousBodyOverflow = document.body.style.overflow;
+        if (shouldLockScroll) {
+          document.documentElement.style.overflow = 'hidden';
+          document.body.style.overflow = 'hidden';
+        } else {
+          document.documentElement.style.overflow = '';
+          document.body.style.overflow = '';
+        }
+        return () => {
+          document.documentElement.style.overflow = previousDocumentOverflow;
+          document.body.style.overflow = previousBodyOverflow;
+        };
+      }, [modalGame, compareModalOpen, rouletteOpen, addGameOpen]);
 
       // Scroll Lock for rating info popover. The root keeps a stable scrollbar gutter,
       // so locking the body does not change the content width or move the layout.
@@ -3815,6 +6892,16 @@
         window.scrollTo({ top: 0, behavior: 'auto' });
       };
 
+      const openGameFromComment = (game) => {
+        setCommentsDrawerOpen(false);
+        setSpeedDialOpen(false);
+        if (isMobile) {
+          navigateToGame(game);
+        } else {
+          setModalGame(game);
+        }
+      };
+
       const closeGamePage = () => {
         if (window.history.state?.gameId) {
           window.history.back();
@@ -3841,6 +6928,19 @@
         } else {
           setModalGame(game);
         }
+      };
+
+      const openGameEditor = (game) => {
+        if (!isSignedIn) {
+          setAuthModalTab('signin');
+          setAuthModalOpen(true);
+          return;
+        }
+        if (!canEditCatalog) return;
+        setCatalogNotice('');
+        setModalGame(null);
+        setEditingGame(game);
+        setAddGameOpen(true);
       };
 
       const handleCardLongPress = (game) => {
@@ -3873,6 +6973,20 @@
 
       return (
         <div>
+          {addGameOpen && <AddGameDialog
+            key={editingGame?.id || 'new-game'}
+            game={editingGame}
+            onClose={() => { setAddGameOpen(false); setEditingGame(null); }}
+            onComplete={(result) => {
+              setAddGameOpen(false);
+              setEditingGame(null);
+              setCatalogNotice(result.isModerator
+                ? (result.isEdit ? 'Изменения сохранены в каталоге.' : 'Игра опубликована в каталоге.')
+                : (result.isEdit ? 'Заявка на изменение отправлена модератору.' : 'Заявка отправлена на проверку модератору.'));
+              if (result.isModerator) window.setTimeout(() => window.location.reload(), 1200);
+            }}
+          />}
+
           {/* Scroll to Top */}
           <button id="scroll-to-top" className={showScrollTop ? 'visible' : ''} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>↑</button>
 
@@ -3969,61 +7083,209 @@
             )}
           </AnimatePresence>
 
-          {/* ═══ ШАПКА ═══ */}
-          <div className={`site-header ${ratingInfoOpen ? 'rating-info-active' : ''}`}>
-            <div className="site-header-left">
-              <div className="page-title">Zvux Good Games</div>
-              <div className="page-subtitle">{filteredGames.length} игр · сортировка: {LABELS[sortBy]}</div>
-            </div>
-            <div className="site-header-right" ref={ratingInfoRef}>
+          {/* Поповер профиля */}
+          <ProfilePopover
+            isOpen={profileOpen}
+            onClose={() => setProfileOpen(false)}
+            user={currentUser}
+            onAvatarChange={(url) => {
+              setProfileAvatarUrl(url || '');
+              try {
+                if (url) sessionStorage.setItem('site_cached_avatar', url);
+                else sessionStorage.removeItem('site_cached_avatar');
+              } catch (_) { }
+            }}
+          />
+
+          <LibraryDrawer
+            isOpen={libraryDrawerOpen}
+            onClose={() => setLibraryDrawerOpen(false)}
+            onSelectProfile={(username) => {
+              window.location.href = `./index.html?profile=${encodeURIComponent(username)}`;
+            }}
+          />
+
+          <CommentsDrawer
+            isOpen={commentsDrawerOpen}
+            onClose={() => setCommentsDrawerOpen(false)}
+            profile={viewedCatalogProfile}
+            currentUser={currentUser}
+            games={GAMES}
+            onOpenGame={openGameFromComment}
+            onRequestAuth={() => {
+              setCommentsDrawerOpen(false);
+              setAuthModalTab('signin');
+              setAuthModalOpen(true);
+            }}
+          />
+
+          {/* Модальное окно авторизации и регистрации */}
+          <AuthModal
+            isOpen={authModalOpen}
+            initialTab={authModalTab}
+            onClose={() => setAuthModalOpen(false)}
+          />
+
+          {/* ═══ ПРАВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ ═══ */}
+          <div className="site-header-right" ref={ratingInfoRef}>
+            {isSignedIn ? (
               <button
                 type="button"
-                className="rating-info-trigger"
-                aria-label="Как оцениваются игры"
-                aria-expanded={ratingInfoOpen}
-                onClick={() => setRatingInfoOpen(open => !open)}
+                className="account-icon-button"
+                aria-label="Открыть профиль"
+                title="Профиль"
+                onClick={() => {
+                  setProfileOpen(true);
+                  setRatingInfoOpen(false);
+                }}
               >
-                ⓘ
+                {profileAvatarUrl
+                  ? <img className="account-avatar-image" src={profileAvatarUrl} alt="" />
+                  : <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
               </button>
-              {ratingInfoOpen && (
-                <div className="rating-info-popover" role="dialog" aria-label={RATING_INFO.title}>
-                  <h2>{RATING_INFO.title}</h2>
-                  <InfoFormattedText className="rating-info-lead">{RATING_INFO.lead}</InfoFormattedText>
-                  {RATING_INFO.items.map(item => (
-                    <div className="rating-info-item" key={item.label}>
-                      <span className="rating-info-label">{item.label}</span>
-                      <InfoFormattedText className="rating-info-text">{item.text}</InfoFormattedText>
-                    </div>
-                  ))}
-                  <h3 className="rating-info-subtitle">{RATING_INFO.usage.title}</h3>
-                  <InfoFormattedText className="rating-info-text rating-info-usage-text">{RATING_INFO.usage.text}</InfoFormattedText>
-                  <InfoFormattedText className="rating-info-note">{RATING_INFO.note}</InfoFormattedText>
-                </div>
-              )}
-              <label htmlFor="themeToggle" className="themeToggle st-sunMoonThemeToggleBtn">
-                <input
-                  type="checkbox"
-                  id="themeToggle"
-                  className="themeToggleInput"
-                  onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  checked={theme === 'light'}
-                />
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" stroke="none">
-                  <mask id="moon-mask">
-                    <rect x="0" y="0" width="20" height="20" fill="white" />
-                    <circle cx="11" cy="3" r="8" fill="black" />
-                  </mask>
-                  <circle className="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)" />
-                  <g>
-                    <line className="sunRay" x1="16.8" y1="10" x2="19.2" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    <line className="sunRay sunRay2" x1="13.4" y1="15.8888" x2="14.6" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    <line className="sunRay sunRay3" x1="6.6" y1="15.8888" x2="5.4" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    <line className="sunRay sunRay4" x1="3.2" y1="10" x2="0.8" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    <line className="sunRay sunRay5" x1="6.6" y1="4.211" x2="5.4" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    <line className="sunRay sunRay6" x1="13.4" y1="4.211" x2="14.6" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                  </g>
+            ) : (
+              <button
+                type="button"
+                className="signin-link"
+                title="Войти в аккаунт"
+                onClick={() => {
+                  setAuthModalTab('signin');
+                  setAuthModalOpen(true);
+                }}
+              >
+                <svg className="signin-link-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="8" r="3.5" />
+                  <path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" />
                 </svg>
-              </label>
+                <span>Войти</span>
+              </button>
+            )}
+            <button
+              type="button"
+              className="rating-info-trigger"
+              aria-label="Как оцениваются игры"
+              aria-expanded={ratingInfoOpen}
+              onClick={() => {
+                setRatingInfoOpen(open => !open);
+                setProfileOpen(false);
+              }}
+            >
+              ⓘ
+            </button>
+            {ratingInfoOpen && (
+              <div className="rating-info-popover" role="dialog" aria-label={RATING_INFO.title}>
+                <h2>{RATING_INFO.title}</h2>
+                <InfoFormattedText className="rating-info-lead">{RATING_INFO.lead}</InfoFormattedText>
+                {RATING_INFO.items.map(item => (
+                  <div className="rating-info-item" key={item.label}>
+                    <span className="rating-info-label">{item.label}</span>
+                    <InfoFormattedText className="rating-info-text">{item.text}</InfoFormattedText>
+                  </div>
+                ))}
+                <h3 className="rating-info-subtitle">{RATING_INFO.usage.title}</h3>
+                <InfoFormattedText className="rating-info-text rating-info-usage-text">{RATING_INFO.usage.text}</InfoFormattedText>
+                <InfoFormattedText className="rating-info-note">{RATING_INFO.note}</InfoFormattedText>
+              </div>
+            )}
+            <label htmlFor="themeToggle" className="themeToggle st-sunMoonThemeToggleBtn">
+              <input
+                type="checkbox"
+                id="themeToggle"
+                className="themeToggleInput"
+                onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                checked={theme === 'light'}
+              />
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" stroke="none">
+                <mask id="moon-mask">
+                  <rect x="0" y="0" width="20" height="20" fill="white" />
+                  <circle cx="11" cy="3" r="8" fill="black" />
+                </mask>
+                <circle className="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)" />
+                <g>
+                  <line className="sunRay" x1="16.8" y1="10" x2="19.2" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <line className="sunRay sunRay2" x1="13.4" y1="15.8888" x2="14.6" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <line className="sunRay sunRay3" x1="6.6" y1="15.8888" x2="5.4" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <line className="sunRay sunRay4" x1="3.2" y1="10" x2="0.8" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <line className="sunRay sunRay5" x1="6.6" y1="4.211" x2="5.4" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <line className="sunRay sunRay6" x1="13.4" y1="4.211" x2="14.6" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </g>
+              </svg>
+            </label>
+          </div>
+
+          {/* ═══ ШАПКА ═══ */}
+          <div className="site-header">
+            <div className="site-header-left">
+              <div className="site-header-actions">
+                {canEditCatalog && <button
+                  className="add-game-trigger"
+                  type="button"
+                  aria-label="Добавить новую игру"
+                  title="Добавить новую игру"
+                  onClick={() => {
+                    if (!isSignedIn) {
+                      setAuthModalTab('signin');
+                      setAuthModalOpen(true);
+                      return;
+                    }
+                    setCatalogNotice('');
+                    setEditingGame(null);
+                    setAddGameOpen(true);
+                  }}
+                >
+                      <img className="add-game-svg" src="svg/addnew.svg" alt="Добавить новую игру" />
+                </button>}
+                <button
+                  className="find-libraries-trigger"
+                  type="button"
+                  aria-label="Смотреть библиотеки"
+                  title="Смотреть библиотеки"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setRatingInfoOpen(false);
+                    setLibraryDrawerOpen(true);
+                  }}
+                >
+                  <img className="find-libraries-svg" src="svg/lib.svg" alt="Библиотеки других" />
+                </button>
+                <button
+                  className="comments-trigger"
+                  type="button"
+                  aria-label="Комментарии профиля"
+                  title="Комментарии профиля"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setRatingInfoOpen(false);
+                    setLibraryDrawerOpen(false);
+                    setCommentsDrawerOpen(true);
+                  }}
+                >
+                  <img className="comments-svg" src="svg/comments.svg" alt="Комментарии" />
+                </button>
+              </div>
+              <div className="site-header-copy">
+                <div className="page-title">
+                  <img className="site-title-svg" src="svg/title.svg" alt="Zvux Good Games" />
+                </div>
+                {viewedCatalogProfile ? (
+                  <div className="page-subtitle">
+                    Библиотека @{viewedCatalogProfile.username} · {formatGameCount(GAMES.length)}{canEditCatalog ? '' : ' · только просмотр'}
+                    {!canEditCatalog && (
+                      <button
+                        type="button"
+                        className="catalog-back-link"
+                        onClick={() => { window.location.href = './index.html'; }}
+                        title={isSignedIn ? 'Вернуться в мой каталог' : 'Вернуться на главную'}
+                      >
+                        {isSignedIn ? '← Мой каталог' : '← Главная'}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="page-subtitle">{filteredGames.length} игр · сортировка: {LABELS[sortBy]}</div>
+                )}
+                {catalogNotice && <p className="add-game-status" role="status">{catalogNotice}</p>}
+              </div>
             </div>
           </div>
 
@@ -4118,8 +7380,12 @@
                 style={{ textAlign: 'center', padding: '60px 20px', opacity: 0.6, userSelect: 'none' }}
               >
                 <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🔍</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>Ничего не найдено</div>
-                <div style={{ fontSize: '0.85rem', marginTop: 4 }}>Попробуйте изменить запрос или сбросить фильтры</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+                  {!isSignedIn ? 'Войдите, чтобы открыть личный каталог' : GAMES.length ? 'Ничего не найдено' : 'Ваш каталог пока пуст'}
+                </div>
+                <div style={{ fontSize: '0.85rem', marginTop: 4 }}>
+                  {!isSignedIn ? 'У каждого аккаунта свой список игр' : GAMES.length ? 'Попробуйте изменить запрос или сбросить фильтры' : 'Добавьте первую игру — после проверки она появится здесь'}
+                </div>
               </motion.div>
             )}
           </main>
@@ -4131,9 +7397,11 @@
           <AnimatePresence>
             {modalGame && <GameModal
               game={modalGame}
-              allGames={filteredGames}
+              allGames={modalGame && !filteredGames.some(game => game.id === modalGame.id) ? [modalGame, ...filteredGames] : filteredGames}
               onClose={() => setModalGame(null)}
               onNavigate={setModalGame}
+              canEdit={isSignedIn && canEditCatalog}
+              onEdit={openGameEditor}
             />}
             {compareModalOpen && <CompareModal
               selectedGameIds={selectedGames}
@@ -4282,13 +7550,12 @@
             scale: { duration: 0.4, ease: "easeOut" },
           }}
           style={view === 'list' ? { marginBottom: 20 } : {}}
-          data-id={game.id}
         >
           <div
             className="card"
             ref={contentRef}
-            style={{ backgroundImage: `url(imgs/${game.image})` }}
           >
+            <CardBackground game={game} view={view} />
             <div className="badge">
               <span style={{ color: 'white', marginRight: 6 }}>#{index + 1}</span>
               <span style={{ color: 'gold' }}>{calcRating(game.ratings)}</span>
@@ -4390,7 +7657,7 @@
               >
                 <span
                   className="similar-game-thumb"
-                  style={{ backgroundImage: `url(imgs/${similarGame.image})` }}
+                  style={{ backgroundImage: `url("${similarGame.image}")` }}
                   aria-hidden="true"
                 />
                 <span className="similar-game-copy">
@@ -4571,7 +7838,7 @@
       );
     });
 
-    const GameModal = ({ game, allGames, onClose, onNavigate }) => {
+    const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => {
       const [slideDir, setSlideDir] = useState(0);
       const [displayGame, setDisplayGame] = useState(game);
       const [chartMode, setChartMode] = useState(false);
@@ -4673,10 +7940,21 @@
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4, ease: "easeInOut" }}
-                style={{ backgroundImage: `url(imgs/${displayGame.image})` }}
+                style={{ backgroundImage: `url("${displayGame.image}")` }}
               />
             </AnimatePresence>
             <span className="close-btn" onClick={onClose}>×</span>
+            {canEdit && (
+              <button
+                type="button"
+                className="modal-edit-btn"
+                onClick={() => onEdit(displayGame)}
+                aria-label={`Изменить карточку ${displayGame.title}`}
+                title="Изменить карточку"
+              >
+                ✎
+              </button>
+            )}
 
 
             {/* Counter — левый верхний угол */}
@@ -4784,7 +8062,7 @@
             <div className="game-page-header-title">Карточка игры</div>
           </div>
 
-          <section className="game-page-hero" style={{ backgroundImage: `url(imgs/${game.image})` }}>
+          <section className="game-page-hero" style={{ backgroundImage: `url("${game.image}")` }}>
             <div className="game-page-hero-content">
               <h1 className="game-page-title">{game.title}</h1>
               <div className="game-page-developer">{game.developer} · оценка {calcRating(game.ratings)}</div>
@@ -5061,7 +8339,7 @@
                             <th key={g.id} title={g.title}>
                               <div className="compare-header-cell">
                                 <div className="compare-header-title">{g.title}</div>
-                                <img src={`imgs/${g.image}`} alt={g.title} className="compare-header-img" loading="lazy" />
+                                <img src={g.image} alt={g.title} className="compare-header-img" loading="lazy" />
                               </div>
                             </th>
                           ))}
@@ -5139,13 +8417,14 @@
       }, []);
 
       const tapeItems = useMemo(() => {
+        if (!GAMES.length) return [];
         const items = [];
         for (let i = 0; i < 100; i++) items.push(GAMES[i % GAMES.length]);
         return items;
       }, []);
 
       const spin = () => {
-        if (spinning || !tapeRef.current || !windowRef.current) return;
+        if (spinning || !tapeItems.length || !tapeRef.current || !windowRef.current) return;
 
         setSpinning(true);
 
@@ -5192,13 +8471,14 @@
               <div className="roulette-marker"></div>
               <div className="roulette-tape" ref={tapeRef}>
                 {tapeItems.map((game, i) => (
-                  <div key={i} className="r-card" style={{ backgroundImage: `url(imgs/${game.image})` }}>
+                  <div key={i} className="r-card" style={{ backgroundImage: `url("${game.image}")` }}>
                     <div className="title">{game.title}</div>
                   </div>
                 ))}
               </div>
             </div>
-            <button id="spin-btn" onClick={spin} disabled={spinning} style={{ background: spinning ? '#555' : '#e91e63', color: 'white', border: 'none', padding: '12px 30px', fontSize: '1.2rem', borderRadius: 30, cursor: spinning ? 'default' : 'pointer', transition: 'background 0.3s' }}>
+            {!tapeItems.length && <p style={{ color: '#aaa' }}>В каталоге пока нет игр.</p>}
+            <button id="spin-btn" onClick={spin} disabled={spinning || !tapeItems.length} style={{ background: spinning ? '#555' : '#e91e63', color: 'white', border: 'none', padding: '12px 30px', fontSize: '1.2rem', borderRadius: 30, cursor: spinning ? 'default' : 'pointer', transition: 'background 0.3s' }}>
               {spinning ? "Крутим..." : "Крутить!"}
             </button>
           </div>
@@ -5206,10 +8486,25 @@
       );
     };
 
-
-
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    gameDataPromise
+      .then(({ GAMES: loadedGames, REVIEWS: loadedReviews, catalogProfile }) => {
+        GAMES = loadedGames;
+        REVIEWS = loadedReviews;
+        viewedCatalogProfile = catalogProfile || null;
+        root.render(<App />);
+      })
+      .catch(error => {
+        console.error('Не удалось загрузить данные каталога:', error);
+        const message = window.location.protocol === 'file:'
+          ? 'Откройте сайт через HTTP-сервер, чтобы браузер мог подключиться к Supabase.'
+          : (error && error.message) || 'Проверьте конфигурацию Supabase, SQL-миграцию и доступность проекта.';
+        document.getElementById('root').innerHTML =
+          '<div style="padding: 40px; text-align: center;">' +
+          '<div>Не удалось загрузить данные каталога.</div>' +
+          '<div style="margin-top: 12px; font-size: 0.9em; opacity: 0.75;">' + message + '</div>' +
+          '</div>';
+      });
   </script>
 </body>
 
