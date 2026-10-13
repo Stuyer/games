@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Модерация заявок — Zvux Good Games</title>
+  <link rel="icon" type="image/svg+xml" href="../favicons/favicon.svg">
+  <link rel="stylesheet" href="moderation.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase-config.js"></script>
+  <script src="./moderation.js" defer></script>
+</head>
+
+<body>
+  <main class="moderation-page">
+    <header class="moderation-topbar">
+      <div>
+        <a class="back-link" href="../index.html">← Вернуться в каталог</a>
+        <h1>Заявки на модерацию</h1>
+        <p id="moderation-subtitle">Проверка новых игр и изменений карточек.</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="refresh-button" class="secondary-button" type="button">Обновить</button>
+        <button id="signout-button" class="secondary-button" type="button">Выйти</button>
+      </div>
+    </header>
+
+    <section class="moderation-toolbar" aria-label="Настройки списка заявок">
+      <div class="queue-summary"><strong id="queue-count">0</strong> ожидающих заявок</div>
+    </section>
+
+    <div id="moderation-status" class="page-status" role="status"></div>
+    <section id="submissions-list" class="submissions-list" aria-live="polite"></section>
+  </main>
+
+  <div id="reject-dialog" class="reject-dialog-backdrop" hidden>
+    <form id="reject-form" class="reject-dialog" novalidate>
+      <h2>Отклонить заявку</h2>
+      <p>Укажите причину — её увидит автор карточки.</p>
+      <textarea id="reject-note" rows="4" maxlength="1000" placeholder="Причина отклонения" required></textarea>
+      <div class="reject-dialog-actions">
+        <button id="cancel-reject" class="secondary-button" type="button">Отмена</button>
+        <button class="danger-button" type="submit">Отклонить заявку</button>
+      </div>
+    </form>
+  </div>
+</body>
+
+</html>
