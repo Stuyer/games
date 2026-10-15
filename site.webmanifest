@@ -2,7 +2,7 @@
   "name": "Zvux Good Games",
   "short_name": "Zvux Games",
   "description": "Персональный каталог видеоигр с подробными оценками, жанровыми фильтрами и возможностью делиться своими отзывами",
-  "start_url": "./index.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#111113",
   "theme_color": "#C5A580",

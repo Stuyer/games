@@ -17,6 +17,14 @@
   <!-- Канонический URL -->
   <link rel="canonical" href="https://zvuxgg.ru/" />
 
+  <!-- Нормализация URL без /index.html -->
+  <script>
+    if (window.location.pathname.endsWith('/index.html')) {
+      var cleanPath = window.location.pathname.replace(/\/index\.html$/, '/') || '/';
+      window.history.replaceState(null, '', cleanPath + window.location.search + window.location.hash);
+    }
+  </script>
+
   <!-- Манифест приложения -->
   <link rel="manifest" href="site.webmanifest" />
 
@@ -108,7 +116,7 @@
       presets: [[Babel.availablePresets.react, { runtime: 'classic' }]]
     });
   </script>
-  <script type="text/babel" data-presets="classic-jsx" src="app.js?v=20261016-reg-date"></script>
+  <script type="text/babel" data-presets="classic-jsx" src="app.js?v=20261016-clean-url"></script>
 </body>
 
 </html>

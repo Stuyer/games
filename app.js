@@ -1,4 +1,11 @@
 // --- DATA ---
+try {
+  if (window.location.pathname.endsWith('/index.html')) {
+    const cleanPath = window.location.pathname.replace(/\/index\.html$/, '/') || '/';
+    window.history.replaceState(null, '', cleanPath + window.location.search + window.location.hash);
+  }
+} catch (_) { }
+
 const supabaseConfig = window.SUPABASE_CONFIG || {};
 const siteSupabase = window.supabase && supabaseConfig.url && supabaseConfig.publishableKey
   ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.publishableKey, {
@@ -35,7 +42,8 @@ const gameDataPromise = (async () => {
   if (isReload && urlParams.has('profile')) {
     const cleanUrl = new URL(window.location.href);
     cleanUrl.searchParams.delete('profile');
-    window.history.replaceState(null, '', cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : ''));
+    const cleanPath = cleanUrl.pathname.replace(/\/index\.html$/, '/') || '/';
+    window.history.replaceState(null, '', cleanPath + (cleanUrl.search ? cleanUrl.search : '') + cleanUrl.hash);
   }
 
   let targetProfile = null;
@@ -1072,13 +1080,13 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
       setMessageError(true);
     } else {
       clearLocalAuthState();
-      window.location.href = './index.html';
+      window.location.href = './';
     }
   };
 
   const handleResetAuth = () => {
     clearLocalAuthState();
-    window.location.href = './index.html';
+    window.location.href = './';
   };
 
   const handleAvatarUpload = async (event) => {
@@ -1576,7 +1584,7 @@ const AddGameForm = ({ game = null, onComplete }) => {
   const averageRating = (Object.values(ratings).reduce((sum, value) => sum + Number(value), 0) / ADD_GAME_RATINGS.length).toFixed(1);
 
   const navigateBack = () => {
-    if (!busy && !compressing) window.location.assign('./index.html');
+    if (!busy && !compressing) window.location.assign('./');
   };
 
   useEffect(() => {
@@ -1697,7 +1705,7 @@ const AddGameForm = ({ game = null, onComplete }) => {
   return (
     <section className="add-game-form-shell" aria-labelledby="add-game-title">
       <div className="add-game-page-header">
-        <a className="add-game-back-link" href="./index.html">← Вернуться в каталог</a>
+        <a className="add-game-back-link" href="./">← Вернуться в каталог</a>
         <h1 id="add-game-title">{isEdit ? 'Изменить игру' : 'Новая игра'}</h1>
       </div>
       <form onSubmit={submit}>
@@ -1837,7 +1845,7 @@ const AddGamePage = ({ game = null }) => {
       ? (result.isEdit ? 'Изменения сохранены в каталоге.' : 'Игра добавлена в каталог.')
       : (result.isEdit ? 'Заявка на изменение отправлена модератору.' : 'Заявка отправлена модератору на проверку.');
     setResultMessage(result.coverCleanupWarning ? `${message} Внимание: ${result.coverCleanupWarning}` : message);
-    window.setTimeout(() => window.location.assign('./index.html'), result.isModerator ? 1200 : 1800);
+    window.setTimeout(() => window.location.assign('./'), result.isModerator ? 1200 : 1800);
   };
 
   return (
@@ -2521,7 +2529,7 @@ const App = () => {
         isOpen={libraryDrawerOpen}
         onClose={() => setLibraryDrawerOpen(false)}
         onSelectProfile={(username) => {
-          window.location.href = `./index.html?profile=${encodeURIComponent(username)}`;
+          window.location.href = `./?profile=${encodeURIComponent(username)}`;
         }}
       />
 
@@ -2693,7 +2701,7 @@ const App = () => {
                   <button
                     type="button"
                     className="catalog-back-link"
-                    onClick={() => { window.location.href = './index.html'; }}
+                    onClick={() => { window.location.href = './'; }}
                     title={isSignedIn ? 'Вернуться в мой каталог' : 'Вернуться на главную'}
                   >
                     {isSignedIn ? '← Мой каталог' : '← Главная'}
