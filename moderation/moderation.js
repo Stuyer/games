@@ -97,7 +97,7 @@
     setStatus('Загружаю заявки…');
     const { data, error } = await client
       .from('game_submissions')
-      .select('id, user_id, title, developer, release_year, genres, image_path, review, playtime_hours, created_at')
+      .select('id, user_id, game_id, title, developer, release_year, genres, image_path, review, playtime_hours, created_at')
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
     if (error) throw error;
@@ -130,12 +130,32 @@
     state.busyIds.add(id);
     render();
     try {
+      const submission = state.submissions.find(item => item.id === id);
+      let oldImagePath = '';
+      if (submission?.game_id) {
+        const { data: game, error: gameError } = await client
+          .from('games').select('image_path').eq('id', submission.game_id).maybeSingle();
+        if (gameError) throw gameError;
+        oldImagePath = game?.image_path || '';
+      }
+
       const result = approve
         ? await client.rpc('approve_game_submission', { p_submission_id: id })
         : await client.rpc('reject_game_submission', { p_submission_id: id, p_note: note });
       if (result.error) throw result.error;
+
+      // После решения заявки файл больше не нужен, если он не стал обложкой игры.
+      // При редактировании старую обложку удаляем только после успешного одобрения.
+      const obsoletePath = approve
+        ? (oldImagePath && oldImagePath !== submission?.image_path ? oldImagePath : '')
+        : (submission?.game_id && oldImagePath === submission.image_path ? '' : submission?.image_path || '');
+      let cleanupWarning = '';
+      if (obsoletePath) {
+        const { error: removeError } = await client.storage.from('game-covers').remove([obsoletePath]);
+        if (removeError) cleanupWarning = ` Старый файл не удалён: ${removeError.message || 'Storage отклонил операцию.'}`;
+      }
       state.submissions = state.submissions.filter(item => item.id !== id);
-      setStatus(approve ? 'Заявка одобрена и добавлена в каталог.' : 'Заявка отклонена.', 'success');
+      setStatus((approve ? 'Заявка одобрена и добавлена в каталог.' : 'Заявка отклонена.') + cleanupWarning, cleanupWarning ? 'error' : 'success');
       render();
     } catch (error) {
       setStatus(error.message || 'Не удалось обработать заявку.', 'error');
