@@ -79,21 +79,22 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicons/favicon-16x16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png" />
   <link rel="shortcut icon" href="favicons/favicon.ico" />
+  <link rel="stylesheet" href="style.css?v=20261015-theme-fixed" />
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
-  <script src="./game-submission.js?v=20261013-edit3"></script>
+  <script src="./game-submission.js?v=20261015-cover-lifecycle"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
   <script>
+    document.documentElement.classList.remove('dark');
     if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
   </script>
   <div id="root">
@@ -107,7 +108,7 @@
       presets: [[Babel.availablePresets.react, { runtime: 'classic' }]]
     });
   </script>
-  <script type="text/babel" data-presets="classic-jsx" src="app.js"></script>
+  <script type="text/babel" data-presets="classic-jsx" src="app.js?v=20261015-theme-fixed"></script>
 </body>
 
 </html>

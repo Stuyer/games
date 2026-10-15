@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Добавить игру — Zvux Good Games</title>
+  <link rel="icon" type="image/svg+xml" href="favicons/favicon.svg" />
+  <link rel="stylesheet" href="style.css?v=20261015-theme-fixed" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./game-submission.js?v=20261015-cover-lifecycle"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body data-page="add-game">
+  <script>
+    document.documentElement.classList.remove('dark');
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+  </script>
+  <div id="root">
+    <div class="catalog-loader-container" role="status" aria-label="Загрузка формы">
+      <div class="catalog-spinner"></div>
+    </div>
+  </div>
+
+  <script>
+    Babel.registerPreset('classic-jsx', {
+      presets: [[Babel.availablePresets.react, { runtime: 'classic' }]]
+    });
+  </script>
+  <script type="text/babel" data-presets="classic-jsx" src="app.js?v=20261015-theme-fixed"></script>
+</body>
+
+</html>

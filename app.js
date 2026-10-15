@@ -10,6 +10,7 @@ const siteSupabase = window.supabase && supabaseConfig.url && supabaseConfig.pub
   })
   : null;
 window.siteSupabase = siteSupabase;
+const isGameFormPage = document.body?.dataset.page === 'add-game';
 
 let loadedSessionUserId = null;
 let viewedCatalogProfile = null;
@@ -21,6 +22,9 @@ const gameDataPromise = (async () => {
   if (authError) throw authError;
   const user = authData.session && authData.session.user;
   loadedSessionUserId = user ? user.id : null;
+  if (isGameFormPage && !new URLSearchParams(window.location.search).has('edit')) {
+    return { GAMES: [], REVIEWS: {}, catalogProfile: null };
+  }
   try { localStorage.removeItem('site_active_profile'); } catch (_) { }
   const navEntry = window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation')[0];
   const isReload = navEntry ? navEntry.type === 'reload' : (window.performance && window.performance.navigation && window.performance.navigation.type === 1);
@@ -1522,7 +1526,7 @@ const CardPreview = ({ game, view }) => (
   </div>
 );
 
-const AddGameDialog = ({ game = null, onClose, onComplete }) => {
+const AddGameForm = ({ game = null, onComplete }) => {
   const isEdit = Boolean(game);
   const [fields, setFields] = useState(() => ({
     title: game?.title || '',
@@ -1553,11 +1557,15 @@ const AddGameDialog = ({ game = null, onClose, onComplete }) => {
   const submitLockRef = useRef(false);
   const averageRating = (Object.values(ratings).reduce((sum, value) => sum + Number(value), 0) / ADD_GAME_RATINGS.length).toFixed(1);
 
+  const navigateBack = () => {
+    if (!busy && !compressing) window.location.assign('./index.html');
+  };
+
   useEffect(() => {
-    const onKeyDown = event => { if (event.key === 'Escape' && !busy && !compressing) onClose(); };
+    const onKeyDown = event => { if (event.key === 'Escape' && !busy && !compressing) navigateBack(); };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose, busy, compressing]);
+  }, [busy, compressing]);
 
   useEffect(() => {
     window.siteSupabase.auth.getSession().then(async ({ data }) => {
@@ -1669,15 +1677,14 @@ const AddGameDialog = ({ game = null, onClose, onComplete }) => {
   };
 
   return (
-    <div className="add-game-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy && !compressing) onClose(); }}>
-      <section className="add-game-dialog" role="dialog" aria-modal="true" aria-labelledby="add-game-title">
-        <div className="form-title">
-          <h2 id="add-game-title">{isEdit ? 'Изменить игру' : 'Новая игра'}</h2>
-          <button type="button" className="rating-info-trigger" aria-label="Закрыть" onClick={onClose} disabled={busy || compressing}>×</button>
-        </div>
-        <form onSubmit={submit}>
-          <fieldset>
-            <legend>Основное</legend>
+    <section className="add-game-form-shell" aria-labelledby="add-game-title">
+      <div className="add-game-page-header">
+        <a className="add-game-back-link" href="./index.html">← Вернуться в каталог</a>
+        <h1 id="add-game-title">{isEdit ? 'Изменить игру' : 'Новая игра'}</h1>
+      </div>
+      <form onSubmit={submit}>
+        <div className="add-game-top-grid">
+          <div className="add-game-details" aria-label="Данные игры">
             <div className="add-fields">
               <label className="add-field">Название *
                 <input type="text" maxLength="120" required value={fields.title} onChange={event => setValue('title', event.target.value)} placeholder="Название игры" />
@@ -1686,7 +1693,7 @@ const AddGameDialog = ({ game = null, onClose, onComplete }) => {
                 <input type="text" maxLength="120" value={fields.developer} onChange={event => setValue('developer', event.target.value)} placeholder="Студия-разработчик" />
               </label>
             </div>
-            <div className="add-fields three">
+            <div className="add-fields add-game-meta-fields">
               <label className="add-field">Год выхода
                 <input type="number" min="1950" max="2100" value={fields.releaseYear} onChange={event => setValue('releaseYear', event.target.value)} placeholder="Например, 2015" />
               </label>
@@ -1694,37 +1701,43 @@ const AddGameDialog = ({ game = null, onClose, onComplete }) => {
                 <input type="number" min="0" max="999999" step="1" value={fields.playtimeHours} onChange={event => setValue('playtimeHours', event.target.value)} placeholder="Например, 40" />
               </label>
             </div>
-          </fieldset>
+            <div className="add-game-genre-block">
+              <span className="add-game-section-label">Жанры</span>
+              <div className="add-game-genres">
+                {ADD_GAME_GENRES.map(genre => (
+                  <button key={genre} type="button" className={`add-game-genre ${selectedGenres.includes(genre) ? 'selected' : ''}`}
+                    aria-pressed={selectedGenres.includes(genre)}
+                    onClick={() => setSelectedGenres(current => current.includes(genre) ? current.filter(item => item !== genre) : [...current, genre])}>
+                    {genre}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
-          <fieldset>
-            <legend>Обложка</legend>
+          <div className="add-game-cover-block">
+            <span className="add-game-section-label">Обложка</span>
             <label className={`add-game-drop ${dragging ? 'dragging' : ''}`}
               onDragOver={event => { event.preventDefault(); setDragging(true); }}
               onDragLeave={() => setDragging(false)}
               onDrop={event => { event.preventDefault(); setDragging(false); chooseCover(event.dataTransfer.files[0]); }}>
               <input type="file" accept="image/*" onChange={event => chooseCover(event.target.files[0])} />
               {coverPreview && <img className="add-game-cover" src={coverPreview} alt="Предпросмотр сжатой обложки" />}
-              <span>{coverPreview ? 'Нажмите или перетащите другую картинку' : 'Нажмите или перетащите картинку сюда'}</span>
+              <span>{coverPreview ? 'Заменить картинку' : 'Выбрать или перетащить картинку'}</span>
             </label>
-            <p className="add-game-hint">{isEdit ? 'Оставьте текущую обложку или выберите новую. Файл до 400 КБ сохранится без изменений, больший файл будет сжат до 400 КБ.' : 'Файл до 400 КБ сохранится без изменений, больший файл будет сжат до 400 КБ.'}</p>
+            <p className="add-game-hint">{isEdit ? 'Можно оставить текущую обложку. Большие файлы сжимаются до 400 КБ.' : 'Большие файлы сжимаются до 400 КБ.'}</p>
             {coverSize && <p className="add-game-hint">{coverSize}</p>}
-          </fieldset>
+          </div>
+        </div>
 
-          <fieldset>
-            <legend>Жанры</legend>
-            <div className="add-game-genres">
-              {ADD_GAME_GENRES.map(genre => (
-                <button key={genre} type="button" className={`add-game-genre ${selectedGenres.includes(genre) ? 'selected' : ''}`}
-                  aria-pressed={selectedGenres.includes(genre)}
-                  onClick={() => setSelectedGenres(current => current.includes(genre) ? current.filter(item => item !== genre) : [...current, genre])}>
-                  {genre}
-                </button>
-              ))}
-            </div>
-          </fieldset>
+        <div className="add-game-editor-grid">
+          <label className="add-game-review-block">
+            <span className="add-game-section-label">Обзор</span>
+            <textarea maxLength="8000" value={fields.review} onChange={event => setValue('review', event.target.value)} placeholder="Ваш обзор игры" />
+          </label>
 
-          <fieldset>
-            <legend>Оценки</legend>
+          <div className="add-game-ratings-block">
+            <span className="add-game-section-label">Оценки</span>
             <div className="add-game-ratings">
               {ADD_GAME_RATINGS.map(([key, label]) => (
                 <label className="add-game-rate" key={key}>
@@ -1736,15 +1749,11 @@ const AddGameDialog = ({ game = null, onClose, onComplete }) => {
               ))}
             </div>
             <div className="add-game-average"><span>Средняя оценка</span><strong>{averageRating}</strong></div>
-          </fieldset>
+          </div>
+        </div>
 
-          <fieldset>
-            <legend>Обзор</legend>
-            <textarea maxLength="8000" value={fields.review} onChange={event => setValue('review', event.target.value)} placeholder="Ваш обзор игры" />
-          </fieldset>
-
-          <fieldset className="add-game-preview-fieldset">
-            <legend>Предпросмотр карточки</legend>
+        <section className="add-game-preview" aria-label="Предпросмотр карточки">
+          <div className="add-game-preview-title">Предпросмотр карточки</div>
             <div className="add-game-preview-toolbar">
               <div className="add-game-preview-switcher" role="group" aria-label="Режим предпросмотра карточки">
                 <button type="button" className={previewView === 'list' ? 'active' : ''} onClick={() => setPreviewView('list')} aria-pressed={previewView === 'list'}>Список</button>
@@ -1766,16 +1775,74 @@ const AddGameDialog = ({ game = null, onClose, onComplete }) => {
               <CardPreview game={previewGame} view={previewView} />
             </div>
             <p className="add-game-hint">Позиция и масштаб сохраняются отдельно для списка и сетки. Кнопка масштаба переключает значения от 100% до 200%. Старайтесь сохранить масштаб на 100%.</p>
-          </fieldset>
+        </section>
 
           {status && <p className={`add-game-status ${statusError ? 'error' : ''}`} role="status">{status}</p>}
           <div className="add-game-actions">
-            <button type="button" className="btn" onClick={onClose} disabled={busy || compressing}>Отмена</button>
+            <button type="button" className="btn" onClick={navigateBack} disabled={busy || compressing}>Отмена</button>
             <button type="submit" className="btn primary" disabled={busy || compressing || (!coverBlob && !isEdit)}>{busy ? (isEdit ? 'Сохраняю…' : 'Отправка…') : compressing ? 'Сжимаю обложку…' : isEdit ? (moderatorMode ? 'Сохранить изменения' : 'Отправить изменения на проверку') : moderatorMode ? 'Добавить в каталог' : 'Отправить на проверку'}</button>
           </div>
-        </form>
-      </section>
-    </div>
+      </form>
+    </section>
+  );
+};
+
+const AddGamePage = ({ game = null }) => {
+  const [isSignedIn, setIsSignedIn] = useState(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState('signin');
+  const [resultMessage, setResultMessage] = useState('');
+
+  useEffect(() => {
+    const client = window.siteSupabase;
+    if (!client) {
+      setIsSignedIn(false);
+      return undefined;
+    }
+    let active = true;
+    client.auth.getSession().then(({ data }) => {
+      if (active) setIsSignedIn(Boolean(data.session?.user));
+    }).catch(() => {
+      if (active) setIsSignedIn(false);
+    });
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+      if (active) setIsSignedIn(Boolean(session?.user));
+    });
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleComplete = result => {
+    const message = result.isModerator
+      ? (result.isEdit ? 'Изменения сохранены в каталоге.' : 'Игра добавлена в каталог.')
+      : (result.isEdit ? 'Заявка на изменение отправлена модератору.' : 'Заявка отправлена модератору на проверку.');
+    setResultMessage(result.coverCleanupWarning ? `${message} Внимание: ${result.coverCleanupWarning}` : message);
+    window.setTimeout(() => window.location.assign('./index.html'), result.isModerator ? 1200 : 1800);
+  };
+
+  return (
+    <main className="add-game-page">
+      <div className="add-game-page-auth-row">
+        {isSignedIn === false ? (
+          <>
+            <span>Для отправки карточки войдите в аккаунт.</span>
+            <button type="button" className="btn" onClick={() => { setAuthModalTab('signin'); setAuthModalOpen(true); }}>Войти</button>
+          </>
+        ) : (
+          <span>Карточка сохранится в вашей библиотеке после отправки.</span>
+        )}
+      </div>
+      {resultMessage && <p className="add-game-page-result add-game-status" role="status">{resultMessage}</p>}
+      <AddGameForm game={game} onComplete={handleComplete} />
+      <AuthModal
+        isOpen={authModalOpen}
+        initialTab={authModalTab}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => setIsSignedIn(true)}
+      />
+    </main>
   );
 };
 
@@ -1789,9 +1856,6 @@ const App = () => {
   });
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState('signin');
-  const [addGameOpen, setAddGameOpen] = useState(false);
-  const [editingGame, setEditingGame] = useState(null);
-  const [catalogNotice, setCatalogNotice] = useState('');
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
   const [gamePage, setGamePage] = useState(() => {
     if (!window.matchMedia('(max-width: 640px)').matches) return null;
@@ -1919,6 +1983,7 @@ const App = () => {
   // Theme Effect
   useEffect(() => {
     document.body.classList.toggle('dark', theme === 'dark');
+    document.documentElement.classList.remove('dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
 
@@ -1956,7 +2021,7 @@ const App = () => {
 
   // Scroll Lock for full-screen modals
   useEffect(() => {
-    const shouldLockScroll = Boolean(modalGame || compareModalOpen || rouletteOpen || addGameOpen);
+    const shouldLockScroll = Boolean(modalGame || compareModalOpen || rouletteOpen);
     const previousDocumentOverflow = document.documentElement.style.overflow;
     const previousBodyOverflow = document.body.style.overflow;
     if (shouldLockScroll) {
@@ -1970,7 +2035,7 @@ const App = () => {
       document.documentElement.style.overflow = previousDocumentOverflow;
       document.body.style.overflow = previousBodyOverflow;
     };
-  }, [modalGame, compareModalOpen, rouletteOpen, addGameOpen]);
+  }, [modalGame, compareModalOpen, rouletteOpen]);
 
   // Scroll Lock for rating info popover. The root keeps a stable scrollbar gutter,
   // so locking the body does not change the content width or move the layout.
@@ -2290,10 +2355,8 @@ const App = () => {
       return;
     }
     if (!canEditCatalog) return;
-    setCatalogNotice('');
     setModalGame(null);
-    setEditingGame(game);
-    setAddGameOpen(true);
+    window.location.assign(`./add-game.html?edit=${encodeURIComponent(game.id)}`);
   };
 
   const handleCardLongPress = (game) => {
@@ -2326,20 +2389,6 @@ const App = () => {
 
   return (
     <div>
-      {addGameOpen && <AddGameDialog
-        key={editingGame?.id || 'new-game'}
-        game={editingGame}
-        onClose={() => { setAddGameOpen(false); setEditingGame(null); }}
-        onComplete={(result) => {
-          setAddGameOpen(false);
-          setEditingGame(null);
-          setCatalogNotice(result.isModerator
-            ? (result.isEdit ? 'Изменения сохранены в каталоге.' : 'Игра опубликована в каталоге.')
-            : (result.isEdit ? 'Заявка на изменение отправлена модератору.' : 'Заявка отправлена на проверку модератору.'));
-          if (result.isModerator) window.setTimeout(() => window.location.reload(), 1200);
-        }}
-      />}
-
       {/* Scroll to Top */}
       <button id="scroll-to-top" className={showScrollTop ? 'visible' : ''} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>↑</button>
 
@@ -2485,10 +2534,11 @@ const App = () => {
           <button
             type="button"
             className="account-icon-button"
-            aria-label="Открыть профиль"
-            title="Профиль"
+            aria-label={profileOpen ? "Закрыть профиль" : "Открыть профиль"}
+            aria-expanded={profileOpen}
+            title={profileOpen ? "Закрыть профиль" : "Профиль"}
             onClick={() => {
-              setProfileOpen(true);
+              setProfileOpen(prev => !prev);
               setRatingInfoOpen(false);
             }}
           >
@@ -2581,9 +2631,7 @@ const App = () => {
                   setAuthModalOpen(true);
                   return;
                 }
-                setCatalogNotice('');
-                setEditingGame(null);
-                setAddGameOpen(true);
+                window.location.assign('./add-game.html');
               }}
             >
               <img className="add-game-svg" src="svg/addnew.svg" alt="Добавить новую игру" />
@@ -2637,7 +2685,6 @@ const App = () => {
             ) : (
               <div className="page-subtitle">{filteredGames.length} игр · сортировка: {LABELS[sortBy]}</div>
             )}
-            {catalogNotice && <p className="add-game-status" role="status">{catalogNotice}</p>}
           </div>
         </div>
       </div>
@@ -3845,7 +3892,13 @@ gameDataPromise
     GAMES = loadedGames;
     REVIEWS = loadedReviews;
     viewedCatalogProfile = catalogProfile || null;
-    root.render(<App />);
+    if (isGameFormPage) {
+      const editId = new URLSearchParams(window.location.search).get('edit');
+      const game = editId ? GAMES.find(item => item.id === editId) || null : null;
+      root.render(<AddGamePage game={game} />);
+    } else {
+      root.render(<App />);
+    }
   })
   .catch(error => {
     console.error('Не удалось загрузить данные каталога:', error);

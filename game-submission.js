@@ -60,10 +60,13 @@
 
     const submissionId = crypto.randomUUID();
     let imagePath = existingGame && existingGame.imagePath ? existingGame.imagePath : '';
+    const previousImagePath = imagePath;
     let uploadedPath = '';
+    let coverCleanupWarning = '';
     if (cover) {
       const contentType = cover.type || 'image/webp';
-      uploadedPath = user.id + '/' + submissionId + '.' + getCoverExtension(contentType);
+      const imageOwnerId = existingGame?.id || submissionId;
+      uploadedPath = user.id + '/games/' + imageOwnerId + '/' + submissionId + '.' + getCoverExtension(contentType);
       const { error: uploadError } = await supabase.storage.from('game-covers').upload(uploadedPath, cover, {
         contentType, cacheControl: '31536000', upsert: false
       });
@@ -132,11 +135,21 @@
         });
       }
       if (result.error) throw result.error;
+
+      // При прямом редактировании модератора старая обложка больше не нужна.
+      // Для обычного пользователя это делает moderation.js только после одобрения заявки.
+      if (existingGame && profile.is_moderator && uploadedPath && previousImagePath && previousImagePath !== uploadedPath) {
+        const { error: removeError } = await supabase.storage.from('game-covers').remove([previousImagePath]);
+        if (removeError) {
+          coverCleanupWarning = removeError.message || 'Storage не разрешил удалить старую обложку.';
+          console.warn('Не удалось удалить старую обложку игры:', removeError);
+        }
+      }
     } catch (error) {
       if (uploadedPath) await supabase.storage.from('game-covers').remove([uploadedPath]).catch(() => { });
       throw error;
     }
-    return { isModerator: Boolean(profile.is_moderator), isEdit: Boolean(existingGame) };
+    return { isModerator: Boolean(profile.is_moderator), isEdit: Boolean(existingGame), coverCleanupWarning };
   }
 
   window.GameSubmission = { compressCover, submit };
