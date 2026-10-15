@@ -179,7 +179,7 @@
   document.getElementById('refresh-button').addEventListener('click', () => loadQueue().catch(error => setStatus(error.message || 'Не удалось обновить очередь.', 'error')));
   document.getElementById('signout-button').addEventListener('click', async () => {
     await client?.auth.signOut({ scope: 'local' });
-    window.location.href = '../index.html';
+    window.location.href = '../';
   });
   document.getElementById('cancel-reject').addEventListener('click', closeRejectDialog);
   rejectBackdrop.addEventListener('click', event => { if (event.target === rejectBackdrop) closeRejectDialog(); });
@@ -202,7 +202,7 @@
       if (error) throw error;
       const user = data.session?.user;
       if (!user) {
-        window.location.href = '../index.html';
+        window.location.href = '../';
         return;
       }
       const { data: profile, error: profileError } = await client.from('profiles')
@@ -210,7 +210,7 @@
       if (profileError) throw profileError;
       if (!profile?.is_moderator) {
         setStatus('Доступ разрешён только модератору.', 'error');
-    setTimeout(() => { window.location.href = '../index.html'; }, 1400);
+    setTimeout(() => { window.location.href = '../'; }, 1400);
         return;
       }
       await loadQueue();
