@@ -870,6 +870,20 @@ const CommentsDrawer = ({ isOpen, onClose, profile, currentUser, games, onOpenGa
   );
 };
 
+const formatRegistrationDate = (rawDate) => {
+  if (!rawDate) return '';
+  try {
+    const d = new Date(rawDate);
+    if (isNaN(d.getTime())) return '';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
+  } catch (_) {
+    return '';
+  }
+};
+
 const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
   const [profile, setProfile] = useState(null);
   const [submissions, setSubmissions] = useState([]);
@@ -915,7 +929,7 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
     try {
       const { data: profileData, error: profileError } = await client
         .from('profiles')
-        .select('username, display_name, is_moderator')
+        .select('username, display_name, is_moderator, created_at')
         .eq('id', user.id)
         .single();
 
@@ -940,7 +954,8 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
         avatarUrl = signed?.signedUrl || '';
       }
       if (version !== renderVersionRef.current) return;
-      const updatedProfile = { ...profileData, avatarUrl };
+      const createdAt = profileData?.created_at || user?.created_at || null;
+      const updatedProfile = { ...profileData, avatarUrl, created_at: createdAt };
       setCachedProfile(user.id, updatedProfile);
       setProfile(updatedProfile);
       onAvatarChange(avatarUrl);
@@ -1260,6 +1275,9 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
             )}
             <p>@{profile?.username || '...'}</p>
             <p>Почта: {user?.email || 'не указана'}</p>
+            {Boolean(profile?.created_at || user?.created_at) && (
+              <p>Собирает с {formatRegistrationDate(profile?.created_at || user?.created_at)}</p>
+            )}
           </div>
           <button className="profile-close" onClick={onClose} aria-label="Закрыть">×</button>
         </div>
