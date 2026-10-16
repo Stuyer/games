@@ -1416,6 +1416,7 @@ body[data-page="add-game"] {
   color: var(--text);
   font: inherit;
   font-size: 0.8rem;
+  box-sizing: border-box;
 }
 
 .delete-game-form button {
@@ -1429,6 +1430,7 @@ body[data-page="add-game"] {
   cursor: pointer;
   transition: background 0.2s;
   white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .delete-game-form button:hover {
@@ -3763,6 +3765,24 @@ body:not(.dark) .roulette-box .close-btn:hover {
 
   .profile-info h2 {
     overflow-wrap: anywhere;
+  }
+
+  .delete-game-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .delete-game-form input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .delete-game-form button {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    text-align: center;
   }
 
   .site-header-right {
