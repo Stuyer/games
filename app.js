@@ -18,6 +18,7 @@ const siteSupabase = window.supabase && supabaseConfig.url && supabaseConfig.pub
   : null;
 window.siteSupabase = siteSupabase;
 const isGameFormPage = document.body?.dataset.page === 'add-game';
+const isStatsPage = document.body?.dataset.page === 'stats';
 
 let loadedSessionUserId = null;
 let viewedCatalogProfile = null;
@@ -33,18 +34,9 @@ const gameDataPromise = (async () => {
     return { GAMES: [], REVIEWS: {}, catalogProfile: null };
   }
   try { localStorage.removeItem('site_active_profile'); } catch (_) { }
-  const navEntry = window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation')[0];
-  const isReload = navEntry ? navEntry.type === 'reload' : (window.performance && window.performance.navigation && window.performance.navigation.type === 1);
 
   const urlParams = new URLSearchParams(window.location.search);
-  let requestedUsername = isReload ? null : urlParams.get('profile');
-
-  if (isReload && urlParams.has('profile')) {
-    const cleanUrl = new URL(window.location.href);
-    cleanUrl.searchParams.delete('profile');
-    const cleanPath = cleanUrl.pathname.replace(/\/index\.html$/, '/') || '/';
-    window.history.replaceState(null, '', cleanPath + (cleanUrl.search ? cleanUrl.search : '') + cleanUrl.hash);
-  }
+  const requestedUsername = urlParams.get('profile');
 
   let targetProfile = null;
 
@@ -71,7 +63,15 @@ const gameDataPromise = (async () => {
 
   if (targetProfile) {
     viewedCatalogProfile = targetProfile;
-  } else if (!user) {
+    const isPersonal = Boolean(user && targetProfile.id === user.id);
+    if (isPersonal && urlParams.has('profile')) {
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('profile');
+      const cleanPath = cleanUrl.pathname.replace(/\/index\.html$/, '/') || '/';
+      window.history.replaceState(null, '', cleanPath + (cleanUrl.search ? cleanUrl.search : '') + cleanUrl.hash);
+    }
+  } else {
+    viewedCatalogProfile = null;
     return { GAMES: [], REVIEWS: {}, catalogProfile: null };
   }
 
@@ -1410,7 +1410,8 @@ const SortDock = ({ value, onChange }) => {
 
 const CRITERIA_KEYS = ["story", "graphics", "gameplay", "main_character", "characters", "atmosphere", "sound_design"];
 const calcRating = (ratings) => {
-  const vals = CRITERIA_KEYS.map(k => ratings[k]).filter(v => v !== undefined);
+  if (!ratings) return 0;
+  const vals = CRITERIA_KEYS.map(k => ratings[k]).filter(v => typeof v === 'number' && !isNaN(v));
   if (!vals.length) return 0;
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
   return Math.round(avg * 10) / 10;
@@ -1488,10 +1489,10 @@ const ADD_GAME_RATINGS = [
 ];
 
 const ADD_GAME_GENRES = [
-  'Выживание', 'Головоломка', 'Инди', 'Интерактивное кино', 'Карточная', 'Киберпанк',
-  'Кооператив', 'Метроидвания', 'Научная фантастика', 'Открытый мир', 'Платформер',
-  'Постапокалипсис', 'Приключение', 'РПГ', 'Соулс-лайк', 'Стелс', 'Сюжетная', 'Фэнтези',
-  'Хоррор', 'Шутер', 'Экшен', 'QTE'
+  'Выживание', 'Головоломка', 'Инди', 'Интерактивное кино', 'Карточная', 'QTE', 'Киберпанк',
+  'Кооператив', 'Сюжетная', 'Метроидвания', 'Научная фантастика', 'Открытый мир', 'Платформер',
+  'Постапокалипсис', 'Приключение', 'РПГ', 'Соулс-лайк', 'Стелс', 'Фэнтези',
+  'Хоррор', 'Шутер', 'Экшен'
 ];
 
 const DEFAULT_CARD_DISPLAY = {
@@ -1535,22 +1536,109 @@ const CardBackground = ({ game, view }) => {
   );
 };
 
-const CardPreview = ({ game, view }) => (
-  <div className={`card-preview-frame ${view}`}>
-    <div className="card">
-      <CardBackground game={game} view={view} />
-      {view === 'list' && (
-        <>
-          <div className="badge">
-            <span style={{ color: 'white', marginRight: 6 }}>#1</span>
-            <span style={{ color: 'gold' }}>{calcRating(game.ratings)}</span>
-          </div>
-          <div className="title">{game.title || 'Название игры'}</div>
-        </>
-      )}
+const CardPreview = ({ game, view, onUpdateDisplay, interactive = false }) => {
+  const frameRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ startX: 0, startY: 0, initialX: 50, initialY: 50 });
+  const isDraggingRef = useRef(false);
+
+  const display = getCardDisplay(game, view);
+
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el || !interactive || !onUpdateDisplay) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      let delta = 0;
+      if (Math.abs(e.deltaY) >= 40) {
+        delta = e.deltaY < 0 ? 5 : -5;
+      } else {
+        delta = -Math.round(e.deltaY * 0.25);
+        if (delta === 0) delta = e.deltaY < 0 ? 1 : -1;
+      }
+
+      const currentScale = display.scale ?? 100;
+      const nextScale = Math.min(200, Math.max(100, currentScale + delta));
+      if (nextScale !== currentScale) {
+        onUpdateDisplay('scale', nextScale);
+      }
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [view, display.scale, interactive, onUpdateDisplay]);
+
+  const handlePointerDown = (e) => {
+    if (!interactive || !onUpdateDisplay || e.button !== 0) return;
+    e.preventDefault();
+    isDraggingRef.current = true;
+    setIsDragging(true);
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {}
+
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: display.x ?? 50,
+      initialY: display.y ?? 50
+    };
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDraggingRef.current || !onUpdateDisplay) return;
+    const deltaX = e.clientX - dragStartRef.current.startX;
+    const deltaY = e.clientY - dragStartRef.current.startY;
+
+    const scaleFactor = (display.scale ?? 100) / 100;
+    const sensitivity = 0.35 / scaleFactor;
+
+    const nextX = Math.min(100, Math.max(0, Math.round(dragStartRef.current.initialX - deltaX * sensitivity)));
+    const nextY = Math.min(100, Math.max(0, Math.round(dragStartRef.current.initialY - deltaY * sensitivity)));
+
+    if (nextX !== display.x || nextY !== display.y) {
+      onUpdateDisplay('position', { x: nextX, y: nextY });
+    }
+  };
+
+  const handlePointerUp = (e) => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+  };
+
+  return (
+    <div
+      ref={frameRef}
+      className={`card-preview-frame ${view} ${interactive ? 'interactive' : ''} ${isDragging ? 'dragging' : ''}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      title={interactive ? 'Перетаскивайте изображение мышью, крутите колесико для масштаба' : undefined}
+    >
+      <div className="card">
+        <CardBackground game={game} view={view} />
+        {view === 'list' && (
+          <>
+            <div className="badge">
+              <span style={{ color: 'white', marginRight: 6 }}>#1</span>
+              <span style={{ color: 'gold' }}>{calcRating(game.ratings) || '-'}</span>
+            </div>
+            <div className="title">{game.title || 'Название игры'}</div>
+          </>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const AddGameForm = ({ game = null, onComplete }) => {
   const isEdit = Boolean(game);
@@ -1561,10 +1649,14 @@ const AddGameForm = ({ game = null, onComplete }) => {
     playtimeHours: game?.playtimeHours || '',
     review: game?.review || REVIEWS[game?.id] || ''
   }));
-  const [ratings, setRatings] = useState(() => ({
-    ...Object.fromEntries(ADD_GAME_RATINGS.map(([key]) => [key, 7])),
-    ...(game?.ratings || {})
-  }));
+  const [ratings, setRatings] = useState(() => (
+    Object.fromEntries(
+      ADD_GAME_RATINGS.map(([key]) => [
+        key,
+        game?.ratings && typeof game.ratings[key] === 'number' ? game.ratings[key] : null
+      ])
+    )
+  ));
   const [selectedGenres, setSelectedGenres] = useState(() => game?.genres || []);
   const [cardDisplay, setCardDisplay] = useState(() => normalizeCardDisplay(game?.cardDisplay));
   const [previewView, setPreviewView] = useState('list');
@@ -1581,7 +1673,38 @@ const AddGameForm = ({ game = null, onComplete }) => {
   const previewUrlRef = useRef('');
   const coverTaskRef = useRef(0);
   const submitLockRef = useRef(false);
-  const averageRating = (Object.values(ratings).reduce((sum, value) => sum + Number(value), 0) / ADD_GAME_RATINGS.length).toFixed(1);
+
+  const ratedValues = Object.entries(ratings)
+    .filter(([k, v]) => ADD_GAME_RATINGS.some(([key]) => key === k) && typeof v === 'number' && !isNaN(v) && v >= 1 && v <= 10)
+    .map(([, v]) => v);
+
+  const areAllRatingsSet = ADD_GAME_RATINGS.every(([key]) => typeof ratings[key] === 'number' && !isNaN(ratings[key]) && ratings[key] >= 1 && ratings[key] <= 10);
+
+  const averageRating = ratedValues.length > 0
+    ? (ratedValues.reduce((sum, value) => sum + value, 0) / ratedValues.length).toFixed(1)
+    : '-';
+
+  const isTitleValid = Boolean(fields.title && fields.title.trim().length > 0);
+  const isDeveloperValid = Boolean(fields.developer && fields.developer.trim().length > 0);
+  const isYearValid = Boolean(
+    fields.releaseYear !== '' &&
+    fields.releaseYear !== null &&
+    fields.releaseYear !== undefined &&
+    String(fields.releaseYear).trim().length > 0 &&
+    !isNaN(Number(fields.releaseYear)) &&
+    Number(fields.releaseYear) >= 1950 &&
+    Number(fields.releaseYear) <= 2100
+  );
+  const isPlaytimeValid = Boolean(
+    fields.playtimeHours !== '' &&
+    fields.playtimeHours !== null &&
+    fields.playtimeHours !== undefined &&
+    String(fields.playtimeHours).trim().length > 0 &&
+    !isNaN(Number(fields.playtimeHours)) &&
+    Number(fields.playtimeHours) >= 0
+  );
+  const hasCover = Boolean(coverBlob || (isEdit && (coverPreview || game?.imagePath || game?.image)));
+  const isFormValid = isTitleValid && isDeveloperValid && isYearValid && isPlaytimeValid && hasCover && areAllRatingsSet;
 
   const navigateBack = () => {
     if (!busy && !compressing) window.location.assign('./');
@@ -1654,8 +1777,13 @@ const AddGameForm = ({ game = null, onComplete }) => {
   const submit = async event => {
     event.preventDefault();
     if (submitLockRef.current) return;
-    if (!coverBlob && !isEdit) {
-      setStatus('Добавьте обложку игры.');
+    if (!isTitleValid || !isDeveloperValid || !isYearValid || !isPlaytimeValid || !hasCover) {
+      setStatus('Заполните обязательные поля: название, разработчик, год выхода, время прохождения и добавьте обложку.');
+      setStatusError(true);
+      return;
+    }
+    if (!areAllRatingsSet) {
+      setStatus('Поставьте оценки по всем критериям (сейчас стоят прочерки "-").');
       setStatusError(true);
       return;
     }
@@ -1687,19 +1815,36 @@ const AddGameForm = ({ game = null, onComplete }) => {
     cardDisplay,
   };
 
-  const updatePreviewDisplay = (key, value) => {
-    setCardDisplay(current => ({
-      ...current,
-      [previewView]: {
-        ...current[previewView],
-        [key]: Number(value)
+  const updatePreviewDisplay = (type, value) => {
+    setCardDisplay(current => {
+      const viewDisplay = current[previewView] || { x: 50, y: 50, scale: 100 };
+      if (type === 'position') {
+        return {
+          ...current,
+          [previewView]: {
+            ...viewDisplay,
+            x: Number(value.x),
+            y: Number(value.y)
+          }
+        };
       }
-    }));
-  };
-
-  const cyclePreviewScale = () => {
-    const nextScale = currentPreviewDisplay.scale >= 200 ? 100 : currentPreviewDisplay.scale + 25;
-    updatePreviewDisplay('scale', nextScale);
+      if (type === 'scale') {
+        return {
+          ...current,
+          [previewView]: {
+            ...viewDisplay,
+            scale: Number(value)
+          }
+        };
+      }
+      return {
+        ...current,
+        [previewView]: {
+          ...viewDisplay,
+          [type]: Number(value)
+        }
+      };
+    });
   };
 
   return (
@@ -1715,16 +1860,16 @@ const AddGameForm = ({ game = null, onComplete }) => {
               <label className="add-field">Название *
                 <input type="text" maxLength="120" required value={fields.title} onChange={event => setValue('title', event.target.value)} placeholder="Название игры" />
               </label>
-              <label className="add-field">Разработчик
-                <input type="text" maxLength="120" value={fields.developer} onChange={event => setValue('developer', event.target.value)} placeholder="Студия-разработчик" />
+              <label className="add-field">Разработчик *
+                <input type="text" maxLength="120" required value={fields.developer} onChange={event => setValue('developer', event.target.value)} placeholder="Студия-разработчик" />
               </label>
             </div>
             <div className="add-fields add-game-meta-fields">
-              <label className="add-field">Год выхода
-                <input type="number" min="1950" max="2100" value={fields.releaseYear} onChange={event => setValue('releaseYear', event.target.value)} placeholder="Например, 2015" />
+              <label className="add-field">Год выхода *
+                <input type="number" min="1950" max="2100" required value={fields.releaseYear} onChange={event => setValue('releaseYear', event.target.value)} placeholder="Например, 2015" />
               </label>
-              <label className="add-field">Время прохождения, ч.
-                <input type="number" min="0" max="999999" step="1" value={fields.playtimeHours} onChange={event => setValue('playtimeHours', event.target.value)} placeholder="Например, 40" />
+              <label className="add-field">Ваше время прохождения, ч. *
+                <input type="number" min="0" max="999999" step="1" required value={fields.playtimeHours} onChange={event => setValue('playtimeHours', event.target.value)} placeholder="Например, 40" />
               </label>
             </div>
             <div className="add-game-genre-block">
@@ -1742,7 +1887,7 @@ const AddGameForm = ({ game = null, onComplete }) => {
           </div>
 
           <div className="add-game-cover-block">
-            <span className="add-game-section-label">Обложка</span>
+            <span className="add-game-section-label">Обложка *</span>
             <label className={`add-game-drop ${dragging ? 'dragging' : ''}`}
               onDragOver={event => { event.preventDefault(); setDragging(true); }}
               onDragLeave={() => setDragging(false)}
@@ -1765,14 +1910,39 @@ const AddGameForm = ({ game = null, onComplete }) => {
           <div className="add-game-ratings-block">
             <span className="add-game-section-label">Оценки</span>
             <div className="add-game-ratings">
-              {ADD_GAME_RATINGS.map(([key, label]) => (
-                <label className="add-game-rate" key={key}>
-                  <span>{label}</span>
-                  <input type="range" min="1" max="10" value={ratings[key]}
-                    onChange={event => setRatings(current => ({ ...current, [key]: Number(event.target.value) }))} />
-                  <output>{ratings[key]}</output>
-                </label>
-              ))}
+              {ADD_GAME_RATINGS.map(([key, label]) => {
+                const isSet = typeof ratings[key] === 'number' && !isNaN(ratings[key]);
+                return (
+                  <label className="add-game-rate" key={key}>
+                    <span>{label}</span>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={isSet ? ratings[key] : 7}
+                      className={!isSet ? 'untouched' : ''}
+                      title={!isSet ? 'Нажмите или переместите ползунок, чтобы поставить оценку' : `Оценка: ${ratings[key]}`}
+                      onPointerDown={() => {
+                        if (!isSet) {
+                          setRatings(current => ({ ...current, [key]: current[key] ?? 7 }));
+                        }
+                      }}
+                      onKeyDown={() => {
+                        if (!isSet) {
+                          setRatings(current => ({ ...current, [key]: current[key] ?? 7 }));
+                        }
+                      }}
+                      onChange={event => {
+                        const val = Number(event.target.value);
+                        setRatings(current => ({ ...current, [key]: val }));
+                      }}
+                    />
+                    <output className={!isSet ? 'untouched' : ''}>
+                      {isSet ? ratings[key] : '-'}
+                    </output>
+                  </label>
+                );
+              })}
             </div>
             <div className="add-game-average"><span>Средняя оценка</span><strong>{averageRating}</strong></div>
           </div>
@@ -1780,34 +1950,67 @@ const AddGameForm = ({ game = null, onComplete }) => {
 
         <section className="add-game-preview" aria-label="Предпросмотр карточки">
           <div className="add-game-preview-title">Предпросмотр карточки</div>
-            <div className="add-game-preview-toolbar">
-              <div className="add-game-preview-switcher" role="group" aria-label="Режим предпросмотра карточки">
-                <button type="button" className={previewView === 'list' ? 'active' : ''} onClick={() => setPreviewView('list')} aria-pressed={previewView === 'list'}>Список</button>
-                <button type="button" className={previewView === 'grid' ? 'active' : ''} onClick={() => setPreviewView('grid')} aria-pressed={previewView === 'grid'}>Сетка</button>
-              </div>
-              <button type="button" className="add-game-preview-scale-btn" onClick={cyclePreviewScale} title="Увеличить масштаб до 200%">
+          <div className="add-game-preview-toolbar">
+            <div className="add-game-preview-switcher" role="group" aria-label="Режим предпросмотра карточки">
+              <button type="button" className={previewView === 'list' ? 'active' : ''} onClick={() => setPreviewView('list')} aria-pressed={previewView === 'list'}>Список</button>
+              <button type="button" className={previewView === 'grid' ? 'active' : ''} onClick={() => setPreviewView('grid')} aria-pressed={previewView === 'grid'}>Сетка</button>
+            </div>
+            <div className="add-game-preview-controls-info">
+              <span className="add-game-preview-scale-badge" title="Масштаб обложки (скролльте колесико мыши над карточкой)">
                 Масштаб: {currentPreviewDisplay.scale}%
-              </button>
+              </span>
+              {(currentPreviewDisplay.x !== 50 || currentPreviewDisplay.y !== 50 || currentPreviewDisplay.scale !== 100) && (
+                <button
+                  type="button"
+                  className="add-game-preview-reset-btn"
+                  onClick={() => {
+                    setCardDisplay(current => ({
+                      ...current,
+                      [previewView]: { x: 50, y: 50, scale: 100 }
+                    }));
+                  }}
+                  title="Сбросить масштаб и положение обложки для текущего вида"
+                >
+                  Сбросить
+                </button>
+              )}
             </div>
-            <div className="add-game-preview-position">
-              <label>Позиция по горизонтали: {currentPreviewDisplay.x}%
-                <input type="range" min="0" max="100" value={currentPreviewDisplay.x} onChange={event => updatePreviewDisplay('x', event.target.value)} />
-              </label>
-              <label>Позиция по вертикали: {currentPreviewDisplay.y}%
-                <input type="range" min="0" max="100" value={currentPreviewDisplay.y} onChange={event => updatePreviewDisplay('y', event.target.value)} />
-              </label>
-            </div>
-            <div className="add-game-preview-stage">
-              <CardPreview game={previewGame} view={previewView} />
-            </div>
-            <p className="add-game-hint">Позиция и масштаб сохраняются отдельно для списка и сетки. Кнопка масштаба переключает значения от 100% до 200%. Старайтесь сохранить масштаб на 100%.</p>
+          </div>
+          <div className="add-game-preview-stage">
+            <CardPreview
+              game={previewGame}
+              view={previewView}
+              interactive={true}
+              onUpdateDisplay={updatePreviewDisplay}
+            />
+          </div>
+          <p className="add-game-hint">Перетаскивайте изображение мышью для позиционирования, крутите колёсико для масштабирования. Старайтесь сохранить масштаб на 100%.</p>
         </section>
 
-          {status && <p className={`add-game-status ${statusError ? 'error' : ''}`} role="status">{status}</p>}
-          <div className="add-game-actions">
-            <button type="button" className="btn" onClick={navigateBack} disabled={busy || compressing}>Отмена</button>
-            <button type="submit" className="btn primary" disabled={busy || compressing || (!coverBlob && !isEdit)}>{busy ? (isEdit ? 'Сохраняю…' : 'Отправка…') : compressing ? 'Сжимаю обложку…' : isEdit ? (moderatorMode ? 'Сохранить изменения' : 'Отправить изменения на проверку') : moderatorMode ? 'Добавить в каталог' : 'Отправить на проверку'}</button>
-          </div>
+        {status && <p className={`add-game-status ${statusError ? 'error' : ''}`} role="status">{status}</p>}
+        <div className="add-game-actions">
+          <button type="button" className="btn" onClick={navigateBack} disabled={busy || compressing}>Отмена</button>
+          <button
+            type="submit"
+            className="btn primary"
+            disabled={busy || compressing || !isFormValid}
+            title={!isFormValid
+              ? (!areAllRatingsSet
+                  ? 'Поставьте оценки по всем критериям (сейчас стоят прочерки "-")'
+                  : 'Заполните обязательные поля и добавьте обложку')
+              : ''}
+          >
+            {busy
+              ? (isEdit ? 'Сохраняю…' : 'Отправка…')
+              : compressing
+                ? 'Сжимаю обложку…'
+                : isEdit
+                  ? (moderatorMode ? 'Сохранить изменения' : 'Отправить изменения на проверку')
+                  : moderatorMode
+                    ? 'Добавить в каталог'
+                    : 'Отправить на проверку'}
+          </button>
+        </div>
       </form>
     </section>
   );
@@ -1872,6 +2075,2342 @@ const AddGamePage = ({ game = null }) => {
   );
 };
 
+// Rolling Count-Up Number Animation component (smooth, stately easing)
+const AnimatedCounter = ({ value, duration = 1400, decimals = 0, suffix = '', prefix = '' }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const target = typeof value === 'number' ? value : parseFloat(value) || 0;
+
+  useEffect(() => {
+    let startTimestamp = null;
+    let animationFrameId;
+
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const elapsed = timestamp - startTimestamp;
+      const progress = Math.min(elapsed / duration, 1);
+      // Smooth easeOutQuart: steady legible roll-up with gentle deceleration
+      const ease = 1 - Math.pow(1 - progress, 3.8);
+      const current = target * ease;
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        animationFrameId = window.requestAnimationFrame(step);
+      } else {
+        setDisplayValue(target);
+      }
+    };
+
+    animationFrameId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(animationFrameId);
+  }, [target, duration]);
+
+  const formatted = decimals > 0
+    ? displayValue.toFixed(decimals)
+    : Math.round(displayValue).toString();
+
+  return (
+    <span className="stats-animated-num">
+      {prefix}{formatted}{suffix}
+    </span>
+  );
+};
+
+// Russian pluralization helper for games: 1 игру, 2 игры, 5 игр
+const formatPluralGames = (n) => {
+  const abs = Math.abs(n) % 100;
+  const rem = abs % 10;
+  if (abs > 10 && abs < 20) return `${n} игр`;
+  if (rem > 1 && rem < 5) return `${n} игры`;
+  if (rem === 1) return `${n} игру`;
+  return `${n} игр`;
+};
+
+// Russian pluralization helper for years span: 1 год, 2 года, 5 лет
+const formatYearsSpan = (n) => {
+  const abs = Math.abs(n) % 100;
+  const rem = abs % 10;
+  if (abs > 10 && abs < 20) return `${n} лет истории игр`;
+  if (rem > 1 && rem < 5) return `${n} года истории игр`;
+  if (rem === 1) return `${n} год истории игр`;
+  return `${n} лет истории игр`;
+};
+
+// Russian list join helper: "A", "A и B", "A, B и C"
+const joinRussianList = (items) => {
+  if (!items || items.length === 0) return '';
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} и ${items[1]}`;
+  return `${items.slice(0, -1).join(', ')} и ${items[items.length - 1]}`;
+};
+
+// The criteria matching the catalog dock, including overall rating
+const STATS_CRITERIA = [
+  { key: 'overall', label: 'Общий балл', short: 'Общий' },
+  { key: 'story', label: 'Сюжет', short: 'Сюжет' },
+  { key: 'graphics', label: 'Графика', short: 'Графика' },
+  { key: 'gameplay', label: 'Геймплей', short: 'Геймплей' },
+  { key: 'main_character', label: 'Главный герой', short: 'Герой' },
+  { key: 'characters', label: 'Персонажи', short: 'Персонажи' },
+  { key: 'atmosphere', label: 'Атмосфера', short: 'Атмосфера' },
+  { key: 'sound_design', label: 'Саунд-дизайн', short: 'Саунд-дизайн' }
+];
+
+const StatsPage = ({ games = [], catalogProfile = null }) => {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const isDark = theme === 'dark';
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    try { localStorage.setItem('theme', next); } catch (_) { }
+    if (next === 'dark') {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  };
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const ratingCanvasRef = useRef(null);
+  const timelineCanvasRef = useRef(null);
+  const genreCanvasRef = useRef(null);
+  const lollipopCanvasRef = useRef(null);
+  const playtimeCanvasRef = useRef(null);
+  const timelineChartInstanceRef = useRef(null);
+  const ratingChartInstanceRef = useRef(null);
+  const genreChartInstanceRef = useRef(null);
+  const playtimeChartInstanceRef = useRef(null);
+  const lollipopChartInstanceRef = useRef(null);
+  const latestLollipopDataRef = useRef([]);
+  const activeCriterionRef = useRef('overall');
+  const isDarkRef = useRef(isDark);
+  isDarkRef.current = isDark;
+  const [hoveredRatingIndex, setHoveredRatingIndex] = useState(null);
+  const [lollipopCriterion, setLollipopCriterion] = useState('overall');
+  activeCriterionRef.current = lollipopCriterion;
+  const [devsSortMode, setDevsSortMode] = useState('rating'); // 'rating' | 'count'
+
+  const requestedProfile = new URLSearchParams(window.location.search).get('profile');
+  const isPersonalCatalog = !requestedProfile
+    || (loadedSessionUserId && catalogProfile && catalogProfile.id === loadedSessionUserId);
+
+  const backUrl = isPersonalCatalog
+    ? './'
+    : `./?profile=${encodeURIComponent(catalogProfile ? catalogProfile.username : (requestedProfile || ''))}`;
+
+  const handleGenreFilterClick = (genreName) => {
+    if (!genreName || genreName === 'Другие жанры') return;
+    const separator = backUrl.includes('?') ? '&' : '?';
+    const targetUrl = `${backUrl}${separator}search=${encodeURIComponent(genreName)}`;
+    window.location.href = targetUrl;
+  };
+
+  // Compute all statistics
+  const stats = useMemo(() => {
+    if (!games || !games.length) return null;
+
+    const totalGames = games.length;
+
+    // 1. Overall Ratings with 0.5 step
+    const scoredGames = games.map(g => ({
+      game: g,
+      rating: calcRating(g.ratings)
+    })).filter(item => item.rating > 0);
+
+    const avgRating = scoredGames.length
+      ? (scoredGames.reduce((acc, curr) => acc + curr.rating, 0) / scoredGames.length).toFixed(1)
+      : '0.0';
+
+    // Step 0.5 buckets from 1.0 to 10.0
+    const rawRatingBrackets = [];
+    for (let s = 1.0; s < 10.0; s = Math.round((s + 0.5) * 10) / 10) {
+      const next = Math.round((s + 0.5) * 10) / 10;
+      const isLast = next >= 10.0;
+      const high = Math.round((next - 0.1) * 10) / 10;
+      const label = isLast ? `${s.toFixed(1)}–10` : `${s.toFixed(1)}–${high.toFixed(1)}`;
+      rawRatingBrackets.push({
+        label,
+        min: s,
+        max: isLast ? 10.05 : next
+      });
+    }
+
+    const ratingBuckets = rawRatingBrackets.map(b => {
+      const count = scoredGames.filter(s => s.rating >= b.min && s.rating < b.max).length;
+      return {
+        ...b,
+        count,
+        percent: scoredGames.length ? Math.round((count / scoredGames.length) * 100) : 0
+      };
+    }).filter(b => b.count > 0); // User rule: only add intervals with games on site
+
+    const maxRatingCount = Math.max(0, ...ratingBuckets.map(b => b.count));
+    const peakRatingBuckets = ratingBuckets.filter(b => b.count === maxRatingCount && maxRatingCount > 0);
+
+    let peakRatingText = null;
+    if (peakRatingBuckets.length === 1) {
+      peakRatingText = `Чаще: ${peakRatingBuckets[0].label} (${peakRatingBuckets[0].percent}%)`;
+    } else if (peakRatingBuckets.length > 1) {
+      const bucketsJoined = joinRussianList(peakRatingBuckets.map(b => b.label));
+      peakRatingText = `Чаще: ${bucketsJoined} (по ${peakRatingBuckets[0].percent}%)`;
+    }
+
+    // 2. Timeline: years from earliest to latest
+    const gamesWithYear = games.map(g => ({
+      game: g,
+      year: parseInt(g.year, 10)
+    })).filter(item => !isNaN(item.year) && item.year > 1900);
+
+    const minYear = gamesWithYear.length ? Math.min(...gamesWithYear.map(item => item.year)) : null;
+    const maxYear = gamesWithYear.length ? Math.max(...gamesWithYear.map(item => item.year)) : null;
+
+    const yearBuckets = [];
+    if (minYear !== null && maxYear !== null) {
+      for (let y = minYear; y <= maxYear; y++) {
+        const matching = gamesWithYear.filter(item => item.year === y);
+        const count = matching.length;
+        const scored = matching.map(m => calcRating(m.game.ratings)).filter(r => r > 0);
+        const avgScore = scored.length ? Math.round((scored.reduce((a, b) => a + b, 0) / scored.length) * 10) / 10 : 0;
+        yearBuckets.push({
+          year: y,
+          count,
+          games: matching.map(m => m.game.title),
+          percent: gamesWithYear.length ? Math.round((count / gamesWithYear.length) * 100) : 0,
+          avgScore
+        });
+      }
+    }
+
+    const maxYearCount = Math.max(0, ...yearBuckets.map(b => b.count));
+    const peakYears = yearBuckets.filter(b => b.count === maxYearCount && maxYearCount > 0);
+
+    let peakYearsText = null;
+    if (peakYears.length === 1) {
+      peakYearsText = `Пик: ${peakYears[0].year} г. (${formatGameCount(maxYearCount)})`;
+    } else if (peakYears.length > 1) {
+      const yearsJoined = joinRussianList(peakYears.map(p => p.year));
+      peakYearsText = `Пик: ${yearsJoined} (по ${formatGameCount(maxYearCount)})`;
+    }
+
+    const scoredYears = yearBuckets.filter(b => b.count > 0 && b.avgScore > 0);
+    const minAvgYear = scoredYears.length ? Math.min(...scoredYears.map(b => b.avgScore)) : 0;
+    const maxAvgYear = scoredYears.length ? Math.max(...scoredYears.map(b => b.avgScore)) : 0;
+
+    // 3. Genres
+    const genreMap = {};
+    games.forEach(g => {
+      (g.genres || []).forEach(genre => {
+        if (!genre) return;
+        const trimmed = genre.trim();
+        if (trimmed) genreMap[trimmed] = (genreMap[trimmed] || 0) + 1;
+      });
+    });
+
+    const sortedGenres = Object.entries(genreMap).map(([name, count]) => ({
+      name,
+      count,
+      percent: Math.round((count / totalGames) * 100)
+    })).sort((a, b) => b.count - a.count);
+
+    const maxGenreCount = sortedGenres.length > 0 ? sortedGenres[0].count : 0;
+    const topGenres = sortedGenres.filter(g => g.count === maxGenreCount && maxGenreCount > 0);
+
+    let topGenresText = null;
+    if (topGenres.length === 1) {
+      topGenresText = `Лидер: ${topGenres[0].name} (${topGenres[0].percent}% · ${formatGameCount(topGenres[0].count)})`;
+    } else if (topGenres.length > 1) {
+      const genresJoined = joinRussianList(topGenres.map(g => g.name));
+      topGenresText = `Лидеры: ${genresJoined} (по ${topGenres[0].percent}% · по ${formatGameCount(topGenres[0].count)})`;
+    }
+
+    // 4. Playtime
+    const gamesWithTime = games.map(g => {
+      const h = parseInt(g.playtime, 10) || Number(g.playtimeHours) || 0;
+      return { game: g, hours: h };
+    }).filter(item => item.hours > 0);
+
+    const totalHours = gamesWithTime.reduce((sum, item) => sum + item.hours, 0);
+    const avgPlaytime = gamesWithTime.length ? Math.round(totalHours / gamesWithTime.length) : 0;
+
+    // Scatter plot: Playtime vs Rating for every game with hours and rating
+    const scatterPlaytimeRating = games.map(g => {
+      const hours = parseInt(g.playtime, 10) || Number(g.playtimeHours) || 0;
+      const rating = calcRating(g.ratings);
+      if (hours > 0 && typeof rating === 'number' && rating > 0) {
+        return {
+          x: hours,
+          y: Math.round(rating * 10) / 10,
+          title: g.title || 'Без названия',
+          developer: g.developer || '',
+          year: g.year || '',
+          game: g
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    // 5. Criteria Profile
+    const criteriaStats = CRITERIA_KEYS.map(key => {
+      const scores = games.map(g => g.ratings ? g.ratings[key] : undefined).filter(v => typeof v === 'number');
+      const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+      return {
+        key,
+        label: LABELS_FULL[key] || key,
+        avg: Math.round(avg * 10) / 10
+      };
+    });
+
+    // 6. Developers / Studios
+    const devMap = {};
+    games.forEach(g => {
+      const dev = (g.developer || '').trim();
+      if (!dev) return;
+      if (!devMap[dev]) devMap[dev] = { name: dev, games: [], ratings: [] };
+      devMap[dev].games.push(g);
+      const r = calcRating(g.ratings);
+      if (r > 0) devMap[dev].ratings.push(r);
+    });
+
+    const allDevs = Object.values(devMap).map(d => {
+      const scoredGames = d.games.map(g => ({
+        game: g,
+        rating: calcRating(g.ratings)
+      })).sort((a, b) => b.rating - a.rating || (parseInt(b.game.year, 10) || 0) - (parseInt(a.game.year, 10) || 0));
+
+      const topGameEntry = scoredGames[0] || null;
+      const bestGame = topGameEntry ? topGameEntry.game : (d.games[0] || null);
+      const bestGameRating = topGameEntry && topGameEntry.rating > 0 ? topGameEntry.rating.toFixed(1) : null;
+
+      const genreSet = new Set();
+      d.games.forEach(g => (g.genres || []).forEach(gen => gen && genreSet.add(gen.trim())));
+      const topGenres = Array.from(genreSet).slice(0, 3);
+
+      return {
+        name: d.name,
+        count: d.games.length,
+        avgRating: d.ratings.length ? (d.ratings.reduce((a, b) => a + b, 0) / d.ratings.length).toFixed(1) : '—',
+        bestGame,
+        bestGameRating,
+        topGenres
+      };
+    });
+
+    return {
+      totalGames,
+      avgRating,
+      ratingBuckets,
+      maxRatingCount,
+      peakRatingText,
+      minYear,
+      maxYear,
+      yearBuckets,
+      maxYearCount,
+      peakYears,
+      peakYearsText,
+      minAvgYear,
+      maxAvgYear,
+      genres: sortedGenres,
+      topGenresText,
+      totalHours,
+      avgPlaytime,
+      scatterPlaytimeRating,
+      criteriaStats,
+      allDevs
+    };
+  }, [games]);
+
+  // Studios sorted by rating or by game count (ties broken by secondary metric)
+  const sortedDevs = useMemo(() => {
+    if (!stats || !stats.allDevs || !stats.allDevs.length) return [];
+    const list = [...stats.allDevs];
+    if (devsSortMode === 'count') {
+      list.sort((a, b) => {
+        const rateA = a.avgRating !== '—' ? Number(a.avgRating) : -1;
+        const rateB = b.avgRating !== '—' ? Number(b.avgRating) : -1;
+        const bestRateA = a.bestGameRating ? Number(a.bestGameRating) : -1;
+        const bestRateB = b.bestGameRating ? Number(b.bestGameRating) : -1;
+        return (
+          b.count - a.count ||
+          rateB - rateA ||
+          bestRateB - bestRateA ||
+          a.name.localeCompare(b.name)
+        );
+      });
+      return list.slice(0, 8);
+    } else {
+      // Exclude studios with only 1 game (require at least 2 games in library)
+      const multiGameList = list.filter(d => d.count > 1);
+      multiGameList.sort((a, b) => {
+        const rateA = a.avgRating !== '—' ? Number(a.avgRating) : -1;
+        const rateB = b.avgRating !== '—' ? Number(b.avgRating) : -1;
+        const bestRateA = a.bestGameRating ? Number(a.bestGameRating) : -1;
+        const bestRateB = b.bestGameRating ? Number(b.bestGameRating) : -1;
+        return (
+          rateB - rateA ||
+          b.count - a.count ||
+          bestRateB - bestRateA ||
+          a.name.localeCompare(b.name)
+        );
+      });
+      return multiGameList.slice(0, 8);
+    }
+  }, [stats, devsSortMode]);
+
+  // Lollipop data: genres ranked by average rating for active criterion (minimum 3 games in genre)
+  const lollipopData = useMemo(() => {
+    if (!stats || !stats.genres || !games || !games.length) return [];
+    const res = [];
+    const isOverall = lollipopCriterion === 'overall';
+
+    stats.genres.forEach(g => {
+      const matchingGames = games.filter(game => {
+        if (!(game.genres || []).includes(g.name)) return false;
+        if (!game.ratings) return false;
+        if (isOverall) {
+          const r = calcRating(game.ratings);
+          return typeof r === 'number' && r > 0;
+        }
+        return (
+          typeof game.ratings[lollipopCriterion] === 'number' &&
+          game.ratings[lollipopCriterion] > 0
+        );
+      });
+
+      // User rule: only include genres with at least 3 games
+      if (matchingGames.length >= 3) {
+        const sum = isOverall
+          ? matchingGames.reduce((acc, game) => acc + calcRating(game.ratings), 0)
+          : matchingGames.reduce((acc, game) => acc + game.ratings[lollipopCriterion], 0);
+        const avg = Math.round((sum / matchingGames.length) * 10) / 10;
+        res.push({
+          name: g.name,
+          avg,
+          count: matchingGames.length,
+          totalInGenre: g.count
+        });
+      }
+    });
+    // Sort descending by avg score (highest rated genre on top), tie-break by game count
+    res.sort((a, b) => b.avg - a.avg || b.count - a.count);
+    return res.slice(0, 8);
+  }, [stats, games, lollipopCriterion]);
+
+  latestLollipopDataRef.current = lollipopData;
+
+  // Cleanup lollipop chart on StatsPage unmount
+  useEffect(() => {
+    return () => {
+      if (lollipopChartInstanceRef.current) {
+        lollipopChartInstanceRef.current.destroy();
+        lollipopChartInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Multiple leaders text for Lollipop criterion
+  const topLollipopText = useMemo(() => {
+    if (!lollipopData || !lollipopData.length) return null;
+    const maxAvg = lollipopData[0].avg;
+    if (maxAvg <= 0) return null;
+    const topGenres = lollipopData.filter(d => Math.abs(d.avg - maxAvg) < 0.001);
+    if (topGenres.length === 1) {
+      return `Лидер: ${topGenres[0].name} (${topGenres[0].avg.toFixed(1)} / 10)`;
+    } else if (topGenres.length > 1) {
+      const namesJoined = joinRussianList(topGenres.map(d => d.name));
+      return `Лидеры: ${namesJoined} (по ${maxAvg.toFixed(1)} / 10)`;
+    }
+    return null;
+  }, [lollipopData]);
+
+  // Criteria deviation data (differences from overall average rating per criteria_deviation_chart_html.html)
+  const criteriaDeviationData = useMemo(() => {
+    if (!stats || !stats.criteriaStats || !stats.criteriaStats.length) return null;
+    const baseAvg = typeof stats.avgRating === 'number'
+      ? stats.avgRating
+      : (parseFloat(stats.avgRating) || 8.3);
+
+    const valid = stats.criteriaStats
+      .filter(c => c.avg > 0)
+      .map(c => {
+        const diff = Math.round((c.avg - baseAvg) * 10) / 10;
+        return {
+          key: c.key,
+          label: c.label,
+          avg: c.avg,
+          diff
+        };
+      })
+      .sort((a, b) => b.diff - a.diff || b.avg - a.avg);
+
+    if (!valid.length) return null;
+
+    const maxAbs = Math.max(...valid.map(c => Math.abs(c.diff)), 0.3);
+
+    // Auto-range: ensure maximum bar occupies at most 60-65% of the half-track,
+    // guaranteeing that the coefficient (+X.X / −X.X) NEVER overlaps the label text or grid edge.
+    // E.g., for maxAbs = 0.6, maxRange becomes 1.0 (with round steps -1.0, -0.5, 8.3, +0.5, +1.0).
+    let maxRange = 1.0;
+    if (maxAbs <= 0.25) maxRange = 0.4;
+    else if (maxAbs <= 0.40) maxRange = 0.6;
+    else if (maxAbs <= 0.55) maxRange = 0.8;
+    else if (maxAbs <= 0.70) maxRange = 1.0;
+    else if (maxAbs <= 0.90) maxRange = 1.2;
+    else if (maxAbs <= 1.15) maxRange = 1.6;
+    else if (maxAbs <= 1.45) maxRange = 2.0;
+    else maxRange = Math.ceil(maxAbs * 1.5 * 2) / 2;
+
+    const halfRange = Math.round((maxRange / 2) * 10) / 10;
+
+    // Leader(s) for the pill
+    const maxDiff = valid[0].diff;
+    const topItems = valid.filter(c => Math.abs(c.diff - maxDiff) < 0.001);
+    const topJoined = joinRussianList(topItems.map(c => c.label));
+    const pillText = `Сильнее всего: ${topJoined}`;
+
+    return {
+      baseAvg,
+      maxRange,
+      halfRange,
+      pillText,
+      items: valid
+    };
+  }, [stats]);
+
+  // Rating Donut Buckets with color assignments matching the design
+  const ratingDonutBuckets = useMemo(() => {
+    if (!stats || !stats.ratingBuckets || !stats.ratingBuckets.length) return [];
+    return stats.ratingBuckets.map(b => {
+      let color;
+      if (b.count === stats.maxRatingCount) {
+        color = isDark ? '#f5c78e' : '#c58940';
+      } else {
+        const ratio = stats.maxRatingCount > 0 ? (b.count / stats.maxRatingCount) : 0;
+        if (isDark) {
+          if (ratio >= 0.35) color = '#8a6f4f';
+          else if (ratio >= 0.15) color = '#6b563f';
+          else color = '#4a3d2e';
+        } else {
+          if (ratio >= 0.35) color = '#b37e3b';
+          else if (ratio >= 0.15) color = '#caa570';
+          else color = '#d8bc98';
+        }
+      }
+      return { ...b, color };
+    });
+  }, [stats, isDark]);
+
+  // Common typography & visual options for Chart.js
+  const chartFont = {
+    family: "'Inter', system-ui, -apple-system, sans-serif",
+    size: 11,
+    weight: 500
+  };
+
+  const getCommonOptions = (isHorizontal = false) => {
+    const textColor = isDark ? '#A1A1AA' : '#71717A';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+    const tooltipBg = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.96)';
+    const tooltipText = isDark ? '#F4F4F5' : '#18181B';
+    const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)';
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 1150,
+        easing: 'easeOutQuart'
+      },
+      animations: isHorizontal ? {
+        x: {
+          type: 'number',
+          easing: 'easeOutQuart',
+          duration: 1050,
+          from: (ctx) => {
+            const xAxis = ctx.chart?.scales?.x;
+            return xAxis ? xAxis.getPixelForValue(0) : 0;
+          },
+          delay: (ctx) => (ctx.type === 'data' && ctx.mode === 'default') ? ctx.dataIndex * 50 : 0
+        }
+      } : {
+        y: {
+          type: 'number',
+          easing: 'easeOutQuart',
+          duration: 1050,
+          from: (ctx) => {
+            const yAxis = ctx.chart?.scales?.y;
+            return yAxis ? yAxis.getPixelForValue(0) : 0;
+          },
+          delay: (ctx) => (ctx.type === 'data' && ctx.mode === 'default') ? ctx.dataIndex * 50 : 0
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: tooltipBg,
+          titleColor: tooltipText,
+          bodyColor: tooltipText,
+          borderColor: tooltipBorder,
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+          displayColors: false,
+          titleFont: { ...chartFont, weight: 700, size: 12 },
+          bodyFont: chartFont
+        }
+      },
+      scales: isHorizontal ? {
+        x: {
+          grid: { color: gridColor, drawBorder: false },
+          ticks: { color: textColor, font: chartFont },
+          border: { display: false }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: textColor, font: chartFont },
+          border: { display: false }
+        }
+      } : {
+        x: {
+          grid: { display: false },
+          ticks: { color: textColor, font: chartFont },
+          border: { display: false }
+        },
+        y: {
+          grid: { color: gridColor, drawBorder: false },
+          ticks: { color: textColor, font: chartFont, precision: 0 },
+          border: { display: false }
+        }
+      }
+    };
+  };
+
+  // 1. Chart: Release Years Timeline (Compact Columns, brightness reflects average rating)
+  useEffect(() => {
+    if (!stats || !timelineCanvasRef.current || !window.Chart) return;
+    const ctx = timelineCanvasRef.current.getContext('2d');
+    const { yearBuckets, maxYearCount, minAvgYear, maxAvgYear } = stats;
+    if (!yearBuckets || !yearBuckets.length) return;
+
+    const labels = yearBuckets.map(b => b.year);
+    const data = yearBuckets.map(b => b.count);
+
+    const backgroundColors = yearBuckets.map(b => {
+      if (b.count === 0 || b.avgScore === 0) return 'transparent';
+      const ratio = maxAvgYear > minAvgYear ? (b.avgScore - minAvgYear) / (maxAvgYear - minAvgYear) : 1;
+      const grad = ctx.createLinearGradient(0, 0, 0, 240);
+      if (isDark) {
+        // Dark theme: higher score = radiant, bright luminous gold; lower score = dimmer bronze-amber
+        if (ratio >= 0.85) {
+          grad.addColorStop(0, '#fce8be');
+          grad.addColorStop(1, '#f5c78e');
+        } else {
+          const topAlpha = (0.35 + 0.55 * ratio).toFixed(2);
+          const botAlpha = (0.16 + 0.44 * ratio).toFixed(2);
+          grad.addColorStop(0, `rgba(245, 199, 142, ${topAlpha})`);
+          grad.addColorStop(1, `rgba(214, 168, 117, ${botAlpha})`);
+        }
+      } else {
+        // Light theme: higher score = rich, deep caramel gold; lower score = paler, muted sand
+        if (ratio >= 0.85) {
+          grad.addColorStop(0, '#c58940');
+          grad.addColorStop(1, '#9e5e1e');
+        } else {
+          const topAlpha = (0.28 + 0.62 * ratio).toFixed(2);
+          const botAlpha = (0.16 + 0.50 * ratio).toFixed(2);
+          grad.addColorStop(0, `rgba(197, 137, 64, ${topAlpha})`);
+          grad.addColorStop(1, `rgba(158, 94, 30, ${botAlpha})`);
+        }
+      }
+      return grad;
+    });
+
+    const borderColors = yearBuckets.map(b => {
+      if (b.count === 0 || b.avgScore === 0) return 'transparent';
+      const ratio = maxAvgYear > minAvgYear ? (b.avgScore - minAvgYear) / (maxAvgYear - minAvgYear) : 1;
+      if (isDark) {
+        if (ratio >= 0.85) return '#ffe2b8';
+        const borderAlpha = (0.35 + 0.55 * ratio).toFixed(2);
+        return `rgba(245, 199, 142, ${borderAlpha})`;
+      } else {
+        if (ratio >= 0.85) return '#7c4812';
+        const borderAlpha = (0.35 + 0.55 * ratio).toFixed(2);
+        return `rgba(197, 137, 64, ${borderAlpha})`;
+      }
+    });
+
+    const options = getCommonOptions(false);
+    options.animation = {
+      duration: 950,
+      easing: 'easeOutQuart'
+    };
+    options.animations = {
+      y: {
+        type: 'number',
+        easing: 'easeOutQuart',
+        duration: 900,
+        from: (c) => {
+          const yAxis = c.chart?.scales?.y;
+          return yAxis ? yAxis.getPixelForValue(0) : 0;
+        },
+        delay: (c) => (c.type === 'data' && c.mode === 'default') ? c.dataIndex * 20 : 0
+      }
+    };
+    options.scales.x.grid = { display: false };
+    options.scales.x.ticks = {
+      color: isDark ? '#A1A1AA' : '#71717A',
+      font: chartFont,
+      autoSkip: true,
+      maxTicksLimit: 14,
+      maxRotation: 0
+    };
+    options.scales.y.beginAtZero = true;
+    options.scales.y.ticks = {
+      color: isDark ? '#A1A1AA' : '#71717A',
+      font: chartFont,
+      precision: 0,
+      stepSize: maxYearCount > 8 ? 2 : 1
+    };
+    options.plugins.tooltip.callbacks = {
+      title: items => `${items[0].label} год выхода`,
+      label: context => {
+        const b = yearBuckets[context.dataIndex];
+        if (!b || b.count === 0) return '0 игр в коллекции';
+        const avgText = b.avgScore > 0 ? ` · Оценка: ★ ${b.avgScore.toFixed(1)}` : '';
+        return `${formatGameCount(b.count)}${avgText} (${b.percent}% каталога)`;
+      },
+      afterLabel: context => {
+        const b = yearBuckets[context.dataIndex];
+        if (!b || !b.games || !b.games.length) return null;
+        if (b.games.length <= 3) return b.games.join(', ');
+        return `${b.games.slice(0, 2).join(', ')} и ещё ${b.games.length - 2}`;
+      }
+    };
+
+    options.interaction = {
+      mode: 'index',
+      intersect: false
+    };
+
+    // Custom plugin to draw low square blocks for empty years (0 games), matching stats_page_mockup_v2.html
+    const emptyYearPlugin = {
+      id: 'emptyYearBlocks',
+      afterDatasetDraw(chart) {
+        const { ctx: cCtx, scales: { y: yScale } } = chart;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data) return;
+
+        const isDarkCurrent = isDarkRef.current;
+        const activeElements = chart.getActiveElements?.() || [];
+        const activeIndex = activeElements.length ? activeElements[0].index : -1;
+
+        meta.data.forEach((bar, index) => {
+          const bucket = yearBuckets[index];
+          if (!bucket || bucket.count > 0) return;
+
+          const cx = bar.x;
+          const basePixel = (bar && typeof bar.base === 'number')
+            ? bar.base
+            : (yScale ? yScale.getPixelForValue(0) : chart.chartArea.bottom);
+
+          const bw = bar.width > 0 ? Math.max(6, Math.min(8, Math.round(bar.width * 0.55))) : 6;
+          const bh = 3.5;
+          const x = cx - bw / 2;
+          const y = basePixel - bh;
+          const isHovered = activeIndex === index;
+
+          cCtx.save();
+          if (isHovered) {
+            cCtx.fillStyle = isDarkCurrent ? '#f5c78e' : '#c58940';
+          } else {
+            cCtx.fillStyle = isDarkCurrent ? '#3a3a40' : '#cbd5e1';
+          }
+
+          if (cCtx.roundRect) {
+            cCtx.beginPath();
+            cCtx.roundRect(x, y, bw, bh, 1);
+            cCtx.fill();
+          } else {
+            cCtx.fillRect(x, y, bw, bh);
+          }
+          cCtx.restore();
+        });
+      }
+    };
+
+    const chart = new window.Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: 1.5,
+          borderRadius: 4,
+          borderSkipped: false,
+          barPercentage: 0.65,
+          categoryPercentage: 0.85,
+          maxBarThickness: 16
+        }]
+      },
+      options,
+      plugins: [emptyYearPlugin]
+    });
+
+    timelineChartInstanceRef.current = chart;
+
+    return () => {
+      if (chart) chart.destroy();
+      timelineChartInstanceRef.current = null;
+    };
+  }, [stats]);
+
+  // 2. Chart: Rating Donut Chart (Chart.js doughnut with rounded segments matching genre doughnut)
+  useEffect(() => {
+    if (!stats || !ratingCanvasRef.current || !window.Chart) return;
+    const ctx = ratingCanvasRef.current.getContext('2d');
+    if (!ratingDonutBuckets || !ratingDonutBuckets.length) return;
+
+    const labels = ratingDonutBuckets.map(b => b.label);
+    const data = ratingDonutBuckets.map(b => b.count);
+    const backgroundColors = ratingDonutBuckets.map(b => b.color);
+
+    const tooltipBg = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.96)';
+    const tooltipText = isDark ? '#F4F4F5' : '#18181B';
+    const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)';
+
+    const chart = new window.Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: backgroundColors,
+          borderColor: isDark ? '#16161a' : '#ffffff',
+          borderWidth: 2.5,
+          borderRadius: 6,
+          spacing: 4,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '67%',
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1100,
+          easing: 'easeOutQuart'
+        },
+        onHover: (event, elements) => {
+          const canvas = event?.chart?.canvas;
+          if (canvas) {
+            canvas.style.cursor = elements && elements.length ? 'pointer' : 'default';
+          }
+          if (elements && elements.length) {
+            setHoveredRatingIndex(elements[0].index);
+          } else {
+            setHoveredRatingIndex(null);
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: tooltipText,
+            borderColor: tooltipBorder,
+            borderWidth: 1,
+            padding: 9,
+            cornerRadius: 8,
+            titleFont: { ...chartFont, weight: 700, size: 12 },
+            bodyFont: chartFont,
+            callbacks: {
+              title: items => `Интервал: ${items[0].label}`,
+              label: context => {
+                const b = ratingDonutBuckets[context.dataIndex];
+                if (!b) return '';
+                return `${formatGameCount(b.count)} (${b.percent}% каталога)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    ratingChartInstanceRef.current = chart;
+
+    return () => {
+      if (chart) chart.destroy();
+      ratingChartInstanceRef.current = null;
+    };
+  }, [stats]);
+
+  // 3. Chart: Genres (Horizontal Bars)
+  useEffect(() => {
+    if (!stats || !genreCanvasRef.current || !window.Chart) return;
+    const ctx = genreCanvasRef.current.getContext('2d');
+    const { genres, totalGames } = stats;
+    if (!genres || !genres.length) return;
+
+    // Show top 10 genres with games
+    const displayGenres = genres.filter(g => g.count > 0).slice(0, 10);
+    if (!displayGenres.length) return;
+
+    const labels = displayGenres.map(g => g.name);
+    const data = displayGenres.map(g => g.percent);
+    const maxPercent = Math.max(...data);
+    const maxX = Math.min(100, Math.ceil((maxPercent + 14) / 10) * 10);
+
+    const backgroundColors = displayGenres.map((g, idx) => {
+      const isLeader = idx === 0;
+      const grad = ctx.createLinearGradient(0, 0, 500, 0);
+      const ratio = maxPercent > 0 ? g.percent / maxPercent : 1;
+      if (isDark) {
+        if (isLeader) {
+          grad.addColorStop(0, '#fce8be');
+          grad.addColorStop(1, '#f5c78e');
+        } else {
+          const startAlpha = (0.32 + 0.45 * ratio).toFixed(2);
+          const endAlpha = (0.55 + 0.40 * ratio).toFixed(2);
+          grad.addColorStop(0, `rgba(214, 168, 117, ${startAlpha})`);
+          grad.addColorStop(1, `rgba(245, 199, 142, ${endAlpha})`);
+        }
+      } else {
+        if (isLeader) {
+          grad.addColorStop(0, '#e89e47');
+          grad.addColorStop(1, '#b36a18');
+        } else {
+          const startAlpha = (0.28 + 0.45 * ratio).toFixed(2);
+          const endAlpha = (0.55 + 0.40 * ratio).toFixed(2);
+          grad.addColorStop(0, `rgba(197, 137, 64, ${startAlpha})`);
+          grad.addColorStop(1, `rgba(158, 94, 30, ${endAlpha})`);
+        }
+      }
+      return grad;
+    });
+
+    const borderColors = displayGenres.map((g, idx) => {
+      const isLeader = idx === 0;
+      const ratio = maxPercent > 0 ? g.percent / maxPercent : 1;
+      if (isDark) {
+        if (isLeader) return '#ffe2b8';
+        const borderAlpha = (0.35 + 0.55 * ratio).toFixed(2);
+        return `rgba(245, 199, 142, ${borderAlpha})`;
+      } else {
+        if (isLeader) return '#7c4812';
+        const borderAlpha = (0.35 + 0.55 * ratio).toFixed(2);
+        return `rgba(197, 137, 64, ${borderAlpha})`;
+      }
+    });
+
+    // Badge plugin at the end of each horizontal bar: "80% · 57 игр"
+    const genreBarBadgePlugin = {
+      id: 'genreBarBadge',
+      afterDatasetDraw(chart) {
+        const { ctx: cCtx } = chart;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data) return;
+
+        meta.data.forEach((bar, index) => {
+          const item = displayGenres[index];
+          if (!item) return;
+          const isLeader = index === 0;
+          const x = bar.x;
+          const y = bar.y;
+
+          cCtx.save();
+          cCtx.font = '700 11px Inter, system-ui, -apple-system, sans-serif';
+          cCtx.fillStyle = isLeader
+            ? (isDarkRef.current ? '#f5c78e' : '#c58940')
+            : (isDarkRef.current ? '#d4d4d8' : '#3f3f46');
+          cCtx.textBaseline = 'middle';
+          cCtx.fillText(`${item.percent}% · ${formatGameCount(item.count)}`, x + 10, y);
+          cCtx.restore();
+        });
+      }
+    };
+
+    const textColor = isDark ? '#A1A1AA' : '#71717A';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+    const tooltipBg = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.96)';
+    const tooltipText = isDark ? '#F4F4F5' : '#18181B';
+    const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)';
+
+    const chart = new window.Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: 1.5,
+          borderRadius: 4,
+          borderSkipped: false,
+          barThickness: 16
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { left: 4, right: 110, top: 4, bottom: 4 }
+        },
+        animation: {
+          duration: 950,
+          easing: 'easeOutQuart'
+        },
+        animations: {
+          x: {
+            type: 'number',
+            easing: 'easeOutQuart',
+            duration: 900,
+            from: 0,
+            delay: (c) => (c.type === 'data' && c.mode === 'default') ? c.dataIndex * 30 : 0
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: tooltipText,
+            borderColor: tooltipBorder,
+            borderWidth: 1,
+            padding: 9,
+            cornerRadius: 8,
+            titleFont: { ...chartFont, weight: 700, size: 12 },
+            bodyFont: chartFont,
+            callbacks: {
+              title: items => `Жанр: ${items[0].label}`,
+              label: context => {
+                const g = displayGenres[context.dataIndex];
+                if (!g) return '';
+                return `${g.percent}% библиотеки (${formatGameCount(g.count)})`;
+              },
+              afterLabel: () => 'Нажмите, чтобы открыть в каталоге'
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            max: maxX,
+            grid: { color: gridColor, drawBorder: false },
+            ticks: {
+              color: textColor,
+              font: chartFont,
+              stepSize: 20,
+              callback: val => `${val}%`
+            }
+          },
+          y: {
+            grid: { display: false, drawBorder: false },
+            ticks: {
+              color: isDark ? '#F4F4F5' : '#18181B',
+              font: { ...chartFont, size: 12, weight: 600 }
+            }
+          }
+        },
+        onClick: (event, elements) => {
+          if (elements && elements.length) {
+            const idx = elements[0].index;
+            const g = displayGenres[idx];
+            if (g) handleGenreFilterClick(g.name);
+          }
+        },
+        onHover: (event, elements) => {
+          const canvas = event?.chart?.canvas;
+          if (canvas) {
+            canvas.style.cursor = elements && elements.length ? 'pointer' : 'default';
+          }
+        }
+      },
+      plugins: [genreBarBadgePlugin]
+    });
+
+    genreChartInstanceRef.current = chart;
+
+    return () => {
+      if (chart) chart.destroy();
+      genreChartInstanceRef.current = null;
+    };
+  }, [stats]);
+
+  // 4. Chart: Playtime vs Rating (Scatter Plot)
+  useEffect(() => {
+    if (!stats || !playtimeCanvasRef.current || !window.Chart) return;
+    const ctx = playtimeCanvasRef.current.getContext('2d');
+    const { scatterPlaytimeRating } = stats;
+
+    if (!scatterPlaytimeRating || scatterPlaytimeRating.length === 0) return;
+
+    const textColor = isDark ? '#A1A1AA' : '#71717A';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+    const tooltipBg = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.96)';
+    const tooltipText = isDark ? '#F4F4F5' : '#18181B';
+    const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)';
+
+    const minRating = Math.min(...scatterPlaytimeRating.map(d => d.y));
+    const yAxisMin = Math.max(0, Math.floor(minRating) - 1);
+
+    // Calculate linear regression trendline (y = m*x + b)
+    let trendlinePoints = [];
+    if (scatterPlaytimeRating.length >= 2) {
+      const n = scatterPlaytimeRating.length;
+      let sumX = 0;
+      let sumY = 0;
+      let sumXY = 0;
+      let sumX2 = 0;
+      let minXVal = Infinity;
+      let maxXVal = -Infinity;
+
+      scatterPlaytimeRating.forEach(d => {
+        sumX += d.x;
+        sumY += d.y;
+        sumXY += d.x * d.y;
+        sumX2 += d.x * d.x;
+        if (d.x < minXVal) minXVal = d.x;
+        if (d.x > maxXVal) maxXVal = d.x;
+      });
+
+      const denominator = n * sumX2 - sumX * sumX;
+      if (Math.abs(denominator) > 0.0001) {
+        const m = (n * sumXY - sumX * sumY) / denominator;
+        const b = (sumY - m * sumX) / n;
+
+        const yStart = Math.max(0, Math.min(10, m * minXVal + b));
+        const yEnd = Math.max(0, Math.min(10, m * maxXVal + b));
+
+        trendlinePoints = [
+          { x: minXVal, y: Math.round(yStart * 100) / 100 },
+          { x: maxXVal, y: Math.round(yEnd * 100) / 100 }
+        ];
+      }
+    }
+
+    const datasets = [
+      {
+        type: 'scatter',
+        label: 'Игры',
+        data: scatterPlaytimeRating,
+        backgroundColor: isDark ? 'rgba(245, 199, 142, 0.40)' : 'rgba(197, 137, 64, 0.40)',
+        borderColor: isDark ? 'rgba(255, 226, 184, 0.75)' : 'rgba(143, 84, 25, 0.70)',
+        borderWidth: 1.2,
+        pointRadius: 5,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: isDark ? '#f5c78e' : '#c58940',
+        pointHoverBorderColor: isDark ? '#16161a' : '#ffffff',
+        pointHoverBorderWidth: 1.5,
+        order: 2
+      }
+    ];
+
+    if (trendlinePoints.length === 2) {
+      datasets.push({
+        type: 'line',
+        label: 'Линия тренда',
+        data: trendlinePoints,
+        borderColor: isDark ? 'rgba(245, 199, 142, 0.55)' : 'rgba(197, 137, 64, 0.55)',
+        borderWidth: 1.5,
+        borderDash: [5, 4],
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        fill: false,
+        tension: 0,
+        order: 1
+      });
+    }
+
+    const chart = new window.Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 950,
+          easing: 'easeOutQuart'
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: false
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            min: 0,
+            grid: { color: gridColor, drawBorder: false },
+            ticks: {
+              color: textColor,
+              font: chartFont,
+              callback: val => `${val} ч`
+            },
+            title: {
+              display: true,
+              text: 'Время прохождения (часы)',
+              color: textColor,
+              font: { ...chartFont, size: 11, weight: 600 }
+            }
+          },
+          y: {
+            type: 'linear',
+            min: yAxisMin,
+            max: 10,
+            grid: { color: gridColor, drawBorder: false },
+            ticks: {
+              stepSize: 1,
+              color: textColor,
+              font: chartFont,
+              callback: val => val === 10 ? '10.0' : val.toFixed(1)
+            },
+            title: {
+              display: true,
+              text: 'Оценка (из 10)',
+              color: textColor,
+              font: { ...chartFont, size: 11, weight: 600 }
+            }
+          }
+        }
+      }
+    });
+
+    playtimeChartInstanceRef.current = chart;
+
+    return () => {
+      if (chart) chart.destroy();
+      playtimeChartInstanceRef.current = null;
+    };
+  }, [stats]);
+
+  // 5. Criteria Profile (Rendered directly as native deviation chart via criteriaDeviationData)
+
+  // 6. Chart: Lollipop Chart (Genre / Criteria Ranking)
+  useEffect(() => {
+    if (!stats || !lollipopCanvasRef.current || !window.Chart) return;
+    if (!lollipopData || lollipopData.length === 0) return;
+
+    const labels = lollipopData.map(d => d.name);
+    const data = lollipopData.map(d => d.avg);
+
+    // Dynamic X-axis start: top-8 genre rating minus 0.5 (if non-zero, otherwise 0)
+    const eighthItem = lollipopData.length >= 8 ? lollipopData[7] : (lollipopData.length > 0 ? lollipopData[lollipopData.length - 1] : null);
+    const eighthScore = eighthItem ? eighthItem.avg : 0;
+    const minX = eighthScore > 0 ? Math.max(0, Math.round((eighthScore - 0.5) * 10) / 10) : 0;
+
+    // Dynamic X-axis end: top-1 genre rating plus 0.5 (capped at 10) so the chart spans full width
+    const firstItem = lollipopData.length > 0 ? lollipopData[0] : null;
+    const firstScore = firstItem ? firstItem.avg : 10;
+    const maxX = firstScore > 0 ? Math.min(10, Math.round((firstScore + 0.5) * 10) / 10) : 10;
+    const safeMaxX = Math.max(minX + 0.5, maxX);
+
+    const existingChart = lollipopChartInstanceRef.current;
+
+    // If chart already exists on the canvas: update in place so dots animate from their current position!
+    if (existingChart && existingChart.ctx && existingChart.canvas === lollipopCanvasRef.current) {
+      existingChart.lollipopData = lollipopData;
+      existingChart.data.labels = labels;
+      existingChart.data.datasets[0].data = data;
+      existingChart.data.datasets[0].base = minX;
+      if (existingChart.options.scales?.x) {
+        existingChart.options.scales.x.min = minX;
+        existingChart.options.scales.x.max = safeMaxX;
+      }
+      existingChart.update();
+      return;
+    }
+
+    if (existingChart) {
+      existingChart.destroy();
+      lollipopChartInstanceRef.current = null;
+    }
+
+    const ctx = lollipopCanvasRef.current.getContext('2d');
+    const textColor = isDark ? '#A1A1AA' : '#71717A';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+    const tooltipBg = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.96)';
+    const tooltipText = isDark ? '#F4F4F5' : '#18181B';
+    const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)';
+
+    // Custom plugin to draw lollipop circular head and score label on each bar
+    const lollipopHeadPlugin = {
+      id: 'lollipopHead',
+      afterDatasetDraw(chart) {
+        const { ctx: chartCtx } = chart;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data) return;
+
+        const currentData = chart.lollipopData || latestLollipopDataRef.current || [];
+        const maxLollipopScore = currentData.length > 0 ? currentData[0].avg : 0;
+
+        meta.data.forEach((bar, index) => {
+          const item = currentData[index];
+          if (!item) return;
+          const isLeader = Math.abs(item.avg - maxLollipopScore) < 0.001;
+          const x = bar.x;
+          const y = bar.y;
+
+          // Draw floating circular point (without sticks)
+          chartCtx.save();
+          if (isLeader) {
+            chartCtx.shadowColor = isDarkRef.current ? 'rgba(245, 199, 142, 0.65)' : 'rgba(197, 137, 64, 0.45)';
+            chartCtx.shadowBlur = 10;
+          }
+          chartCtx.beginPath();
+          chartCtx.arc(x, y, 6, 0, Math.PI * 2);
+          chartCtx.fillStyle = isLeader ? (isDarkRef.current ? '#f5c78e' : '#c58940') : (isDarkRef.current ? '#e4e4e7' : '#27272a');
+          chartCtx.fill();
+
+          chartCtx.lineWidth = 2;
+          chartCtx.strokeStyle = isLeader ? (isDarkRef.current ? '#ffe2b8' : '#8f5419') : (isDarkRef.current ? '#18181b' : '#ffffff');
+          chartCtx.stroke();
+          chartCtx.restore();
+
+          // Draw score label text next to the point
+          chartCtx.save();
+          chartCtx.font = '700 11px Inter, system-ui, -apple-system, sans-serif';
+          chartCtx.fillStyle = isLeader ? (isDarkRef.current ? '#f5c78e' : '#c58940') : (isDarkRef.current ? '#d4d4d8' : '#3f3f46');
+          chartCtx.textBaseline = 'middle';
+
+          // Current numerical score based on current animated dot position
+          const xAxis = chart.scales?.x;
+          const currentVal = xAxis ? xAxis.getValueForPixel(x) : item.avg;
+          const displayScore = (typeof currentVal === 'number' && !isNaN(currentVal) && isFinite(currentVal))
+            ? Math.min(10, Math.max(0, currentVal)).toFixed(1)
+            : item.avg.toFixed(1);
+
+          chartCtx.fillText(displayScore, x + 11, y);
+          chartCtx.restore();
+        });
+      },
+      afterRender(chart) {
+        chart._hasRendered = true;
+      }
+    };
+
+    const chart = new window.Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          base: minX,
+          barThickness: 18,
+          backgroundColor: 'transparent',
+          borderColor: 'transparent',
+          borderWidth: 0,
+          hoverBackgroundColor: 'transparent',
+          hoverBorderColor: 'transparent',
+          hoverBorderWidth: 0
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { left: 4, right: 36, top: 4, bottom: 6 }
+        },
+        animation: {
+          duration: 750,
+          easing: 'easeOutQuart'
+        },
+        animations: {
+          x: {
+            type: 'number',
+            easing: 'easeOutQuart',
+            duration: 750,
+            from: (context) => {
+              if (!context.chart._hasRendered) {
+                const xAxis = context.chart?.scales?.x;
+                return xAxis ? xAxis.getPixelForValue(minX) : undefined;
+              }
+              return undefined;
+            },
+            delay: (context) => (!context.chart._hasRendered && context.type === 'data') ? context.dataIndex * 35 : 0
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: tooltipText,
+            borderColor: tooltipBorder,
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 8,
+            titleFont: { ...chartFont, weight: 700, size: 12 },
+            bodyFont: chartFont,
+            callbacks: {
+              title: items => `Жанр: ${items[0].label}`,
+              label: context => {
+                const currentData = chart.lollipopData || latestLollipopDataRef.current || [];
+                const item = currentData[context.dataIndex];
+                if (!item) return '';
+                const activeKey = activeCriterionRef.current;
+                const critObj = STATS_CRITERIA.find(c => c.key === activeKey);
+                const critName = critObj ? critObj.label : activeKey;
+                return `Средний балл (${critName}): ${item.avg.toFixed(1)} / 10 (${formatGameCount(item.count)})`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            min: minX,
+            max: safeMaxX,
+            grid: { color: gridColor, drawBorder: false },
+            ticks: {
+              color: textColor,
+              font: chartFont,
+              callback: val => val.toFixed(1)
+            }
+          },
+          y: {
+            grid: { display: false, drawBorder: false },
+            ticks: {
+              color: textColor,
+              font: { ...chartFont, size: 11, weight: 600 }
+            }
+          }
+        }
+      },
+      plugins: [lollipopHeadPlugin]
+    });
+
+    chart.lollipopData = lollipopData;
+    lollipopChartInstanceRef.current = chart;
+  }, [stats, lollipopData]);
+
+  // 7. Instant Theme Synchronization: Update all active Chart.js instances without re-creating or re-animating
+  useEffect(() => {
+    if (!stats) return;
+
+    const textColor = isDark ? '#A1A1AA' : '#71717A';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+    const tooltipBg = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.96)';
+    const tooltipText = isDark ? '#F4F4F5' : '#18181B';
+    const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)';
+
+    // Update Chart 1: Timeline
+    const tl = timelineChartInstanceRef.current;
+    if (tl && stats.yearBuckets && stats.yearBuckets.length) {
+      const { yearBuckets, maxAvgYear, minAvgYear } = stats;
+      tl.data.datasets[0].backgroundColor = yearBuckets.map(b => {
+        if (b.count === 0 || b.avgScore === 0) return 'transparent';
+        const ratio = maxAvgYear > minAvgYear ? (b.avgScore - minAvgYear) / (maxAvgYear - minAvgYear) : 1;
+        const grad = tl.ctx.createLinearGradient(0, 0, 0, 240);
+        if (isDark) {
+          if (ratio >= 0.85) { grad.addColorStop(0, '#fce8be'); grad.addColorStop(1, '#f5c78e'); }
+          else {
+            grad.addColorStop(0, `rgba(245, 199, 142, ${(0.35 + 0.55 * ratio).toFixed(2)})`);
+            grad.addColorStop(1, `rgba(214, 168, 117, ${(0.16 + 0.44 * ratio).toFixed(2)})`);
+          }
+        } else {
+          if (ratio >= 0.85) { grad.addColorStop(0, '#c58940'); grad.addColorStop(1, '#9e5e1e'); }
+          else {
+            grad.addColorStop(0, `rgba(197, 137, 64, ${(0.28 + 0.62 * ratio).toFixed(2)})`);
+            grad.addColorStop(1, `rgba(158, 94, 30, ${(0.16 + 0.50 * ratio).toFixed(2)})`);
+          }
+        }
+        return grad;
+      });
+      tl.data.datasets[0].borderColor = yearBuckets.map(b => {
+        if (b.count === 0 || b.avgScore === 0) return 'transparent';
+        const ratio = maxAvgYear > minAvgYear ? (b.avgScore - minAvgYear) / (maxAvgYear - minAvgYear) : 1;
+        if (isDark) return ratio >= 0.85 ? '#ffe2b8' : `rgba(245, 199, 142, ${(0.35 + 0.55 * ratio).toFixed(2)})`;
+        return ratio >= 0.85 ? '#7c4812' : `rgba(197, 137, 64, ${(0.35 + 0.55 * ratio).toFixed(2)})`;
+      });
+      if (tl.options.scales?.x?.ticks) tl.options.scales.x.ticks.color = textColor;
+      if (tl.options.scales?.y?.ticks) tl.options.scales.y.ticks.color = textColor;
+      if (tl.options.scales?.y?.grid) tl.options.scales.y.grid.color = gridColor;
+      if (tl.options.plugins?.tooltip) {
+        tl.options.plugins.tooltip.backgroundColor = tooltipBg;
+        tl.options.plugins.tooltip.titleColor = tooltipText;
+        tl.options.plugins.tooltip.bodyColor = tooltipText;
+        tl.options.plugins.tooltip.borderColor = tooltipBorder;
+      }
+      tl.update('none');
+    }
+
+    // Update Chart 2: Rating Donut
+    const rChart = ratingChartInstanceRef.current;
+    if (rChart && ratingDonutBuckets && ratingDonutBuckets.length) {
+      rChart.data.datasets[0].backgroundColor = ratingDonutBuckets.map(b => b.color);
+      rChart.data.datasets[0].borderColor = isDark ? '#16161a' : '#ffffff';
+      if (rChart.options.plugins?.tooltip) {
+        rChart.options.plugins.tooltip.backgroundColor = tooltipBg;
+        rChart.options.plugins.tooltip.titleColor = tooltipText;
+        rChart.options.plugins.tooltip.bodyColor = tooltipText;
+        rChart.options.plugins.tooltip.borderColor = tooltipBorder;
+      }
+      rChart.update('none');
+    }
+
+    // Update Chart 3: Genre Bars (Horizontal)
+    const gChart = genreChartInstanceRef.current;
+    if (gChart && stats.genres && stats.genres.length) {
+      const displayGenres = stats.genres.filter(g => g.count > 0).slice(0, 10);
+      const maxPercent = Math.max(...displayGenres.map(g => g.percent));
+      gChart.data.datasets[0].backgroundColor = displayGenres.map((g, idx) => {
+        const isLeader = idx === 0;
+        const grad = gChart.ctx.createLinearGradient(0, 0, 500, 0);
+        const ratio = maxPercent > 0 ? g.percent / maxPercent : 1;
+        if (isDark) {
+          if (isLeader) { grad.addColorStop(0, '#fce8be'); grad.addColorStop(1, '#f5c78e'); }
+          else {
+            grad.addColorStop(0, `rgba(214, 168, 117, ${(0.32 + 0.45 * ratio).toFixed(2)})`);
+            grad.addColorStop(1, `rgba(245, 199, 142, ${(0.55 + 0.40 * ratio).toFixed(2)})`);
+          }
+        } else {
+          if (isLeader) { grad.addColorStop(0, '#e89e47'); grad.addColorStop(1, '#b36a18'); }
+          else {
+            grad.addColorStop(0, `rgba(197, 137, 64, ${(0.28 + 0.45 * ratio).toFixed(2)})`);
+            grad.addColorStop(1, `rgba(158, 94, 30, ${(0.55 + 0.40 * ratio).toFixed(2)})`);
+          }
+        }
+        return grad;
+      });
+      gChart.data.datasets[0].borderColor = displayGenres.map((g, idx) => {
+        const isLeader = idx === 0;
+        const ratio = maxPercent > 0 ? g.percent / maxPercent : 1;
+        if (isDark) return isLeader ? '#ffe2b8' : `rgba(245, 199, 142, ${(0.35 + 0.55 * ratio).toFixed(2)})`;
+        return isLeader ? '#7c4812' : `rgba(197, 137, 64, ${(0.35 + 0.55 * ratio).toFixed(2)})`;
+      });
+      if (gChart.options.scales?.x?.ticks) gChart.options.scales.x.ticks.color = textColor;
+      if (gChart.options.scales?.x?.grid) gChart.options.scales.x.grid.color = gridColor;
+      if (gChart.options.scales?.y?.ticks) gChart.options.scales.y.ticks.color = isDark ? '#F4F4F5' : '#18181B';
+      if (gChart.options.plugins?.tooltip) {
+        gChart.options.plugins.tooltip.backgroundColor = tooltipBg;
+        gChart.options.plugins.tooltip.titleColor = tooltipText;
+        gChart.options.plugins.tooltip.bodyColor = tooltipText;
+        gChart.options.plugins.tooltip.borderColor = tooltipBorder;
+      }
+      gChart.update('none');
+    }
+
+    // Update Chart 4: Playtime Scatter
+    const pChart = playtimeChartInstanceRef.current;
+    if (pChart && pChart.data?.datasets?.[0]) {
+      pChart.data.datasets[0].backgroundColor = isDark ? 'rgba(245, 199, 142, 0.40)' : 'rgba(197, 137, 64, 0.40)';
+      pChart.data.datasets[0].borderColor = isDark ? 'rgba(255, 226, 184, 0.75)' : 'rgba(143, 84, 25, 0.70)';
+      pChart.data.datasets[0].pointHoverBackgroundColor = isDark ? '#f5c78e' : '#c58940';
+      pChart.data.datasets[0].pointHoverBorderColor = isDark ? '#16161a' : '#ffffff';
+      if (pChart.data.datasets[1]) {
+        pChart.data.datasets[1].borderColor = isDark ? 'rgba(245, 199, 142, 0.55)' : 'rgba(197, 137, 64, 0.55)';
+      }
+      if (pChart.options.scales?.x?.ticks) pChart.options.scales.x.ticks.color = textColor;
+      if (pChart.options.scales?.x?.grid) pChart.options.scales.x.grid.color = gridColor;
+      if (pChart.options.scales?.x?.title) pChart.options.scales.x.title.color = textColor;
+      if (pChart.options.scales?.y?.ticks) pChart.options.scales.y.ticks.color = textColor;
+      if (pChart.options.scales?.y?.grid) pChart.options.scales.y.grid.color = gridColor;
+      if (pChart.options.scales?.y?.title) pChart.options.scales.y.title.color = textColor;
+      if (pChart.options.plugins?.tooltip) {
+        pChart.options.plugins.tooltip.enabled = false;
+      }
+      pChart.update('none');
+    }
+
+    // Update Chart 6: Lollipop
+    const lol = lollipopChartInstanceRef.current;
+    if (lol && lol.data?.datasets?.[0]) {
+      lol.data.datasets[0].backgroundColor = 'transparent';
+      lol.data.datasets[0].borderColor = 'transparent';
+      lol.data.datasets[0].borderWidth = 0;
+      lol.data.datasets[0].hoverBackgroundColor = 'transparent';
+      lol.data.datasets[0].hoverBorderColor = 'transparent';
+      lol.data.datasets[0].hoverBorderWidth = 0;
+      if (lol.options.scales?.x?.ticks) lol.options.scales.x.ticks.color = textColor;
+      if (lol.options.scales?.x?.grid) lol.options.scales.x.grid.color = gridColor;
+      if (lol.options.scales?.y?.ticks) lol.options.scales.y.ticks.color = textColor;
+      if (lol.options.plugins?.tooltip) {
+        lol.options.plugins.tooltip.backgroundColor = tooltipBg;
+        lol.options.plugins.tooltip.titleColor = tooltipText;
+        lol.options.plugins.tooltip.bodyColor = tooltipText;
+        lol.options.plugins.tooltip.borderColor = tooltipBorder;
+      }
+      lol.update('none');
+    }
+  }, [isDark]);
+
+  const handleRatingItemEnter = (index) => {
+    setHoveredRatingIndex(index);
+    if (ratingChartInstanceRef.current && ratingDonutBuckets && ratingDonutBuckets.length) {
+      if (index !== null && index < ratingDonutBuckets.length) {
+        ratingChartInstanceRef.current.setActiveElements([{ datasetIndex: 0, index }]);
+        ratingChartInstanceRef.current.tooltip.setActiveElements([{ datasetIndex: 0, index }], { x: 0, y: 0 });
+        ratingChartInstanceRef.current.update('none');
+      }
+    }
+  };
+
+  const handleRatingItemLeave = () => {
+    setHoveredRatingIndex(null);
+    if (ratingChartInstanceRef.current) {
+      ratingChartInstanceRef.current.setActiveElements([]);
+      ratingChartInstanceRef.current.tooltip.setActiveElements([], { x: 0, y: 0 });
+      ratingChartInstanceRef.current.update('none');
+    }
+  };
+
+  // Render Theme Toggle button matching main page
+  const renderThemeToggle = (idSuffix = '') => (
+    <label
+      htmlFor={`themeToggleStats${idSuffix}`}
+      className="themeToggle st-sunMoonThemeToggleBtn"
+      title={isDark ? 'Включить светлую тему' : 'Включить тёмную тему'}
+      aria-label={isDark ? 'Включить светлую тему' : 'Включить тёмную тему'}
+    >
+      <input
+        type="checkbox"
+        id={`themeToggleStats${idSuffix}`}
+        className="themeToggleInput"
+        onChange={toggleTheme}
+        checked={!isDark}
+      />
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" stroke="none">
+        <mask id={`moon-mask-stats${idSuffix}`}>
+          <rect x="0" y="0" width="20" height="20" fill="white" />
+          <circle cx="11" cy="3" r="8" fill="black" />
+        </mask>
+        <circle className="sunMoon" cx="10" cy="10" r="8" mask={`url(#moon-mask-stats${idSuffix})`} />
+        <g>
+          <line className="sunRay" x1="16.8" y1="10" x2="19.2" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line className="sunRay sunRay2" x1="13.4" y1="15.8888" x2="14.6" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line className="sunRay sunRay3" x1="6.6" y1="15.8888" x2="5.4" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line className="sunRay sunRay4" x1="3.2" y1="10" x2="0.8" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line className="sunRay sunRay5" x1="6.6" y1="4.211" x2="5.4" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line className="sunRay sunRay6" x1="13.4" y1="4.211" x2="14.6" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </g>
+      </svg>
+    </label>
+  );
+
+  const MIN_GAMES_REQUIRED = 3;
+
+  if (!games || games.length === 0) {
+    return (
+      <div className="stats-page">
+        <div className="stats-container">
+          <header className="stats-topbar">
+            <div className="stats-topbar-left">
+              <a href={backUrl} className="stats-back-btn" title="Вернуться в каталог">
+                <span>←</span>
+                <span>В каталог</span>
+              </a>
+              <div className="stats-title-group">
+                <h1 className="stats-title">Статистика библиотеки</h1>
+              </div>
+            </div>
+            <div className="stats-topbar-right">
+              {renderThemeToggle('-empty')}
+            </div>
+          </header>
+          <div className="stats-empty-state">
+            <div className="stats-empty-icon">📊</div>
+            <h2 className="stats-empty-title">В библиотеке пока нет игр</h2>
+            <p className="stats-empty-desc">
+              Добавьте хотя бы несколько игр в каталог, чтобы сформировать графики, аналитику и жанровую диаграмму.
+            </p>
+            <div style={{ marginTop: '20px' }}>
+              <a href={backUrl} className="stats-empty-action-btn">
+                Перейти в каталог
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (games.length < MIN_GAMES_REQUIRED) {
+    const needed = MIN_GAMES_REQUIRED - games.length;
+    return (
+      <div className="stats-page">
+        <div className="stats-container">
+          <header className="stats-topbar">
+            <div className="stats-topbar-left">
+              <a href={backUrl} className="stats-back-btn" title="Вернуться в каталог">
+                <span>←</span>
+                <span>В каталог</span>
+              </a>
+              <div className="stats-title-group">
+                <h1 className="stats-title">Статистика библиотеки</h1>
+                <div className="stats-subtitle">
+                  {formatGameCount(games.length)} · недостаточно данных для полной аналитики
+                </div>
+              </div>
+            </div>
+            <div className="stats-topbar-right">
+              {renderThemeToggle('-empty')}
+            </div>
+          </header>
+          <div className="stats-empty-state stats-insufficient-state">
+            <div className="stats-empty-badge">
+              {!loadedSessionUserId && !catalogProfile ? 'Каталог не выбран' : 'Недостаточно данных'}
+            </div>
+            <div className="stats-empty-icon">{!loadedSessionUserId && !catalogProfile ? '📊' : '📈'}</div>
+            <h2 className="stats-empty-title">
+              {!loadedSessionUserId && !catalogProfile
+                ? 'Войдите в аккаунт для просмотра аналитики'
+                : `Добавьте ${formatPluralGames(needed)}, чтобы построить график`}
+            </h2>
+            <p className="stats-empty-desc">
+              {!loadedSessionUserId && !catalogProfile
+                ? 'У каждого пользователя свой личный каталог. Войдите в аккаунт или выберите библиотеку других пользователей через каталог.'
+                : 'Для расчета распределения оценок, хронологической шкалы релизов и кольцевой диаграммы жанров необходимо минимум 3 игры в каталоге.'}
+            </p>
+            {!loadedSessionUserId && !catalogProfile ? (
+              <div style={{ marginTop: '20px' }}>
+                <a href={backUrl} className="stats-empty-action-btn">
+                  Вернуться в каталог
+                </a>
+              </div>
+            ) : (
+              <>
+                <div className="stats-empty-progress-wrap">
+                  <div className="stats-empty-progress-bar">
+                    <div
+                      className="stats-empty-progress-fill"
+                      style={{ width: `${(games.length / MIN_GAMES_REQUIRED) * 100}%` }}
+                    />
+                  </div>
+                  <span className="stats-empty-progress-text">
+                    {games.length} из {MIN_GAMES_REQUIRED} игр добавлено
+                  </span>
+                </div>
+                <div style={{ marginTop: '20px' }}>
+                  <a href={backUrl} className="stats-empty-action-btn">
+                    Добавить игры в каталог
+                  </a>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="stats-page">
+      <div className="stats-container">
+        {/* Верхняя панель управления */}
+        <header className="stats-topbar">
+          <div className="stats-topbar-left">
+            <a href={backUrl} className="stats-back-btn" title="Вернуться в каталог">
+              <span>←</span>
+              <span>В каталог</span>
+            </a>
+            <div className="stats-title-group">
+              <h1 className="stats-title">
+                {catalogProfile
+                  ? `Статистика @${catalogProfile.username}`
+                  : 'Статистика библиотеки'}
+              </h1>
+              <div className="stats-subtitle">
+                {formatGameCount(stats.totalGames)} · аналитика коллекции
+              </div>
+            </div>
+          </div>
+          <div className="stats-topbar-right">
+            {renderThemeToggle()}
+          </div>
+        </header>
+
+        {/* ═══ ГЕРОЙ-БЛОК СТАТИСТИКИ (HTML/CSS) ═══ */}
+        <section className="stats-hero-card" aria-label="Сводная статистика библиотеки">
+          <div className="stats-hero-glow" aria-hidden="true" />
+          <div className="stats-hero-content">
+
+            {/* Левая доминанта: Игровые часы (Крупный акцент на общих часах) */}
+            <div className="stats-hero-hours-group">
+              <div className="stats-hero-stat-primary">
+                <div className="stats-hero-badge">
+                  <span className="stats-hero-badge-icon">⏱</span>
+                  <span>Игровое время</span>
+                </div>
+                <div className="stats-hero-hours-large">
+                  <AnimatedCounter value={stats.totalHours} />
+                  <span className="stats-hero-unit">ч</span>
+                </div>
+                <div className="stats-hero-hours-label">
+                  всего часов в играх библиотеки
+                </div>
+              </div>
+            </div>
+
+            {/* Правая часть: сетка 2х2 (Игр в библиотеке, Средняя оценка, В среднем на игру, Охват релизов) */}
+            <div className="stats-hero-metrics-group">
+              <div className="stats-hero-metric-cell">
+                <div className="stats-hero-cell-header">
+                  <span className="stats-hero-cell-icon" aria-hidden="true">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="4" />
+                      <circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none" />
+                      <circle cx="16" cy="8" r="1.1" fill="currentColor" stroke="none" />
+                      <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
+                      <circle cx="8" cy="16" r="1.1" fill="currentColor" stroke="none" />
+                      <circle cx="16" cy="16" r="1.1" fill="currentColor" stroke="none" />
+                    </svg>
+                  </span>
+                  <span className="stats-hero-cell-title">Игр в библиотеке</span>
+                </div>
+                <div className="stats-hero-cell-value">
+                  <AnimatedCounter value={stats.totalGames} />
+                </div>
+                <div className="stats-hero-cell-desc">
+                  в личной коллекции
+                </div>
+              </div>
+
+              <div className="stats-hero-metric-cell">
+                <div className="stats-hero-cell-header">
+                  <span className="stats-hero-cell-icon">★</span>
+                  <span className="stats-hero-cell-title">Средняя оценка</span>
+                </div>
+                <div className="stats-hero-cell-value">
+                  <AnimatedCounter value={stats.avgRating} decimals={1} />
+                  <span className="stats-hero-cell-denom">/10</span>
+                </div>
+                <div className="stats-hero-cell-desc">
+                  по 7 критериям качества
+                </div>
+              </div>
+
+              <div className="stats-hero-metric-cell">
+                <div className="stats-hero-cell-header">
+                  <span className="stats-hero-cell-icon">⏱</span>
+                  <span className="stats-hero-cell-title">В среднем на игру</span>
+                </div>
+                <div className="stats-hero-cell-value">
+                  <AnimatedCounter value={stats.avgPlaytime} />
+                  <span className="stats-hero-cell-denom">ч</span>
+                </div>
+                <div className="stats-hero-cell-desc">
+                  на одно прохождение
+                </div>
+              </div>
+
+              <div className="stats-hero-metric-cell">
+                <div className="stats-hero-cell-header">
+                  <span className="stats-hero-cell-icon">🗓</span>
+                  <span className="stats-hero-cell-title">Охват релизов</span>
+                </div>
+                <div className="stats-hero-cell-value stats-hero-cell-years">
+                  {stats.minYear && stats.maxYear ? `${stats.minYear} – ${stats.maxYear}` : '—'}
+                </div>
+                <div className="stats-hero-cell-desc">
+                  {stats.minYear && stats.maxYear
+                    ? formatYearsSpan(stats.maxYear - stats.minYear + 1)
+                    : 'период релизов'}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* ═══ СЕТКА ГРАФИКОВ ═══ */}
+        <section className="stats-charts-grid">
+          {/* График 1: Хронология релизов (Компактные столбцы) */}
+          <div className="stats-chart-card">
+            <div className="stats-chart-header">
+              <div className="stats-chart-info">
+                <h2 className="stats-chart-title">Хронология релизов</h2>
+                <p className="stats-chart-subtitle">
+                  {stats.minYear && stats.maxYear
+                    ? `Игры от ${stats.minYear} до ${stats.maxYear} года`
+                    : 'Распределение игр по годам выпуска'}
+                </p>
+              </div>
+              {stats.peakYearsText && (
+                <span className="stats-accent-pill">
+                  {stats.peakYearsText}
+                </span>
+              )}
+            </div>
+            <div className="stats-canvas-wrap timeline-wrap">
+              {stats.yearBuckets && stats.yearBuckets.length > 0 ? (
+                <canvas ref={timelineCanvasRef} />
+              ) : (
+                <div className="stats-chart-empty">
+                  <span className="stats-chart-empty-icon">🗓</span>
+                  <span>Года выхода игр не указаны</span>
+                </div>
+              )}
+            </div>
+            <div className="stats-timeline-legend-row">
+              <span className="stats-timeline-tip">Наведите на столбик для деталей</span>
+              <span className="stats-timeline-legend">
+                оценка ниже
+                <span className="stats-timeline-gradient-bar" />
+                выше
+              </span>
+            </div>
+          </div>
+
+          {/* График 2: Рейтинг игр (Бублик распределения оценок из макета) */}
+          <div className="stats-chart-card">
+            <div className="stats-chart-header">
+              <div className="stats-chart-info">
+                <h2 className="stats-chart-title">Рейтинг игр</h2>
+                <p className="stats-chart-subtitle">Как вы оцениваете игры чаще всего</p>
+              </div>
+              {stats.peakRatingText && (
+                <span className="stats-accent-pill">
+                  {stats.peakRatingText}
+                </span>
+              )}
+            </div>
+
+            {ratingDonutBuckets.length > 0 ? (
+              <div className="stats-rating-donut-layout">
+                <div className="stats-rating-donut-container">
+                  <canvas ref={ratingCanvasRef} />
+                  <div className="stats-rating-donut-center" aria-hidden="true">
+                    <div className="stats-rating-donut-val">
+                      {hoveredRatingIndex !== null && ratingDonutBuckets[hoveredRatingIndex]
+                        ? `${ratingDonutBuckets[hoveredRatingIndex].percent}%`
+                        : stats.avgRating}
+                    </div>
+                    <div className="stats-rating-donut-lbl">
+                      {hoveredRatingIndex !== null && ratingDonutBuckets[hoveredRatingIndex]
+                        ? ratingDonutBuckets[hoveredRatingIndex].label
+                        : 'средняя оценка'}
+                    </div>
+                  </div>
+                </div>
+                <div className="stats-rating-donut-legend">
+                  {ratingDonutBuckets.map((seg, i) => {
+                    const isHovered = hoveredRatingIndex === i;
+                    return (
+                      <div
+                        key={seg.label}
+                        className={`stats-rating-donut-row ${isHovered ? 'active' : ''}`}
+                        onMouseEnter={() => handleRatingItemEnter(i)}
+                        onMouseLeave={handleRatingItemLeave}
+                      >
+                        <span
+                          className="stats-rating-donut-dot"
+                          style={{ background: seg.color }}
+                        />
+                        <span className="stats-rating-donut-range">{seg.label}</span>
+                        <span className="stats-rating-donut-count">{formatGameCount(seg.count)}</span>
+                        <span className="stats-rating-donut-pct">{seg.percent}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="stats-chart-empty">
+                <span className="stats-chart-empty-icon">★</span>
+                <span>Нет игр с оценками для построения графика</span>
+              </div>
+            )}
+          </div>
+
+          {/* График 3: Жанры (full-width) — Компактные столбики как в хронологии релизов */}
+          <div className="stats-chart-card full-width">
+            <div className="stats-chart-header">
+              <div className="stats-chart-info">
+                <h2 className="stats-chart-title">Процент игр по жанрам</h2>
+                <p className="stats-chart-subtitle">
+                  Какие жанры преобладают в вашей библиотеке и сколько игр в каждом жанре
+                </p>
+              </div>
+              {stats.topGenresText && (
+                <span className="stats-accent-pill">
+                  {stats.topGenresText}
+                </span>
+              )}
+            </div>
+
+            <div className="stats-canvas-wrap genre-bars-wrap">
+              {stats.genres && stats.genres.length > 0 ? (
+                <canvas ref={genreCanvasRef} />
+              ) : (
+                <div className="stats-chart-empty">
+                  <span className="stats-chart-empty-icon">🎮</span>
+                  <span>Жанры пока не указаны</span>
+                </div>
+              )}
+            </div>
+            <div className="stats-timeline-legend-row">
+              <span className="stats-timeline-tip">Нажмите на полосу жанра, чтобы открыть игры в каталоге</span>
+              <span className="stats-timeline-legend">
+                меньше
+                <span className="stats-timeline-gradient-bar" />
+                больше
+              </span>
+            </div>
+          </div>
+
+          {/* График 4: Lollipop-график Оценки жанров по критериям (full-width) */}
+          <div className="stats-chart-card full-width">
+            <div className="stats-chart-header">
+              <div className="stats-chart-info">
+                <h2 className="stats-chart-title">Оценка жанров по критериям</h2>
+                <p className="stats-chart-subtitle">
+                  Посмотрите, какие жанры лидируют по общей оценке и по отдельным критериям качества
+                </p>
+              </div>
+              {topLollipopText && (
+                <span className="stats-accent-pill">
+                  {topLollipopText}
+                </span>
+              )}
+            </div>
+
+            {/* Док-панель критериев над графиком */}
+            <div className="stats-lollipop-dock-wrap">
+              <div className="stats-criteria-dock" role="toolbar" aria-label="Выбор критерия для графика">
+                <div className="stats-criteria-dock-track">
+                  {STATS_CRITERIA.map(c => {
+                    const isActive = lollipopCriterion === c.key;
+                    return (
+                      <button
+                        key={c.key}
+                        type="button"
+                        className={`stats-criteria-dock-btn ${isActive ? 'active' : ''}`}
+                        onClick={() => setLollipopCriterion(c.key)}
+                        aria-pressed={isActive}
+                        title={c.key === 'overall' ? 'Показать среднюю общую оценку по всем 7 критериям' : `Показать оценки по критерию: ${c.label}`}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="statsCriteriaIndicator"
+                            className="stats-criteria-dock-indicator"
+                            transition={{
+                              type: 'spring',
+                              stiffness: 420,
+                              damping: 32
+                            }}
+                          />
+                        )}
+                        <span className="stats-criteria-dock-text">{c.short}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="stats-canvas-wrap lollipop-wrap">
+              {lollipopData.length > 0 ? (
+                <canvas ref={lollipopCanvasRef} />
+              ) : (
+                <div className="stats-chart-empty">
+                  <span className="stats-chart-empty-icon">🍭</span>
+                  <span>Недостаточно оценок по данному критерию</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* График 5: Время прохождения и оценка (Scatter) */}
+          <div className="stats-chart-card">
+            <div className="stats-chart-header">
+              <div className="stats-chart-info">
+                <h2 className="stats-chart-title">Время прохождения и оценка</h2>
+                <p className="stats-chart-subtitle">Связь между продолжительностью игры и итоговой оценкой. 1 круг = 1 игра</p>
+              </div>
+            </div>
+            <div className="stats-canvas-wrap scatter-wrap">
+              {stats.scatterPlaytimeRating && stats.scatterPlaytimeRating.length > 0 ? (
+                <canvas ref={playtimeCanvasRef} />
+              ) : (
+                <div className="stats-chart-empty">
+                  <span className="stats-chart-empty-icon">⏱</span>
+                  <span>Время прохождения пока не указано</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* График 6: Профиль критериев (График отклонений по эскизу criteria_deviation_chart_html.html) */}
+          <div className="stats-chart-card">
+            <div className="stats-chart-header">
+              <div className="stats-chart-info">
+                <h2 className="stats-chart-title">Профиль критериев</h2>
+                <p className="stats-chart-subtitle">
+                  {criteriaDeviationData
+                    ? `Показывает отклонение средней оценки по каждому критерию от вашей общей средней оценки ${criteriaDeviationData.baseAvg}`
+                    : 'Чем критерий отличается от вашей средней оценки'}
+                </p>
+              </div>
+              {criteriaDeviationData && criteriaDeviationData.pillText && (
+                <span className="stats-accent-pill">
+                  {criteriaDeviationData.pillText}
+                </span>
+              )}
+            </div>
+
+            {criteriaDeviationData && criteriaDeviationData.items.length > 0 ? (
+              <div className="stats-deviation-wrap">
+                <div className="stats-deviation-table">
+                  {/* Фоновая сетка и центральная линия (средняя оценка) */}
+                  <div className="stats-deviation-grid-bg" aria-hidden="true">
+                    <div className="stats-deviation-gl" style={{ left: '0%' }} />
+                    <div className="stats-deviation-gl" style={{ left: '25%' }} />
+                    <div className="stats-deviation-gl center-line" style={{ left: '50%' }} />
+                    <div className="stats-deviation-gl" style={{ left: '75%' }} />
+                    <div className="stats-deviation-gl" style={{ left: '100%' }} />
+                  </div>
+
+                  {/* Строки критериев с барами отклонения */}
+                  {criteriaDeviationData.items.map((item) => {
+                    const absDiff = Math.abs(item.diff);
+                    // Cap bar width at 36% of total track (72% of half-track) so value labels always have guaranteed room
+                    const barWidth = Math.min(36, (absDiff / criteriaDeviationData.maxRange) * 50);
+                    const isPos = item.diff > 0;
+                    const isNeg = item.diff < 0;
+
+                    const barStyle = isPos
+                      ? { left: '50%', width: `${barWidth}%` }
+                      : isNeg
+                      ? { right: '50%', width: `${barWidth}%` }
+                      : { left: '50%', width: '0%' };
+
+                    const valStyle = isPos
+                      ? { left: `calc(${50 + barWidth}% + 8px)` }
+                      : isNeg
+                      ? { right: `calc(${50 + barWidth}% + 8px)` }
+                      : { left: 'calc(50% + 8px)' };
+
+                    const valText = isPos
+                      ? `+${item.diff.toFixed(1)}`
+                      : isNeg
+                      ? `−${absDiff.toFixed(1)}`
+                      : '0.0';
+
+                    return (
+                      <div key={item.key} className="stats-deviation-row">
+                        <div className="stats-deviation-nm">{item.label}</div>
+                        <div className="stats-deviation-track">
+                          <div
+                            className={`stats-deviation-bar ${isPos ? 'positive' : isNeg ? 'negative' : ''}`}
+                            style={barStyle}
+                          />
+                          <div
+                            className={`stats-deviation-val ${isPos ? 'positive' : isNeg ? 'negative' : ''}`}
+                            style={valStyle}
+                          >
+                            {valText}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Шкала оси X снизу с шагами и центральной средней оценкой */}
+                <div className="stats-deviation-axis" aria-hidden="true">
+                  <div />
+                  <div className="stats-deviation-axis-marks">
+                    <span className="stats-deviation-axis-mark" style={{ left: '0%' }}>
+                      −{criteriaDeviationData.maxRange.toFixed(1)}
+                    </span>
+                    <span className="stats-deviation-axis-mark" style={{ left: '25%' }}>
+                      −{criteriaDeviationData.halfRange.toFixed(1)}
+                    </span>
+                    <span className="stats-deviation-axis-mark center" style={{ left: '50%' }}>
+                      {criteriaDeviationData.baseAvg}
+                    </span>
+                    <span className="stats-deviation-axis-mark" style={{ left: '75%' }}>
+                      +{criteriaDeviationData.halfRange.toFixed(1)}
+                    </span>
+                    <span className="stats-deviation-axis-mark" style={{ left: '100%' }}>
+                      +{criteriaDeviationData.maxRange.toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Легенда снизу */}
+                <div className="stats-deviation-footer">
+                  <span className="stats-deviation-legend-item">
+                    <span className="stats-deviation-legend-dot pos" />
+                    выше средней
+                  </span>
+                  <span className="stats-deviation-legend-item">
+                    <span className="stats-deviation-legend-dot neg" />
+                    ниже средней
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="stats-chart-empty">
+                <span className="stats-chart-empty-icon">🎯</span>
+                <span>Критерии оценки пока не заполнены</span>
+              </div>
+            )}
+          </div>
+
+          {/* Секция 6: Топ разработчиков и студий (full-width) */}
+          {stats.allDevs && stats.allDevs.length > 0 && (
+            <div className="stats-chart-card full-width stats-studios-section">
+              <div className="stats-chart-header">
+                <div className="stats-chart-info">
+                  <h2 className="stats-chart-title">Студии и разработчики</h2>
+                  <p className="stats-chart-subtitle">
+                    {devsSortMode === 'rating'
+                      ? 'Создатели с наивысшим средним баллом в вашей коллекции и их главные шедевры'
+                      : 'Создатели с наибольшим количеством пройденных игр в вашей коллекции и их шедевры'}
+                  </p>
+                </div>
+                <div className="stats-studios-header-actions">
+                  <div className="stats-view-switch" role="tablist" aria-label="Сортировка студий">
+                    <button
+                      type="button"
+                      className={devsSortMode === 'rating' ? 'active' : ''}
+                      onClick={() => setDevsSortMode('rating')}
+                      title="Сортировать студии по среднему баллу"
+                    >
+                      По среднему баллу
+                    </button>
+                    <button
+                      type="button"
+                      className={devsSortMode === 'count' ? 'active' : ''}
+                      onClick={() => setDevsSortMode('count')}
+                      title="Сортировать студии по количеству игр"
+                    >
+                      По количеству игр
+                    </button>
+                  </div>
+                  {sortedDevs.length > 0 && (
+                    <span className="stats-accent-pill">
+                      Топ-{sortedDevs.length} студий
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {sortedDevs.length > 0 ? (
+                <div key={devsSortMode} className="stats-studios-list">
+                  {sortedDevs.map((dev, i) => {
+                    const rank = i + 1;
+                    const isTop3 = i < 3;
+                    const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+                    const rowClass = `stats-studio-row ${rankClass} ${isTop3 ? 'top-3-row' : 'compact-row'}`;
+                    return (
+                      <div key={`${devsSortMode}-${dev.name}`} className={rowClass}>
+                        {/* Левая часть: Номер в топе, Обложка лучшей игры, Название студии и шедевра */}
+                        <div className="stats-studio-main">
+                          <div className={`stats-studio-rank ${rankClass}`}>
+                            {rank}
+                          </div>
+
+                          {dev.bestGame && (
+                            <div className="stats-studio-thumb-wrap">
+                              {dev.bestGame.image ? (
+                                <img
+                                  src={dev.bestGame.image}
+                                  alt={dev.bestGame.title}
+                                  className="stats-studio-thumb"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="stats-studio-thumb-placeholder">
+                                  <span>🎮</span>
+                                </div>
+                              )}
+                              {dev.bestGameRating && (
+                                <span className="stats-studio-thumb-badge" title={`Оценка шедевра: ${dev.bestGameRating}`}>
+                                  ★ {dev.bestGameRating}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="stats-studio-details">
+                            <div className="stats-studio-title-row">
+                              <h3 className="stats-studio-name">{dev.name}</h3>
+                            </div>
+
+                            {dev.bestGame && (
+                              <div className="stats-studio-best-game">
+                                <span className="stats-studio-best-label">Шедевр:</span>
+                                <span className="stats-studio-best-title">«{dev.bestGame.title}»</span>
+                                {dev.bestGame.year && (
+                                  <span className="stats-studio-best-year">({dev.bestGame.year} г.)</span>
+                                )}
+                              </div>
+                            )}
+
+                            {dev.topGenres && dev.topGenres.length > 0 && (
+                              <div className="stats-studio-genres">
+                                {dev.topGenres.map(genre => (
+                                  <span key={genre} className="stats-studio-genre-tag">{genre}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Правая часть: Сводные метрики студии */}
+                        <div className="stats-studio-metrics">
+                          <div className={`stats-studio-metric-cell ${devsSortMode === 'count' ? 'highlight' : ''}`}>
+                            <span className="stats-studio-metric-val">{formatGameCount(dev.count)}</span>
+                            <span className="stats-studio-metric-lbl">в коллекции</span>
+                          </div>
+
+                          <div className="stats-studio-metric-divider" aria-hidden="true" />
+
+                          <div className={`stats-studio-metric-cell ${devsSortMode === 'rating' ? 'highlight' : ''}`}>
+                            <span className="stats-studio-metric-val">
+                              {dev.avgRating !== '—' ? `★ ${dev.avgRating}` : '—'}
+                            </span>
+                            <span className="stats-studio-metric-lbl">средний балл</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="stats-chart-empty" style={{ minHeight: '180px', padding: '36px 16px' }}>
+                  <span className="stats-chart-empty-icon">🏢</span>
+                  <span>
+                    {devsSortMode === 'rating'
+                      ? 'В коллекции пока нет студий с 2 или более играми для расчёта среднего балла. Переключитесь на «По количеству игр».'
+                      : 'В коллекции пока нет студий для отображения'}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+};
+
+
 const App = () => {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [view, setView] = useState(localStorage.getItem('view') || 'list');
@@ -1888,8 +4427,32 @@ const App = () => {
     const gameId = new URLSearchParams(window.location.search).get('game');
     return GAMES.find(g => g.id === gameId) || null;
   });
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('search') || "";
+    } catch (_) {
+      return "";
+    }
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('search') || "";
+    } catch (_) {
+      return "";
+    }
+  });
+
+  // Ensure search query parameter from URL is applied on initial catalog mount
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get('search');
+      if (q && q !== search) {
+        setSearch(q);
+        setDebouncedSearch(q);
+      }
+    } catch (_) { }
+  }, []);
+
   const [searchFocused, setSearchFocused] = useState(false);
   const [selectedGenres, setSelectedGenres] = useState([]);
   const [excludedGenres, setExcludedGenres] = useState([]);
@@ -1912,7 +4475,13 @@ const App = () => {
   const ratingInfoRef = useRef(null);
 
   const activeView = isMobile ? 'list' : view;
-  const canEditCatalog = !viewedCatalogProfile || Boolean(currentUser && currentUser.id === viewedCatalogProfile.id);
+  const requestedProfile = new URLSearchParams(window.location.search).get('profile');
+  const isExternalCatalog = Boolean(
+    requestedProfile &&
+    viewedCatalogProfile &&
+    (!currentUser || currentUser.id !== viewedCatalogProfile.id)
+  );
+  const canEditCatalog = Boolean(currentUser && viewedCatalogProfile && currentUser.id === viewedCatalogProfile.id);
   const searchSuggestionsOpen = searchFocused && !search.trim();
 
   useEffect(() => {
@@ -2675,111 +5244,133 @@ const App = () => {
             >
               <img className="find-libraries-svg" src="svg/lib.svg" alt="Библиотеки других" />
             </button>
-            <button
-              className="comments-trigger"
-              type="button"
-              aria-label="Комментарии профиля"
-              title="Комментарии профиля"
-              onClick={() => {
-                setProfileOpen(false);
-                setRatingInfoOpen(false);
-                setLibraryDrawerOpen(false);
-                setCommentsDrawerOpen(true);
-              }}
-            >
-              <img className="comments-svg" src="svg/comments.svg" alt="Комментарии" />
-            </button>
+            {viewedCatalogProfile && (
+              <button
+                className="comments-trigger"
+                type="button"
+                aria-label="Комментарии профиля"
+                title="Комментарии профиля"
+                onClick={() => {
+                  setProfileOpen(false);
+                  setRatingInfoOpen(false);
+                  setLibraryDrawerOpen(false);
+                  setCommentsDrawerOpen(true);
+                }}
+              >
+                <img className="comments-svg" src="svg/comments.svg" alt="Комментарии" />
+              </button>
+            )}
+            {viewedCatalogProfile && (
+              <a
+                className="stats-trigger"
+                href={
+                  isExternalCatalog
+                    ? `stats.html?profile=${encodeURIComponent(viewedCatalogProfile.username)}`
+                    : 'stats.html'
+                }
+                aria-label="Статистика библиотеки"
+                title="Статистика библиотеки"
+              >
+                <img className="stats-svg" src="svg/stats.svg" alt="Статистика" />
+              </a>
+            )}
           </div>
           <div className="site-header-copy">
             <div className="page-title">
-              <img className="site-title-svg" src="svg/title.svg" alt="Zvux Good Games" />
+              <img className="site-title-svg" src="svg/title.svg?v=20261016-2301" alt="Zvux Good Games" />
             </div>
-            {viewedCatalogProfile ? (
+            {isExternalCatalog && viewedCatalogProfile ? (
               <div className="page-subtitle">
-                Библиотека @{viewedCatalogProfile.username} · {formatGameCount(GAMES.length)}{canEditCatalog ? '' : ' · только просмотр'}
-                {!canEditCatalog && (
-                  <button
-                    type="button"
-                    className="catalog-back-link"
-                    onClick={() => { window.location.href = './'; }}
-                    title={isSignedIn ? 'Вернуться в мой каталог' : 'Вернуться на главную'}
-                  >
-                    {isSignedIn ? '← Мой каталог' : '← Главная'}
-                  </button>
-                )}
+                Библиотека @{viewedCatalogProfile.username} · {filteredGames.length !== GAMES.length ? `${formatGameCount(filteredGames.length)} (из ${GAMES.length})` : formatGameCount(GAMES.length)} · только просмотр
+                <button
+                  type="button"
+                  className="catalog-back-link"
+                  onClick={() => { window.location.href = './'; }}
+                  title={isSignedIn ? 'Вернуться в мой каталог' : 'Вернуться на главную'}
+                >
+                  {isSignedIn ? '← Мой каталог' : '← Главная'}
+                </button>
+              </div>
+            ) : isSignedIn && viewedCatalogProfile ? (
+              <div className="page-subtitle">
+                Библиотека @{viewedCatalogProfile.username} · {filteredGames.length !== GAMES.length ? `${formatGameCount(filteredGames.length)} (из ${GAMES.length})` : formatGameCount(GAMES.length)}
               </div>
             ) : (
-              <div className="page-subtitle">{filteredGames.length} игр · сортировка: {LABELS[sortBy]}</div>
+              <div className="page-subtitle">
+                Войдите в аккаунт, чтобы открыть свой каталог
+              </div>
             )}
           </div>
         </div>
       </div>
 
       {/* ═══ ПАНЕЛЬ УПРАВЛЕНИЯ ═══ */}
-      <div className={`controls-bar search-only ${controlsCompact ? 'compact' : ''}`}>
-        <div
-          className="search-wrapper"
-          ref={searchWrapperRef}
-          style={{ flex: 1 }}
-          onFocus={() => setSearchFocused(true)}
-        >
-          <input
-            ref={searchInputRef}
-            type="text"
-            id="search"
-            placeholder={isMobile ? "Поиск по играм, студиям и многому другому..." : "Поиск по играм, жанрам, годам, оценкам или компаниям..."}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-expanded={searchSuggestionsOpen}
-            aria-controls="search-suggestions"
-            style={{ width: '100%', boxSizing: 'border-box' }}
-          />
-          {search && <span id="clear-search" onClick={() => { setSearch(""); setDebouncedSearch(""); }} title="Очистить">×</span>}
-          <AnimatePresence initial={false}>
-            {searchSuggestionsOpen && (
-              <motion.div
-                key="search-suggestions"
-                id="search-suggestions"
-                className="search-suggestions"
-                role="listbox"
-                aria-label="Примеры поисковых запросов"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {SEARCH_SUGGESTIONS.map(({ query, hint }) => (
-                  <button
-                    key={query}
-                    type="button"
-                    className="search-suggestion"
-                    role="option"
-                    aria-label={`Подставить запрос: ${query}`}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      applySearchSuggestion(query);
-                    }}
-                    onClick={() => applySearchSuggestion(query)}
-                  >
-                    <span className="search-suggestion-body">
-                      <span className="search-suggestion-query">{query}</span>
-                      <span className="search-suggestion-separator" aria-hidden="true">|</span>
-                      <span className="search-suggestion-hint">{hint}</span>
-                    </span>
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+      {GAMES.length > 0 && (
+        <div className={`controls-bar search-only ${controlsCompact ? 'compact' : ''}`}>
+          <div
+            className="search-wrapper"
+            ref={searchWrapperRef}
+            style={{ flex: 1 }}
+            onFocus={() => setSearchFocused(true)}
+          >
+            <input
+              ref={searchInputRef}
+              type="text"
+              id="search"
+              placeholder={isMobile ? "Поиск по играм, студиям и многому другому..." : "Поиск по играм, жанрам, годам, оценкам или компаниям..."}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-expanded={searchSuggestionsOpen}
+              aria-controls="search-suggestions"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+            {search && <span id="clear-search" onClick={() => { setSearch(""); setDebouncedSearch(""); }} title="Очистить">×</span>}
+            <AnimatePresence initial={false}>
+              {searchSuggestionsOpen && (
+                <motion.div
+                  key="search-suggestions"
+                  id="search-suggestions"
+                  className="search-suggestions"
+                  role="listbox"
+                  aria-label="Примеры поисковых запросов"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {SEARCH_SUGGESTIONS.map(({ query, hint }) => (
+                    <button
+                      key={query}
+                      type="button"
+                      className="search-suggestion"
+                      role="option"
+                      aria-label={`Подставить запрос: ${query}`}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        applySearchSuggestion(query);
+                      }}
+                      onClick={() => applySearchSuggestion(query)}
+                    >
+                      <span className="search-suggestion-body">
+                        <span className="search-suggestion-query">{query}</span>
+                        <span className="search-suggestion-separator" aria-hidden="true">|</span>
+                        <span className="search-suggestion-hint">{hint}</span>
+                      </span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          {compareMode && (
+            <>
+              <div className="controls-separator" />
+              <button className="btn btn-green compare-confirm-btn" onClick={handleCompareConfirm}>Сравнить {selectedGames.length}</button>
+              <button className="btn btn-red" onClick={cancelCompare}>✕</button>
+            </>
+          )}
         </div>
-        {compareMode && (
-          <>
-            <div className="controls-separator" />
-            <button className="btn btn-green compare-confirm-btn" onClick={handleCompareConfirm}>Сравнить {selectedGames.length}</button>
-            <button className="btn btn-red" onClick={cancelCompare}>✕</button>
-          </>
-        )}
-      </div>
+      )}
 
       <main>
         {/* Grid / List with Framer Motion Layout */}
@@ -2803,21 +5394,90 @@ const App = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ textAlign: 'center', padding: '60px 20px', opacity: 0.6, userSelect: 'none' }}
+            className="empty-catalog-box"
+            style={{
+              textAlign: 'center',
+              padding: '64px 20px',
+              maxWidth: '520px',
+              margin: '0 auto',
+              userSelect: 'none'
+            }}
           >
-            <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🔍</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-              {!isSignedIn ? 'Войдите, чтобы открыть личный каталог' : GAMES.length ? 'Ничего не найдено' : 'Ваш каталог пока пуст'}
-            </div>
-            <div style={{ fontSize: '0.85rem', marginTop: 4 }}>
-              {!isSignedIn ? 'У каждого аккаунта свой список игр' : GAMES.length ? 'Попробуйте изменить запрос или сбросить фильтры' : 'Добавьте первую игру — после проверки она появится здесь'}
-            </div>
+            {!isSignedIn ? (
+              <>
+                <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎮</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 8, color: 'var(--text-color, #fff)' }}>
+                  Войдите, чтобы видеть свои игры
+                </div>
+                <div style={{ fontSize: '0.92rem', opacity: 0.75, lineHeight: 1.5, marginBottom: 24 }}>
+                  У каждого пользователя здесь личный каталог. Чтобы смотреть игры других игроков, откройте список библиотек.
+                </div>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{
+                      padding: '10px 22px',
+                      borderRadius: '8px',
+                      background: 'var(--primary-color, #3b82f6)',
+                      color: '#fff',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.92rem'
+                    }}
+                    onClick={() => {
+                      setAuthModalTab('signin');
+                      setAuthModalOpen(true);
+                    }}
+                  >
+                    Войти в аккаунт
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--surface-border, rgba(255,255,255,0.15))',
+                      background: 'var(--pill-bg, rgba(255,255,255,0.06))',
+                      color: 'var(--text-color, #fff)',
+                      cursor: 'pointer',
+                      fontSize: '0.92rem'
+                    }}
+                    onClick={() => {
+                      setProfileOpen(false);
+                      setRatingInfoOpen(false);
+                      setLibraryDrawerOpen(true);
+                    }}
+                  >
+                    Смотреть библиотеки
+                  </button>
+                </div>
+              </>
+            ) : GAMES.length ? (
+              <>
+                <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🔍</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>Ничего не найдено</div>
+                <div style={{ fontSize: '0.85rem', marginTop: 4, opacity: 0.75 }}>
+                  Попробуйте изменить запрос или сбросить фильтры
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>📦</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>Ваш каталог пока пуст</div>
+                <div style={{ fontSize: '0.85rem', marginTop: 4, opacity: 0.75 }}>
+                  Добавьте первую игру через зелёную кнопку
+                </div>
+              </>
+            )}
           </motion.div>
         )}
       </main>
 
       {/* Плавающий док быстрой сортировки по критериям */}
-      <SortDock value={sortBy} onChange={setSortBy} />
+      {GAMES.length > 0 && <SortDock value={sortBy} onChange={setSortBy} />}
 
       {/* Modals */}
       <AnimatePresence>
@@ -3922,6 +6582,8 @@ gameDataPromise
       const editId = new URLSearchParams(window.location.search).get('edit');
       const game = editId ? GAMES.find(item => item.id === editId) || null : null;
       root.render(<AddGamePage game={game} />);
+    } else if (isStatsPage) {
+      root.render(<StatsPage games={GAMES} catalogProfile={viewedCatalogProfile} />);
     } else {
       root.render(<App />);
     }

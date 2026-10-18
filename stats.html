@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Статистика библиотеки — Zvux Good Games</title>
+  <meta name="description"
+    content="Подробная статистика и аналитика личной библиотеки видеоигр: распределение рейтингов, эпохи десятилетий, жанры, среднее время прохождения и средние оценки по критериям." />
+  <meta name="keywords"
+    content="статистика игр, аналитика библиотеки, графики рейтинга игр, жанры игр, распределение времени, Zvux Good Games" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#111113" />
+
+  <link rel="icon" type="image/svg+xml" href="favicons/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicons/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png" />
+  <link rel="shortcut icon" href="favicons/favicon.ico" />
+
+  <link rel="stylesheet" href="style.css?v=20261018-stats-hero-dice" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./game-submission.js?v=20261015-cover-lifecycle"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body data-page="stats">
+  <script>
+    document.documentElement.classList.remove('dark');
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+  </script>
+  <div id="root">
+    <div class="catalog-loader-container" role="status" aria-label="Загрузка статистики библиотеки">
+      <div class="catalog-spinner"></div>
+    </div>
+  </div>
+
+  <script>
+    Babel.registerPreset('classic-jsx', {
+      presets: [[Babel.availablePresets.react, { runtime: 'classic' }]]
+    });
+  </script>
+  <script type="text/babel" data-presets="classic-jsx" src="app.js?v=20261018-stats-hero-dice"></script>
+</body>
+
+</html>
