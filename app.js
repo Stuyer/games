@@ -131,21 +131,8 @@ const SORT_SHORT = { rating: "★ Общий", story: "Сюжет", graphics: "�
 const SORT_KEYS = Object.keys(LABELS);
 
 const RATING_INFO = {
-  title: "Как оцениваются игры",
-  lead: "Итоговая оценка — это среднее арифметическое оценок по семи критериям.",
-  items: [
-    { label: "Шкала", text: "Каждый критерий оценивается по шкале от 1 до 10.\n**7** - удовлетворительно \n**8** - хорошо \n**9** - отлично \n**10** - недостижимо" },
-    { label: "Сюжет", text: "Рассматривается оригинальность истории, её вариативность и реиграбельность." },
-    { label: "Графика", text: "Основное внимание уделяется художественному стилю, детализации и левел-дизайну." },
-    { label: "Геймплей", text: "Оценивается разнообразие механик, баланс ресурсов и органичное вплетение в динамику игры." },
-    { label: "Главный герой", text: "Рассматривается цельность решений персонажа, последовательность действий и харизма." },
-    { label: "Персонажи", text: "Фокус на цельности второстепенных героев, их импонируемости, запоминаемости." },
-    { label: "Атмосфера", text: "Способность игры погружать в мир, удачное применение музыки и точность подобранных локаций." },
-    { label: "Саунд-дизайн", text: "В первую очередь оценивается качество музыки и синергия звуковых эффектов с настроением игры." },
-  ],
-  usage: {
-    title: "Как пользоваться сайтом",
-    text: "Приведённая ниже инструкция будет скорее полезна десктопным пользователям. На мобильных устройствах сайт может немного отличаться, \
+  title: "Как пользоваться сайтом",
+  text: "Приведённая ниже инструкция будет скорее полезна десктопным пользователям. На мобильных устройствах сайт может немного отличаться, \
     но общая логика остаётся такой же. Сайт создан для тех, кто не может определиться с выбором игры, но знает, что ищет. \n\nВы можете найти игру по **жанру** (пр. хоррор), \
     по **рейтингу** (пр. 8.5+), **году выхода** (пр. 2020+) или **студии** (пр. Bethesda) через подвижный **поиск**, расположенный в верхней части сайта. \
     Жанры также можно исключить из поиска, *поставив* перед ними *минус* (пр. -инди). \n\nПоиск можно открыть через хоткей, нажав *слэш* или *точку* на клавиатуре. \
@@ -158,7 +145,6 @@ const RATING_INFO = {
     можно преобразовать в график, нажав на кнопку 🕸️. Снизу: небольшое описание-ревью от автора сайта. Справа: инфо-окно с небольшой информацией. \
     Также под ним есть кнопка, позволяющая найти и отобразить похожие по жанру игры. На каждую из них можно нажать, чтобы открыть её карточку. \
     Игры ищутся и сортируются исключительно по **количеству совпадающих жанров.**",
-  },
   note: "Буду рад услышать любые отзывы и предложения по улучшению взаимодействия с сайтом. Телеграм - @zvuxoed.",
 };
 
@@ -201,7 +187,7 @@ const prepareAvatarImage = async (file) => {
 
 let memoryLibrariesCache = null;
 try {
-  const stored = sessionStorage.getItem('site_cached_libraries');
+  const stored = localStorage.getItem('site_cached_libraries') || sessionStorage.getItem('site_cached_libraries');
   if (stored) memoryLibrariesCache = JSON.parse(stored);
 } catch (_) { }
 
@@ -209,7 +195,7 @@ let memoryProfileCache = new Map();
 const getCachedProfile = (userId) => {
   if (memoryProfileCache.has(userId)) return memoryProfileCache.get(userId);
   try {
-    const stored = sessionStorage.getItem('site_cached_profile_' + userId);
+    const stored = localStorage.getItem('site_cached_profile_' + userId) || sessionStorage.getItem('site_cached_profile_' + userId);
     if (stored) {
       const parsed = JSON.parse(stored);
       memoryProfileCache.set(userId, parsed);
@@ -220,7 +206,11 @@ const getCachedProfile = (userId) => {
 };
 const setCachedProfile = (userId, data) => {
   memoryProfileCache.set(userId, data);
-  try { sessionStorage.setItem('site_cached_profile_' + userId, JSON.stringify(data)); } catch (_) { }
+  try {
+    const serialized = JSON.stringify(data);
+    localStorage.setItem('site_cached_profile_' + userId, serialized);
+    sessionStorage.setItem('site_cached_profile_' + userId, serialized);
+  } catch (_) { }
 };
 
 const clearLocalAuthState = () => {
@@ -528,7 +518,11 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
         });
 
         memoryLibrariesCache = mapped;
-        try { sessionStorage.setItem('site_cached_libraries', JSON.stringify(mapped)); } catch (_) { }
+        try {
+          const serialized = JSON.stringify(mapped);
+          localStorage.setItem('site_cached_libraries', serialized);
+          sessionStorage.setItem('site_cached_libraries', serialized);
+        } catch (_) { }
         if (active) {
           setLibraries(mapped);
           setLoading(false);
@@ -892,17 +886,26 @@ const formatRegistrationDate = (rawDate) => {
   }
 };
 
-const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
-  const [profile, setProfile] = useState(null);
-  const [submissions, setSubmissions] = useState([]);
-  const [moderationCount, setModerationCount] = useState(0);
+const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCountChange }) => {
+  const [profile, setProfile] = useState(() => (user ? getCachedProfile(user.id) : null));
+  const [submissions, setSubmissions] = useState(() => {
+    const cached = user ? getCachedProfile(user.id) : null;
+    return cached?.submissions || [];
+  });
+  const [moderationCount, setModerationCount] = useState(() => {
+    const cached = user ? getCachedProfile(user.id) : null;
+    return cached?.moderationCount || 0;
+  });
   const [message, setMessage] = useState('');
   const [messageError, setMessageError] = useState(false);
   const [deleteTitle, setDeleteTitle] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState('');
+  const [nameInput, setNameInput] = useState(() => {
+    const cached = user ? getCachedProfile(user.id) : null;
+    return cached?.display_name || '';
+  });
   const [nameSaving, setNameSaving] = useState(false);
   const renderVersionRef = useRef(0);
   const avatarInputRef = useRef(null);
@@ -910,7 +913,6 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
 
   useEffect(() => {
     if (!isOpen || !user) {
-      setProfile(null);
       setIsEditingName(false);
       return;
     }
@@ -920,6 +922,8 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
       setProfile(cached);
       setNameInput(cached.display_name || '');
       if (cached.avatarUrl) onAvatarChange(cached.avatarUrl);
+      if (Array.isArray(cached.submissions)) setSubmissions(cached.submissions);
+      if (typeof cached.moderationCount === 'number') setModerationCount(cached.moderationCount);
     }
     const version = Date.now();
     renderVersionRef.current = version;
@@ -1012,9 +1016,12 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
 
       if (version !== renderVersionRef.current) return;
       if (!error) {
-        setSubmissions(data || []);
+        const rows = data || [];
+        setSubmissions(rows);
+        const cur = getCachedProfile(user.id) || {};
+        setCachedProfile(user.id, { ...cur, submissions: rows });
         // Помечаем непросмотренные заявки как просмотренные
-        (data || []).forEach(async (submission) => {
+        rows.forEach(async (submission) => {
           if (!submission.viewed_at && submission.status !== 'pending') {
             await client.rpc('mark_submission_as_viewed', { p_submission_id: submission.id });
           }
@@ -1035,7 +1042,11 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange }) => {
 
       if (version !== renderVersionRef.current) return;
       if (error) throw error;
-      setModerationCount(count || 0);
+      const total = count || 0;
+      setModerationCount(total);
+      if (onModerationCountChange) onModerationCountChange(total);
+      const cur = getCachedProfile(user.id) || {};
+      setCachedProfile(user.id, { ...cur, moderationCount: total });
     } catch (err) {
       console.error('Load moderation count error:', err);
     }
@@ -1430,6 +1441,16 @@ const formatGameCount = (value) => {
   return `${count} ${word}`;
 };
 
+const formatSubmissionCount = (value) => {
+  const count = Number(value) || 0;
+  const remainder100 = count % 100;
+  const remainder10 = count % 10;
+  const word = remainder100 >= 11 && remainder100 <= 14
+    ? 'заявок'
+    : remainder10 === 1 ? 'заявка' : remainder10 >= 2 && remainder10 <= 4 ? 'заявки' : 'заявок';
+  return `${count} ${word}`;
+};
+
 // Каждый жанр хранит только каноническое имя и список слов-синонимов через запятую.
 // Это упрощает расширение: добавляем новый жанр или уточняем его слова в одном месте.
 const GENRE_RULES = [
@@ -1579,7 +1600,7 @@ const CardPreview = ({ game, view, onUpdateDisplay, interactive = false }) => {
 
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
-    } catch (_) {}
+    } catch (_) { }
 
     dragStartRef.current = {
       startX: e.clientX,
@@ -1611,7 +1632,7 @@ const CardPreview = ({ game, view, onUpdateDisplay, interactive = false }) => {
     setIsDragging(false);
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch (_) {}
+    } catch (_) { }
   };
 
   return (
@@ -1777,7 +1798,38 @@ const AddGameForm = ({ game = null, onComplete }) => {
   const submit = async event => {
     event.preventDefault();
     if (submitLockRef.current) return;
-    if (!isTitleValid || !isDeveloperValid || !isYearValid || !isPlaytimeValid || !hasCover) {
+
+    const trimmedTitle = (fields.title || '').trim();
+    const trimmedDeveloper = (fields.developer || '').trim();
+    const trimmedReleaseYear = String(fields.releaseYear || '').trim();
+    const trimmedPlaytimeHours = String(fields.playtimeHours || '').trim();
+    const trimmedReview = (fields.review || '').trim();
+
+    const trimmedFields = {
+      ...fields,
+      title: trimmedTitle,
+      developer: trimmedDeveloper,
+      releaseYear: trimmedReleaseYear,
+      playtimeHours: trimmedPlaytimeHours,
+      review: trimmedReview
+    };
+    setFields(trimmedFields);
+
+    const isTValid = Boolean(trimmedTitle.length > 0);
+    const isDValid = Boolean(trimmedDeveloper.length > 0);
+    const isYValid = Boolean(
+      trimmedReleaseYear.length > 0 &&
+      !isNaN(Number(trimmedReleaseYear)) &&
+      Number(trimmedReleaseYear) >= 1950 &&
+      Number(trimmedReleaseYear) <= 2100
+    );
+    const isPValid = Boolean(
+      trimmedPlaytimeHours.length > 0 &&
+      !isNaN(Number(trimmedPlaytimeHours)) &&
+      Number(trimmedPlaytimeHours) >= 0
+    );
+
+    if (!isTValid || !isDValid || !isYValid || !isPValid || !hasCover) {
       setStatus('Заполните обязательные поля: название, разработчик, год выхода, время прохождения и добавьте обложку.');
       setStatusError(true);
       return;
@@ -1793,7 +1845,7 @@ const AddGameForm = ({ game = null, onComplete }) => {
     setStatusError(false);
     try {
       const result = await window.GameSubmission.submit(window.siteSupabase, {
-        ...fields,
+        ...trimmedFields,
         genres: selectedGenres,
         ratings,
         cardDisplay
@@ -1858,18 +1910,53 @@ const AddGameForm = ({ game = null, onComplete }) => {
           <div className="add-game-details" aria-label="Данные игры">
             <div className="add-fields">
               <label className="add-field">Название *
-                <input type="text" maxLength="120" required value={fields.title} onChange={event => setValue('title', event.target.value)} placeholder="Название игры" />
+                <input
+                  type="text"
+                  maxLength="120"
+                  required
+                  value={fields.title}
+                  onChange={event => setValue('title', event.target.value)}
+                  onBlur={event => setValue('title', event.target.value.trim())}
+                  placeholder="Название игры"
+                />
               </label>
               <label className="add-field">Разработчик *
-                <input type="text" maxLength="120" required value={fields.developer} onChange={event => setValue('developer', event.target.value)} placeholder="Студия-разработчик" />
+                <input
+                  type="text"
+                  maxLength="120"
+                  required
+                  value={fields.developer}
+                  onChange={event => setValue('developer', event.target.value)}
+                  onBlur={event => setValue('developer', event.target.value.trim())}
+                  placeholder="Студия-разработчик"
+                />
               </label>
             </div>
             <div className="add-fields add-game-meta-fields">
               <label className="add-field">Год выхода *
-                <input type="number" min="1950" max="2100" required value={fields.releaseYear} onChange={event => setValue('releaseYear', event.target.value)} placeholder="Например, 2015" />
+                <input
+                  type="number"
+                  min="1950"
+                  max="2100"
+                  required
+                  value={fields.releaseYear}
+                  onChange={event => setValue('releaseYear', event.target.value)}
+                  onBlur={event => setValue('releaseYear', String(event.target.value).trim())}
+                  placeholder="Например, 2015"
+                />
               </label>
               <label className="add-field">Ваше время прохождения, ч. *
-                <input type="number" min="0" max="999999" step="1" required value={fields.playtimeHours} onChange={event => setValue('playtimeHours', event.target.value)} placeholder="Например, 40" />
+                <input
+                  type="number"
+                  min="0"
+                  max="999999"
+                  step="1"
+                  required
+                  value={fields.playtimeHours}
+                  onChange={event => setValue('playtimeHours', event.target.value)}
+                  onBlur={event => setValue('playtimeHours', String(event.target.value).trim())}
+                  placeholder="Например, 40"
+                />
               </label>
             </div>
             <div className="add-game-genre-block">
@@ -1896,7 +1983,7 @@ const AddGameForm = ({ game = null, onComplete }) => {
               {coverPreview && <img className="add-game-cover" src={coverPreview} alt="Предпросмотр сжатой обложки" />}
               <span>{coverPreview ? 'Заменить картинку' : 'Выбрать или перетащить картинку'}</span>
             </label>
-            <p className="add-game-hint">{isEdit ? 'Можно оставить текущую обложку. Большие файлы сжимаются до 400 КБ.' : 'Большие файлы сжимаются до 400 КБ.'}</p>
+            <p className="add-game-hint">{isEdit ? 'Можно оставить текущую обложку. Большие файлы сжимаются до 400 КБ. Рекомендуемое соотношение сторон - 16:9' : 'Большие файлы сжимаются до 400 КБ. Рекомендуемое соотношение сторон - 16:9'}</p>
             {coverSize && <p className="add-game-hint">{coverSize}</p>}
           </div>
         </div>
@@ -1904,7 +1991,13 @@ const AddGameForm = ({ game = null, onComplete }) => {
         <div className="add-game-editor-grid">
           <label className="add-game-review-block">
             <span className="add-game-section-label">Обзор</span>
-            <textarea maxLength="8000" value={fields.review} onChange={event => setValue('review', event.target.value)} placeholder="Ваш обзор игры" />
+            <textarea
+              maxLength="8000"
+              value={fields.review}
+              onChange={event => setValue('review', event.target.value)}
+              onBlur={event => setValue('review', event.target.value.trim())}
+              placeholder="Ваш обзор игры"
+            />
           </label>
 
           <div className="add-game-ratings-block">
@@ -1996,8 +2089,8 @@ const AddGameForm = ({ game = null, onComplete }) => {
             disabled={busy || compressing || !isFormValid}
             title={!isFormValid
               ? (!areAllRatingsSet
-                  ? 'Поставьте оценки по всем критериям (сейчас стоят прочерки "-")'
-                  : 'Заполните обязательные поля и добавьте обложку')
+                ? 'Поставьте оценки по всем критериям (сейчас стоят прочерки "-")'
+                : 'Заполните обязательные поля и добавьте обложку')
               : ''}
           >
             {busy
@@ -2155,6 +2248,636 @@ const STATS_CRITERIA = [
   { key: 'sound_design', label: 'Саунд-дизайн', short: 'Саунд-дизайн' }
 ];
 
+// Helper: Generates gamer portrait archetype based on collection statistics
+const generateGamerPortrait = (stats) => {
+  if (!stats) return { line1: 'Истинный', line2: 'геймер' };
+
+  const topGenre = (stats.genres && stats.genres[0]?.name) || '';
+  const secondGenre = (stats.genres && stats.genres[1]?.name) || '';
+
+  const criteria = (stats.criteriaStats || []).filter(c => c.key !== 'overall' && c.avg > 0);
+  criteria.sort((a, b) => b.avg - a.avg);
+
+  const strongestCrit = criteria[0]?.key || '';
+  const totalHours = stats.totalHours || 0;
+  const avgPlaytime = stats.avgPlaytime || 0;
+  const avgRating = parseFloat(stats.avgRating) || 8.0;
+
+  const genreLower = topGenre.toLowerCase();
+  const secondLower = secondGenre.toLowerCase();
+
+  // 1. Direct thematic synergies (prompt explicit examples & signature pairings)
+  if (strongestCrit === 'sound_design' && (genreLower.includes('хоррор') || genreLower.includes('horror') || secondLower.includes('хоррор'))) {
+    return { line1: 'Страшный', line2: 'любитель музыки' };
+  }
+  if (strongestCrit === 'atmosphere' && (genreLower.includes('сюжет') || genreLower.includes('story') || genreLower.includes('рпг') || secondLower.includes('сюжет'))) {
+    return { line1: 'Атмосферный', line2: 'сюжетоман' };
+  }
+  if (strongestCrit === 'atmosphere' && (genreLower.includes('хоррор') || genreLower.includes('horror') || genreLower.includes('выживан'))) {
+    return { line1: 'Мрачный', line2: 'исследователь' };
+  }
+  if (strongestCrit === 'graphics' && (genreLower.includes('инди') || genreLower.includes('indie'))) {
+    return { line1: 'Эстет', line2: 'пикселей' };
+  }
+  if (strongestCrit === 'gameplay' && (genreLower.includes('экшен') || genreLower.includes('action'))) {
+    return { line1: 'Бескомпромиссный', line2: 'файтер' };
+  }
+  if (strongestCrit === 'story' && (genreLower.includes('рпг') || genreLower.includes('ролев'))) {
+    return { line1: 'Хранитель', line2: 'летописей' };
+  }
+  if (strongestCrit === 'characters' && (genreLower.includes('приключ') || genreLower.includes('adventure'))) {
+    return { line1: 'Душевный', line2: 'странник' };
+  }
+  if (strongestCrit === 'gameplay' && (genreLower.includes('стратег') || genreLower.includes('тактик'))) {
+    return { line1: 'Великий', line2: 'тактик' };
+  }
+  if (strongestCrit === 'sound_design' && (genreLower.includes('приключ') || genreLower.includes('инди'))) {
+    return { line1: 'Акустический', line2: 'скиталец' };
+  }
+  if (strongestCrit === 'graphics' && (genreLower.includes('фантаст') || genreLower.includes('кибер'))) {
+    return { line1: 'Неоновый', line2: 'визионер' };
+  }
+
+  // 2. Playtime & rating extremes
+  if (totalHours >= 2000) {
+    return { line1: 'Неутомимый', line2: 'марафонец' };
+  }
+  if (avgRating <= 7.0 && stats.totalGames >= 5) {
+    return { line1: 'Беспощадный', line2: 'критик' };
+  }
+  if (avgRating >= 9.2 && stats.totalGames >= 5) {
+    return { line1: 'Восторженный', line2: 'энтузиаст' };
+  }
+
+  // 3. Dynamic composition: Adjective (Criterion/Mood) + Noun (Genre/Style)
+  let adj = 'Увлечённый';
+  switch (strongestCrit) {
+    case 'atmosphere':
+      adj = 'Атмосферный';
+      break;
+    case 'story':
+      adj = 'Вдумчивый';
+      break;
+    case 'graphics':
+      adj = 'Визуальный';
+      break;
+    case 'gameplay':
+      adj = 'Хардкорный';
+      break;
+    case 'sound_design':
+      adj = 'Мелодичный';
+      break;
+    case 'characters':
+      adj = 'Эмпатичный';
+      break;
+    case 'main_character':
+      adj = 'Харизматичный';
+      break;
+    default:
+      if (stats.minYear && stats.minYear < 2005) adj = 'Олдскульный';
+      else if (avgPlaytime >= 50) adj = 'Терпеливый';
+      else adj = 'Искушённый';
+  }
+
+  let noun = 'геймер';
+  if (genreLower.includes('сюжет')) noun = 'сюжетоман';
+  else if (genreLower.includes('экшен') || genreLower.includes('action')) noun = 'боевик';
+  else if (genreLower.includes('рпг') || genreLower.includes('ролев')) noun = 'ролевик';
+  else if (genreLower.includes('хоррор') || genreLower.includes('horror')) noun = 'борец со страхом';
+  else if (genreLower.includes('инди') || genreLower.includes('indie')) noun = 'ценитель инди';
+  else if (genreLower.includes('приключ') || genreLower.includes('adventure')) noun = 'первооткрыватель';
+  else if (genreLower.includes('стратег') || genreLower.includes('тактик')) noun = 'стратег';
+  else if (genreLower.includes('гонк') || genreLower.includes('racing')) noun = 'гонщик';
+  else if (genreLower.includes('шутер') || genreLower.includes('shooter')) noun = 'стрелок';
+  else if (genreLower.includes('выживан') || genreLower.includes('survival')) noun = 'выживальщик';
+  else if (genreLower.includes('головолом') || genreLower.includes('puzzle')) noun = 'мыслитель';
+  else if (genreLower.includes('платформер')) noun = 'акробат';
+  else if (genreLower.includes('симулятор')) noun = 'виртуоз';
+  else if (genreLower.includes('открытый мир')) noun = 'скиталец';
+
+  return { line1: adj, line2: noun };
+};
+
+// Canvas drawing helper for generating 1200x1500 high-res share card
+const drawShareCardCanvas = (stats, catalogProfile, portrait) => {
+  const width = 1200;
+  const height = 1500;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  const roundRect = (x, y, w, h, r) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  };
+
+  roundRect(0, 0, width, height, 60);
+  ctx.clip();
+
+  const radGrad = ctx.createRadialGradient(180, 0, 0, 180, 0, 1400);
+  radGrad.addColorStop(0, '#3d3022');
+  radGrad.addColorStop(0.55, '#1c1c1f');
+  radGrad.addColorStop(1, '#141416');
+  ctx.fillStyle = radGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = '#4a3d2e';
+  ctx.lineWidth = 3;
+  roundRect(1.5, 1.5, width - 3, height - 3, 60);
+  ctx.stroke();
+
+  const padX = 72;
+  const currentYear = new Date().getFullYear();
+  const username = catalogProfile?.username || (new URLSearchParams(window.location.search).get('profile') || 'zvux');
+
+  ctx.fillStyle = '#a5a5ad';
+  ctx.font = '600 28px Inter, system-ui, sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`БИБЛИОТЕКА @${username.toUpperCase()}`, padX, 90);
+
+  const pillText = String(currentYear);
+  ctx.font = '500 32px Inter, system-ui, sans-serif';
+  const pillW = ctx.measureText(pillText).width + 48;
+  const pillH = 50;
+  const pillX = width - padX - pillW;
+  const pillY = 65;
+  ctx.fillStyle = '#2a241d';
+  roundRect(pillX, pillY, pillW, pillH, 25);
+  ctx.fill();
+  ctx.strokeStyle = '#6b563f';
+  ctx.lineWidth = 2;
+  roundRect(pillX, pillY, pillW, pillH, 25);
+  ctx.stroke();
+  ctx.fillStyle = '#f2c48e';
+  ctx.textAlign = 'center';
+  ctx.fillText(pillText, pillX + pillW / 2, pillY + pillH / 2 + 1);
+  ctx.textAlign = 'left';
+
+  ctx.fillStyle = '#f2c48e';
+  ctx.font = '700 28px Inter, system-ui, sans-serif';
+  ctx.fillText('МОЙ ИГРОВОЙ ПОРТРЕТ', padX, 205);
+
+  ctx.fillStyle = '#f4f4f5';
+  ctx.font = '600 82px Inter, system-ui, sans-serif';
+  ctx.textBaseline = 'top';
+  ctx.fillText(portrait.line1, padX, 235);
+  ctx.fillText(portrait.line2, padX, 325);
+
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = '600 170px Inter, system-ui, sans-serif';
+  ctx.fillStyle = '#f4f4f5';
+  const hoursNum = String(stats.totalHours || 0);
+  ctx.fillText(hoursNum, padX, 600);
+  const hoursW = ctx.measureText(hoursNum).width;
+  ctx.font = '500 58px Inter, system-ui, sans-serif';
+  ctx.fillStyle = '#f2c48e';
+  ctx.fillText(' ч', padX + hoursW, 600);
+
+  const daysText = `≈ ${Math.round((stats.totalHours || 0) / 24)} суток игрового времени`;
+  ctx.font = '500 34px Inter, system-ui, sans-serif';
+  ctx.fillStyle = '#f2c48e';
+  ctx.fillText(daysText, padX, 648);
+
+  const sparkYBottom = 640;
+  const sparkMaxH = 110;
+  const sparkBarW = 11;
+  const sparkGap = 6;
+  const sparkCount = 24;
+  const sparkXStart = width - padX - (sparkCount * (sparkBarW + sparkGap));
+
+  const yearBuckets = stats.yearBuckets || [];
+  const maxBucketCount = Math.max(1, ...yearBuckets.map(b => b.count));
+  for (let i = 0; i < sparkCount; i++) {
+    const bucket = yearBuckets[yearBuckets.length - sparkCount + i];
+    const count = bucket ? bucket.count : 0;
+    const barH = count > 0 ? Math.max(14, Math.round((count / maxBucketCount) * sparkMaxH)) : 8;
+    const barX = sparkXStart + i * (sparkBarW + sparkGap);
+    const barY = sparkYBottom - barH;
+    ctx.fillStyle = count > 0 ? '#f2c48e' : '#4a3d2e';
+    roundRect(barX, barY, sparkBarW, barH, 3);
+    ctx.fill();
+  }
+
+  const rowY = 705;
+  const rowH = 115;
+  ctx.strokeStyle = '#34343a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(padX, rowY);
+  ctx.lineTo(width - padX, rowY);
+  ctx.moveTo(padX, rowY + rowH);
+  ctx.lineTo(width - padX, rowY + rowH);
+  ctx.stroke();
+
+  const colW1 = 330;
+  const colW2 = 330;
+  ctx.beginPath();
+  ctx.moveTo(padX + colW1, rowY);
+  ctx.lineTo(padX + colW1, rowY + rowH);
+  ctx.moveTo(padX + colW1 + colW2, rowY);
+  ctx.lineTo(padX + colW1 + colW2, rowY + rowH);
+  ctx.stroke();
+
+  ctx.fillStyle = '#f4f4f5';
+  ctx.font = '600 52px Inter, system-ui, sans-serif';
+  ctx.fillText(String(stats.totalGames || 0), padX, rowY + 54);
+  ctx.fillStyle = '#a5a5ad';
+  ctx.font = '500 28px Inter, system-ui, sans-serif';
+  const gameWord = stats.totalGames % 10 === 1 && stats.totalGames % 100 !== 11 ? 'игра' : (stats.totalGames % 10 >= 2 && stats.totalGames % 10 <= 4 ? 'игры' : 'игр');
+  ctx.fillText(gameWord, padX, rowY + 95);
+
+  ctx.fillStyle = '#f4f4f5';
+  ctx.font = '600 52px Inter, system-ui, sans-serif';
+  ctx.fillText(String(stats.avgRating || '—'), padX + colW1 + 36, rowY + 54);
+  ctx.fillStyle = '#a5a5ad';
+  ctx.font = '500 28px Inter, system-ui, sans-serif';
+  ctx.fillText('средняя оценка', padX + colW1 + 36, rowY + 95);
+
+  const spanText = stats.minYear && stats.maxYear ? `${stats.minYear}–${String(stats.maxYear).slice(-2)}` : '—';
+  ctx.fillStyle = '#f4f4f5';
+  ctx.font = '600 52px Inter, system-ui, sans-serif';
+  ctx.fillText(spanText, padX + colW1 + colW2 + 36, rowY + 54);
+  ctx.fillStyle = '#a5a5ad';
+  ctx.font = '500 28px Inter, system-ui, sans-serif';
+  ctx.fillText('охват релизов', padX + colW1 + colW2 + 36, rowY + 95);
+
+  const genresY = 880;
+  ctx.fillStyle = '#a5a5ad';
+  ctx.font = '600 28px Inter, system-ui, sans-serif';
+  ctx.fillText('ЛЮБИМЫЕ ЖАНРЫ', padX, genresY);
+
+  const topGenres = (stats.genres || []).slice(0, 3);
+  topGenres.forEach((g, idx) => {
+    const gy = genresY + 38 + idx * 46;
+    ctx.fillStyle = '#ececec';
+    ctx.font = '500 32px Inter, system-ui, sans-serif';
+    ctx.fillText(g.name, padX, gy + 14);
+
+    const barX = padX + 240;
+    const barW = 680;
+    const barH = 16;
+    ctx.fillStyle = '#2a2a2f';
+    roundRect(barX, gy, barW, barH, 8);
+    ctx.fill();
+
+    const fillW = Math.max(16, Math.round((g.percent / 100) * barW));
+    ctx.fillStyle = '#f2c48e';
+    roundRect(barX, gy, fillW, barH, 8);
+    ctx.fill();
+
+    ctx.fillStyle = '#a5a5ad';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${g.percent}%`, width - padX, gy + 14);
+    ctx.textAlign = 'left';
+  });
+
+  const chipsY = 1045;
+  const baseAvg = typeof stats.avgRating === 'number' ? stats.avgRating : (parseFloat(stats.avgRating) || 8.0);
+  const validCrits = (stats.criteriaStats || []).filter(c => c.key !== 'overall' && c.avg > 0)
+    .map(c => ({ ...c, diff: Math.round((c.avg - baseAvg) * 10) / 10 }))
+    .sort((a, b) => b.diff - a.diff);
+
+  let chipCurX = padX;
+  if (validCrits.length > 0) {
+    const strongest = validCrits[0];
+    const sDiff = strongest.diff >= 0 ? `+${strongest.diff}` : `${strongest.diff}`;
+    const sText = `▲ ${strongest.label} ${sDiff}`;
+    ctx.font = '600 28px Inter, system-ui, sans-serif';
+    const sW = ctx.measureText(sText).width + 48;
+    ctx.fillStyle = '#2a241d';
+    roundRect(chipCurX, chipsY, sW, 52, 26);
+    ctx.fill();
+    ctx.strokeStyle = '#6b563f';
+    ctx.lineWidth = 1.5;
+    roundRect(chipCurX, chipsY, sW, 52, 26);
+    ctx.stroke();
+    ctx.fillStyle = '#f2c48e';
+    ctx.fillText(sText, chipCurX + 24, chipsY + 36);
+    chipCurX += sW + 20;
+
+    const weakest = validCrits[validCrits.length - 1];
+    if (weakest && weakest !== strongest) {
+      const wDiff = weakest.diff >= 0 ? `+${weakest.diff}` : `${weakest.diff}`;
+      const wText = `▼ ${weakest.label} ${wDiff}`;
+      const wW = ctx.measureText(wText).width + 48;
+      ctx.fillStyle = '#20242c';
+      roundRect(chipCurX, chipsY, wW, 52, 26);
+      ctx.fill();
+      ctx.strokeStyle = '#3b4457';
+      ctx.lineWidth = 1.5;
+      roundRect(chipCurX, chipsY, wW, 52, 26);
+      ctx.stroke();
+      ctx.fillStyle = '#aab4c8';
+      ctx.fillText(wText, chipCurX + 24, chipsY + 36);
+    }
+  }
+
+  // Отступ на одну строку перед блоком лучших студий
+  const studiosY = 1175;
+  ctx.fillStyle = '#a5a5ad';
+  ctx.font = '600 26px Inter, system-ui, sans-serif';
+  ctx.fillText('ЛУЧШИЕ СТУДИИ', padX, studiosY);
+
+  const topStudios = (stats.allDevs || []).slice(0, 3);
+  if (topStudios.length === 0) {
+    ctx.fillStyle = '#6e6e78';
+    ctx.font = '500 28px Inter, system-ui, sans-serif';
+    ctx.fillText('Студии ещё не добавлены', padX, studiosY + 44);
+  } else {
+    topStudios.forEach((dev, idx) => {
+      const sy = studiosY + 44 + idx * 46;
+      // Номер места
+      ctx.font = '600 28px Inter, system-ui, sans-serif';
+      ctx.fillStyle = '#f2c48e';
+      ctx.fillText(String(idx + 1), padX, sy);
+
+      // Название студии (на всю ширину строки)
+      ctx.fillStyle = '#ececec';
+      ctx.font = '500 28px Inter, system-ui, sans-serif';
+      const maxNameW = width - padX * 2 - 200;
+      let devName = dev.name;
+      while (devName.length > 3 && ctx.measureText(devName).width > maxNameW) {
+        devName = devName.slice(0, -1);
+      }
+      if (devName !== dev.name) devName += '…';
+      ctx.fillText(devName, padX + 38, sy);
+
+      // Оценка студии справа
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#f2c48e';
+      ctx.font = '600 28px Inter, system-ui, sans-serif';
+      const ratingText = dev.avgRating !== '—' ? `★ ${dev.avgRating}` : '';
+      ctx.fillText(ratingText, width - padX, sy);
+      ctx.textAlign = 'left';
+    });
+  }
+
+  const footerY = 1375;
+  ctx.strokeStyle = '#34343a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(padX, footerY);
+  ctx.lineTo(width - padX, footerY);
+  ctx.stroke();
+
+  ctx.fillStyle = '#a5a5ad';
+  ctx.font = '500 28px Inter, system-ui, sans-serif';
+  ctx.fillText('Библиотека твоих воспоминаний', padX, footerY + 54);
+
+  const siteDomain = window.location.hostname && window.location.hostname !== '127.0.0.1' && window.location.hostname !== 'localhost' ? window.location.hostname : 'zvuxgg.ru';
+  ctx.fillStyle = '#f2c48e';
+  ctx.textAlign = 'right';
+  ctx.font = '600 30px Inter, system-ui, sans-serif';
+  ctx.fillText(siteDomain, width - padX, footerY + 54);
+  ctx.textAlign = 'left';
+
+  return canvas;
+};
+
+// Modal for generating and previewing the 4:5 social share card
+const ShareCardModal = ({ isOpen, onClose, stats, catalogProfile }) => {
+  if (!isOpen || !stats) return null;
+  const [copyStatus, setCopyStatus] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const portrait = useMemo(() => generateGamerPortrait(stats), [stats]);
+  const currentYear = new Date().getFullYear();
+  const username = catalogProfile?.username || (new URLSearchParams(window.location.search).get('profile') || 'zvux');
+  const siteDomain = window.location.hostname && window.location.hostname !== '127.0.0.1' && window.location.hostname !== 'localhost' ? window.location.hostname : 'zvuxgg.ru';
+
+  const baseAvg = typeof stats.avgRating === 'number' ? stats.avgRating : (parseFloat(stats.avgRating) || 8.0);
+  const validCrits = useMemo(() => {
+    return (stats.criteriaStats || []).filter(c => c.key !== 'overall' && c.avg > 0)
+      .map(c => ({ ...c, diff: Math.round((c.avg - baseAvg) * 10) / 10 }))
+      .sort((a, b) => b.diff - a.diff);
+  }, [stats, baseAvg]);
+
+  const strongestCrit = validCrits[0] || null;
+  const weakestCrit = validCrits.length > 1 ? validCrits[validCrits.length - 1] : null;
+
+  const topGenres = (stats.genres || []).slice(0, 3);
+  const topStudios = (stats.allDevs || []).slice(0, 3);
+  const spanText = stats.minYear && stats.maxYear ? `${stats.minYear}–${String(stats.maxYear).slice(-2)}` : '—';
+  const gameWord = stats.totalGames % 10 === 1 && stats.totalGames % 100 !== 11 ? 'игра' : (stats.totalGames % 10 >= 2 && stats.totalGames % 10 <= 4 ? 'игры' : 'игр');
+
+  const sparkBuckets = useMemo(() => {
+    const list = stats.yearBuckets || [];
+    const max = Math.max(1, ...list.map(b => b.count));
+    const recent = list.slice(-24);
+    return recent.map(b => ({
+      ...b,
+      height: b.count > 0 ? Math.max(5, Math.round((b.count / max) * 35)) : 2
+    }));
+  }, [stats]);
+
+  const handleDownloadImage = () => {
+    setIsDownloading(true);
+    try {
+      const canvas = drawShareCardCanvas(stats, catalogProfile, portrait);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `zvuxgg-stats-${username}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setIsDownloading(false);
+      }, 'image/png');
+    } catch (e) {
+      console.error('Download card error:', e);
+      setIsDownloading(false);
+    }
+  };
+
+  const handleCopyImage = () => {
+    try {
+      const canvas = drawShareCardCanvas(stats, catalogProfile, portrait);
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        try {
+          if (navigator.clipboard && window.ClipboardItem) {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            setCopyStatus('Картинка скопирована в буфер обмена!');
+            setTimeout(() => setCopyStatus(''), 3000);
+          } else {
+            handleDownloadImage();
+            setCopyStatus('Картинка сохранена на устройство');
+            setTimeout(() => setCopyStatus(''), 3000);
+          }
+        } catch (_) {
+          handleDownloadImage();
+          setCopyStatus('Картинка сохранена на устройство');
+          setTimeout(() => setCopyStatus(''), 3000);
+        }
+      }, 'image/png');
+    } catch (e) {
+      console.error('Copy card error:', e);
+    }
+  };
+
+  const handleCopyLink = () => {
+    const link = window.location.href;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(link).then(() => {
+        setCopyStatus('Ссылка на статистику скопирована!');
+        setTimeout(() => setCopyStatus(''), 3000);
+      });
+    }
+  };
+
+  return (
+    <div className="share-modal-backdrop" onClick={onClose}>
+      <div className="share-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="share-modal-header">
+          <h3 className="share-modal-title">Карточка для соцсетей</h3>
+          <button type="button" className="share-modal-close" onClick={onClose} aria-label="Закрыть">×</button>
+        </div>
+
+        <div className="share-card-wrap">
+          <div className="sc-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="lab">Библиотека @{username}</span>
+              <span className="pk" style={{ fontSize: '11px', border: '0.5px solid #6b563f', borderRadius: '999px', padding: '2px 9px', background: '#2a241d' }}>
+                {currentYear}
+              </span>
+            </div>
+
+            <div>
+              <div className="lab pk" style={{ marginBottom: '4px' }}>Мой игровой портрет</div>
+              <div style={{ fontSize: '28px', lineHeight: 1.15, fontWeight: 600, color: '#f4f4f5' }}>
+                {portrait.line1}<br />{portrait.line2}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '10px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{ fontSize: '56px', lineHeight: 1, fontWeight: 600, color: '#f4f4f5', letterSpacing: '-.02em' }}>
+                    {stats.totalHours || 0}
+                  </span>
+                  <span className="pk" style={{ fontSize: '20px' }}>ч</span>
+                </div>
+                <div className="pk" style={{ fontSize: '12px', marginTop: '4px' }}>
+                  ≈ {Math.round((stats.totalHours || 0) / 24)} суток игрового времени
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '36px', opacity: 0.75 }} aria-hidden="true">
+                {sparkBuckets.map((b, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      width: '4px',
+                      height: `${b.height}px`,
+                      background: b.count > 0 ? '#f2c48e' : '#4a3d2e',
+                      borderRadius: '1px'
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="row3">
+              <div><b>{stats.totalGames || 0}</b><small>{gameWord}</small></div>
+              <div><b>{stats.avgRating || '—'}</b><small>средняя оценка</small></div>
+              <div><b>{spanText}</b><small>охват релизов</small></div>
+            </div>
+
+            <div>
+              <div className="lab">Любимые жанры</div>
+              {topGenres.map((g, i) => (
+                <div key={g.name} className="gr">
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}</span>
+                  <div className="tk">
+                    <i style={{ width: `${g.percent}%`, opacity: 1 - i * 0.15 }} />
+                  </div>
+                  <span className="mut" style={{ textAlign: 'right' }}>{g.percent}%</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {strongestCrit && (
+                <span className="chip" style={{ background: '#2a241d', border: '0.5px solid #6b563f', color: '#f2c48e' }}>
+                  ▲ {strongestCrit.label} {strongestCrit.diff >= 0 ? `+${strongestCrit.diff}` : strongestCrit.diff}
+                </span>
+              )}
+              {weakestCrit && weakestCrit !== strongestCrit && (
+                <span className="chip" style={{ background: '#20242c', border: '0.5px solid #3b4457', color: '#aab4c8' }}>
+                  ▼ {weakestCrit.label} {weakestCrit.diff >= 0 ? `+${weakestCrit.diff}` : weakestCrit.diff}
+                </span>
+              )}
+            </div>
+
+            <div style={{ marginTop: '16px' }}>
+              <div className="lab" style={{ marginBottom: '6px' }}>Лучшие студии</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '11px' }}>
+                {topStudios.length === 0 ? (
+                  <span className="mut" style={{ fontSize: '10px' }}>Студии ещё не добавлены</span>
+                ) : (
+                  topStudios.map((dev, i) => (
+                    <div key={dev.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '280px' }}>
+                        <span className="pk">{i + 1}</span> {dev.name}
+                      </span>
+                      <span className="pk" style={{ fontSize: '10.5px', fontWeight: 600 }}>★ {dev.avgRating}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '0.5px solid #34343a', paddingTop: '10px', fontSize: '11px' }}>
+              <span className="mut">Библиотека твоих воспоминаний</span>
+              <span className="pk">{siteDomain}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="share-modal-actions">
+          <button type="button" className="share-action-btn primary" onClick={handleDownloadImage} disabled={isDownloading}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>{isDownloading ? 'Сохраняю…' : 'Скачать PNG'}</span>
+          </button>
+          <button type="button" className="share-action-btn secondary" onClick={handleCopyImage}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            <span>Скопировать</span>
+          </button>
+          <button type="button" className="share-action-btn secondary" onClick={handleCopyLink}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <span>Ссылка</span>
+          </button>
+        </div>
+
+        {copyStatus && <div className="share-copy-toast">{copyStatus}</div>}
+      </div>
+    </div>
+  );
+};
+
 const StatsPage = ({ games = [], catalogProfile = null }) => {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   const isDark = theme === 'dark';
@@ -2209,6 +2932,13 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
     if (!genreName || genreName === 'Другие жанры') return;
     const separator = backUrl.includes('?') ? '&' : '?';
     const targetUrl = `${backUrl}${separator}search=${encodeURIComponent(genreName)}`;
+    window.location.href = targetUrl;
+  };
+
+  const handleYearFilterClick = (year) => {
+    if (!year) return;
+    const separator = backUrl.includes('?') ? '&' : '?';
+    const targetUrl = `${backUrl}${separator}search=${encodeURIComponent(year)}`;
     window.location.href = targetUrl;
   };
 
@@ -2787,15 +3517,42 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
       },
       afterLabel: context => {
         const b = yearBuckets[context.dataIndex];
-        if (!b || !b.games || !b.games.length) return null;
-        if (b.games.length <= 3) return b.games.join(', ');
-        return `${b.games.slice(0, 2).join(', ')} и ещё ${b.games.length - 2}`;
+        if (!b || b.count === 0) return null;
+        const lines = [];
+        if (b.games && b.games.length) {
+          lines.push(b.games.length <= 3 ? b.games.join(', ') : `${b.games.slice(0, 2).join(', ')} и ещё ${b.games.length - 2}`);
+        }
+        lines.push('Нажмите, чтобы открыть в каталоге');
+        return lines;
       }
     };
 
     options.interaction = {
       mode: 'index',
       intersect: false
+    };
+
+    options.onClick = (event, elements) => {
+      if (elements && elements.length) {
+        const idx = elements[0].index;
+        const b = yearBuckets[idx];
+        if (b && b.year && b.count > 0) {
+          handleYearFilterClick(b.year);
+        }
+      }
+    };
+
+    options.onHover = (event, elements) => {
+      const canvas = event?.chart?.canvas;
+      if (canvas) {
+        if (elements && elements.length) {
+          const idx = elements[0].index;
+          const b = yearBuckets[idx];
+          canvas.style.cursor = (b && b.count > 0) ? 'pointer' : 'default';
+        } else {
+          canvas.style.cursor = 'default';
+        }
+      }
     };
 
     // Custom plugin to draw low square blocks for empty years (0 games), matching stats_page_mockup_v2.html
@@ -3668,6 +4425,28 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
     }
   };
 
+  const handleDownloadShareCard = () => {
+    if (!stats) return;
+    try {
+      const portrait = generateGamerPortrait(stats);
+      const canvas = drawShareCardCanvas(stats, catalogProfile, portrait);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const username = catalogProfile?.username || (new URLSearchParams(window.location.search).get('profile') || 'zvux');
+        a.href = url;
+        a.download = `zvuxgg-stats-${username}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    } catch (e) {
+      console.error('Download share card error:', e);
+    }
+  };
+
   // Render Theme Toggle button matching main page
   const renderThemeToggle = (idSuffix = '') => (
     <label
@@ -3829,6 +4608,29 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
             </div>
           </div>
           <div className="stats-topbar-right">
+            <button
+              type="button"
+              className="stats-share-btn"
+              style={{
+                border: 'none',
+                background: 'transparent',
+                outline: 'none',
+                padding: 0,
+                boxShadow: 'none',
+                color: isDark ? 'var(--text-dark, #e8e6e1)' : 'var(--text-light, #2c2b29)'
+              }}
+              title="Скачать карточку статистики"
+              aria-label="Скачать карточку статистики"
+              onClick={handleDownloadShareCard}
+            >
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="18" cy="5" r="3" fill="currentColor" />
+                <circle cx="6" cy="12" r="3" fill="currentColor" />
+                <circle cx="18" cy="19" r="3" fill="currentColor" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            </button>
             {renderThemeToggle()}
           </div>
         </header>
@@ -3965,7 +4767,7 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
               )}
             </div>
             <div className="stats-timeline-legend-row">
-              <span className="stats-timeline-tip">Наведите на столбик для деталей</span>
+              <span className="stats-timeline-tip">Нажмите на столбик, чтобы открыть игры в каталоге</span>
               <span className="stats-timeline-legend">
                 оценка ниже
                 <span className="stats-timeline-gradient-bar" />
@@ -4194,20 +4996,20 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
                     const barStyle = isPos
                       ? { left: '50%', width: `${barWidth}%` }
                       : isNeg
-                      ? { right: '50%', width: `${barWidth}%` }
-                      : { left: '50%', width: '0%' };
+                        ? { right: '50%', width: `${barWidth}%` }
+                        : { left: '50%', width: '0%' };
 
                     const valStyle = isPos
                       ? { left: `calc(${50 + barWidth}% + 8px)` }
                       : isNeg
-                      ? { right: `calc(${50 + barWidth}% + 8px)` }
-                      : { left: 'calc(50% + 8px)' };
+                        ? { right: `calc(${50 + barWidth}% + 8px)` }
+                        : { left: 'calc(50% + 8px)' };
 
                     const valText = isPos
                       ? `+${item.diff.toFixed(1)}`
                       : isNeg
-                      ? `−${absDiff.toFixed(1)}`
-                      : '0.0';
+                        ? `−${absDiff.toFixed(1)}`
+                        : '0.0';
 
                     return (
                       <div key={item.key} className="stats-deviation-row">
@@ -4417,8 +5219,21 @@ const App = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [profileAvatarUrl, setProfileAvatarUrl] = useState(() => {
-    try { return sessionStorage.getItem('site_cached_avatar') || ''; } catch (_) { return ''; }
+    try {
+      return localStorage.getItem('site_cached_avatar') || sessionStorage.getItem('site_cached_avatar') || '';
+    } catch (_) { return ''; }
   });
+  const [isModerator, setIsModerator] = useState(() => {
+    try {
+      const keys = Object.keys(sessionStorage).filter(k => k.startsWith('site_cached_profile_'));
+      if (keys.length > 0) {
+        const cached = JSON.parse(sessionStorage.getItem(keys[0]) || '{}');
+        return Boolean(cached.is_moderator);
+      }
+    } catch (_) { }
+    return false;
+  });
+  const [moderationCount, setModerationCount] = useState(0);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState('signin');
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
@@ -4513,25 +5328,91 @@ const App = () => {
 
   useEffect(() => {
     let active = true;
-    const loadAvatar = async () => {
+    let timer = null;
+
+    const fetchModerationCount = async (client) => {
+      try {
+        const { count, error } = await client
+          .from('game_submissions')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        if (!error && active) {
+          setModerationCount(count || 0);
+        }
+      } catch (err) {
+        console.warn('Не удалось загрузить количество заявок на модерацию:', err);
+      }
+    };
+
+    const loadProfileData = async () => {
       if (!currentUser || !window.siteSupabase) {
         setProfileAvatarUrl('');
+        setIsModerator(false);
+        setModerationCount(0);
         try { sessionStorage.removeItem('site_cached_avatar'); } catch (_) { }
         return;
       }
       const client = window.siteSupabase;
-      const { data: profile, error } = await client.from('profiles')
-        .select('avatar_path').eq('id', currentUser.id).single();
-      if (error || !profile?.avatar_path || !active) return;
-      const { data: signed } = await client.storage.from('profile-avatars')
-        .createSignedUrl(profile.avatar_path, 604800);
-      if (active && signed?.signedUrl) {
-        setProfileAvatarUrl(signed.signedUrl);
-        try { sessionStorage.setItem('site_cached_avatar', signed.signedUrl); } catch (_) { }
+      const cached = getCachedProfile(currentUser.id);
+      if (cached) {
+        if (cached.avatarUrl && active) setProfileAvatarUrl(cached.avatarUrl);
+        if (typeof cached.is_moderator === 'boolean' && active) setIsModerator(cached.is_moderator);
+      }
+
+      try {
+        const { data: profile, error } = await client.from('profiles')
+          .select('avatar_path, is_moderator').eq('id', currentUser.id).single();
+        if (error || !active) return;
+
+        const isMod = Boolean(profile?.is_moderator);
+        if (active) setIsModerator(isMod);
+
+        if (profile?.avatar_path) {
+          const { data: signed } = await client.storage.from('profile-avatars')
+            .createSignedUrl(profile.avatar_path, 604800);
+          if (active && signed?.signedUrl) {
+            setProfileAvatarUrl(signed.signedUrl);
+            try {
+              localStorage.setItem('site_cached_avatar', signed.signedUrl);
+              sessionStorage.setItem('site_cached_avatar', signed.signedUrl);
+            } catch (_) { }
+          }
+        }
+
+        if (isMod && active) {
+          await fetchModerationCount(client);
+          timer = setInterval(() => {
+            if (active) fetchModerationCount(client);
+          }, 60000);
+        } else if (active) {
+          setModerationCount(0);
+        }
+      } catch (error) {
+        console.warn('Не удалось загрузить данные профиля:', error);
       }
     };
-    loadAvatar().catch(error => console.warn('Не удалось загрузить фото профиля:', error));
-    return () => { active = false; };
+
+    const handleWindowFocus = () => {
+      if (currentUser && window.siteSupabase) {
+        const client = window.siteSupabase;
+        client.from('profiles').select('is_moderator').eq('id', currentUser.id).single()
+          .then(({ data: prof }) => {
+            if (prof?.is_moderator) {
+              setIsModerator(true);
+              fetchModerationCount(client);
+            }
+          }).catch(() => { });
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    loadProfileData().catch(error => console.warn('Ошибка загрузки профиля:', error));
+
+    return () => {
+      active = false;
+      if (timer) clearInterval(timer);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
   }, [currentUser?.id]);
 
   // Keep the mobile layout isolated from the desktop view state.
@@ -5092,6 +5973,9 @@ const App = () => {
             else sessionStorage.removeItem('site_cached_avatar');
           } catch (_) { }
         }}
+        onModerationCountChange={(count) => {
+          setModerationCount(count);
+        }}
       />
 
       <LibraryDrawer
@@ -5129,9 +6013,21 @@ const App = () => {
           <button
             type="button"
             className="account-icon-button"
-            aria-label={profileOpen ? "Закрыть профиль" : "Открыть профиль"}
+            aria-label={
+              profileOpen
+                ? "Закрыть профиль"
+                : isModerator && moderationCount > 0
+                  ? `Открыть профиль: в очереди ${formatSubmissionCount(moderationCount)}`
+                  : "Открыть профиль"
+            }
             aria-expanded={profileOpen}
-            title={profileOpen ? "Закрыть профиль" : "Профиль"}
+            title={
+              profileOpen
+                ? "Закрыть профиль"
+                : isModerator && moderationCount > 0
+                  ? `Профиль (${formatSubmissionCount(moderationCount)} в очереди)`
+                  : "Профиль"
+            }
             onClick={() => {
               setProfileOpen(prev => !prev);
               setRatingInfoOpen(false);
@@ -5140,6 +6036,14 @@ const App = () => {
             {profileAvatarUrl
               ? <img className="account-avatar-image" src={profileAvatarUrl} alt="" />
               : <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
+            {isModerator && moderationCount > 0 && (
+              <span
+                className="moderator-queue-badge"
+                aria-label={`Заявок в очереди: ${moderationCount}`}
+              >
+                {moderationCount > 99 ? '99+' : moderationCount}
+              </span>
+            )}
           </button>
         ) : (
           <button
@@ -5161,7 +6065,7 @@ const App = () => {
         <button
           type="button"
           className="rating-info-trigger"
-          aria-label="Как оцениваются игры"
+          aria-label={RATING_INFO.title}
           aria-expanded={ratingInfoOpen}
           onClick={() => {
             setRatingInfoOpen(open => !open);
@@ -5173,15 +6077,7 @@ const App = () => {
         {ratingInfoOpen && (
           <div className="rating-info-popover" role="dialog" aria-label={RATING_INFO.title}>
             <h2>{RATING_INFO.title}</h2>
-            <InfoFormattedText className="rating-info-lead">{RATING_INFO.lead}</InfoFormattedText>
-            {RATING_INFO.items.map(item => (
-              <div className="rating-info-item" key={item.label}>
-                <span className="rating-info-label">{item.label}</span>
-                <InfoFormattedText className="rating-info-text">{item.text}</InfoFormattedText>
-              </div>
-            ))}
-            <h3 className="rating-info-subtitle">{RATING_INFO.usage.title}</h3>
-            <InfoFormattedText className="rating-info-text rating-info-usage-text">{RATING_INFO.usage.text}</InfoFormattedText>
+            <InfoFormattedText className="rating-info-text rating-info-usage-text">{RATING_INFO.text}</InfoFormattedText>
             <InfoFormattedText className="rating-info-note">{RATING_INFO.note}</InfoFormattedText>
           </div>
         )}

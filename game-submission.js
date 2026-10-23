@@ -74,18 +74,30 @@
       imagePath = uploadedPath;
     }
 
+    const trimmedTitle = (values.title || '').trim();
+    const trimmedDev = (values.developer || '').trim();
+    const trimmedYear = String(values.releaseYear || '').trim();
+    const trimmedHours = values.playtimeHours !== null && values.playtimeHours !== undefined ? String(values.playtimeHours).trim() : '';
+    const trimmedReview = (values.review || '').trim();
+
+    if (!trimmedTitle) throw new Error('Заполните название игры.');
+    if (!trimmedDev) throw new Error('Заполните разработчика игры.');
+    if (!trimmedYear || isNaN(Number(trimmedYear))) throw new Error('Укажите год выхода игры.');
+    if (trimmedHours === '' || isNaN(Number(trimmedHours))) {
+      throw new Error('Укажите время прохождения игры.');
+    }
     if (!imagePath) throw new Error('Добавьте обложку игры.');
 
     const game = {
       id: submissionId,
-      title: values.title.trim(),
-      developer: values.developer.trim(),
-      release_year: values.releaseYear ? Number(values.releaseYear) : null,
+      title: trimmedTitle,
+      developer: trimmedDev,
+      release_year: Number(trimmedYear),
       genres: values.genres,
       image_path: imagePath,
       ratings: values.ratings,
-      review: values.review.trim(),
-      playtime_hours: values.playtimeHours ? Math.round(Number(values.playtimeHours)) : null,
+      review: trimmedReview,
+      playtime_hours: trimmedHours ? Math.round(Number(trimmedHours)) : null,
       background_position_list_x: values.cardDisplay?.list?.x ?? 50,
       background_position_list_y: values.cardDisplay?.list?.y ?? 50,
       background_scale_list: values.cardDisplay?.list?.scale ?? 100,
