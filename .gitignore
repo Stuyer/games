@@ -1,0 +1,27 @@
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+*.local
+*.key
+*.pem
+*.p12
+secrets/
+
+# Build and dependencies
+node_modules/
+dist/
+
+# Editor and OS
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+# Local files and notes
+start-site.bat
+supabase/
+*.txt
+!robots.txt
+
+

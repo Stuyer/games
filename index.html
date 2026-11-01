@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Основные SEO метатеги -->
+  <title>Zvux Good Games — Личная библиотека игр</title>
+  <meta name="description"
+    content="Персональный каталог видеоигр с подробными оценками, жанровыми фильтрами и возможностью делиться своими отзывами." />
+  <meta name="keywords"
+    content="игры, каталог игр, библиотека игр, рейтинг видеоигр, топ игр, оценки игр, фильтр игр, Zvux Good Games, найти игру" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="author" content="Zvux Good Games" />
+  <meta name="theme-color" content="#111113" />
+  <meta name="yandex-verification" content="8a99cd3e800b18ac" />
+
+  <!-- Канонический URL -->
+  <link rel="canonical" href="https://zvuxgg.ru/" />
+
+  <!-- Нормализация URL без /index.html -->
+  <script>
+    if (window.location.pathname.endsWith('/index.html')) {
+      var cleanPath = window.location.pathname.replace(/\/index\.html$/, '/') || '/';
+      window.history.replaceState(null, '', cleanPath + window.location.search + window.location.hash);
+    }
+  </script>
+
+  <!-- Манифест приложения -->
+  <link rel="manifest" href="site.webmanifest" />
+
+  <!-- Open Graph (для красивого отображения в Telegram, VK, WhatsApp, Facebook) -->
+  <meta property="og:locale" content="ru_RU" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Zvux Good Games — Личная библиотека игр" />
+  <meta property="og:description"
+    content="Персональный каталог видеоигр с подробными оценками, жанровыми фильтрами и возможностью делиться своими отзывами." />
+  <meta property="og:url" content="https://zvuxgg.ru/" />
+  <meta property="og:site_name" content="Zvux Good Games" />
+  <meta property="og:image" content="https://zvuxgg.ru/favicons/favicon-512x512.png" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta property="og:image:alt" content="Логотип Zvux Good Games" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Zvux Good Games — Личная библиотека игр" />
+  <meta name="twitter:description"
+    content="Персональный каталог видеоигр с подробными оценками, жанровыми фильтрами и возможностью делиться своими отзывами." />
+  <meta name="twitter:image" content="https://zvuxgg.ru/favicons/favicon-512x512.png" />
+
+  <!-- Микроразметка Schema.org (JSON-LD) для улучшенных сниппетов в поиске -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://zvuxgg.ru/#website",
+        "url": "https://zvuxgg.ru/",
+        "name": "Zvux Good Games",
+        "description": "Персональный каталог видеоигр с подробными оценками",
+        "inLanguage": "ru-RU",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://zvuxgg.ru/?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "CollectionPage",
+        "@id": "https://zvuxgg.ru/#webpage",
+        "url": "https://zvuxgg.ru/",
+        "name": "Каталог видеоигр — Zvux Good Games",
+        "isPartOf": {
+          "@id": "https://zvuxgg.ru/#website"
+        },
+        "description": "Каталог видеоигр с фильтрами по жанрам, датам выхода и оценкам",
+        "inLanguage": "ru-RU"
+      }
+    ]
+  }
+  </script>
+
+  <!-- Иконки и фавиконы -->
+  <link rel="icon" type="image/svg+xml" href="favicons/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicons/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png" />
+  <link rel="shortcut icon" href="favicons/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    if (savedTheme === 'dark') document.body.classList.add('dark');
+  </script>
+  <div id="root">
+    <div class="catalog-loader-container" role="status" aria-label="Загрузка каталога">
+      <div class="catalog-spinner"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/app.jsx"></script>
+</body>
+
+</html>

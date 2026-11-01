@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Добавить игру — Zvux Good Games</title>
+  <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body data-page="add-game">
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    if (savedTheme === 'dark') document.body.classList.add('dark');
+  </script>
+  <div id="root">
+    <div class="catalog-loader-container" role="status" aria-label="Загрузка формы">
+      <div class="catalog-spinner"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/app.jsx"></script>
+</body>
+
+</html>

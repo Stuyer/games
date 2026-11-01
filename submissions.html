@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Мои заявки — Zvux Good Games</title>
+  <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" />
+</head>
+<body data-page="submissions">
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    if (savedTheme === 'dark') document.body.classList.add('dark');
+  </script>
+  <div id="root"><div class="catalog-loader-container" role="status" aria-label="Загрузка заявок"><div class="catalog-spinner"></div></div></div>
+  <script type="module" src="/app.jsx"></script>
+</body>
+</html>
