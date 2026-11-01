@@ -6599,7 +6599,7 @@ const App = () => {
           </nav>
           <div className="site-header-copy">
             <h1 className="page-title">
-              <img className="site-title-svg" src="svg/title.svg?v=20261016-2301" alt="Zvux Good Games" width="511" height="312" fetchpriority="high" />
+              <img className="site-title-svg" src="/svg/title.svg" alt="Zvux Good Games" width="511" height="312" fetchpriority="high" />
             </h1>
             {isExternalCatalog && viewedCatalogProfile ? (
               <p className="page-subtitle">
