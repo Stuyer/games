@@ -24,6 +24,9 @@ function copyStaticSiteFiles() {
         const source = resolve(root, entry);
         if (existsSync(source)) cpSync(source, resolve(output, entry), { recursive: true });
       }
+      const faviconsSource = resolve(root, 'favicons');
+      const assetsFavicons = resolve(output, 'assets/favicons');
+      if (existsSync(faviconsSource)) cpSync(faviconsSource, assetsFavicons, { recursive: true });
     }
   };
 }

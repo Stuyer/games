@@ -6599,7 +6599,7 @@ const App = () => {
           </nav>
           <div className="site-header-copy">
             <h1 className="page-title">
-              <img className="site-title-svg" src="svg/title.svg?v=20261016-2301" alt="Zvux Good Games" />
+              <img className="site-title-svg" src="svg/title.svg?v=20261016-2301" alt="Zvux Good Games" width="511" height="312" fetchpriority="high" />
             </h1>
             {isExternalCatalog && viewedCatalogProfile ? (
               <p className="page-subtitle">
@@ -6946,8 +6946,8 @@ const Card = forwardRef(({ game, view, onClick, onLongPress, selected, index, so
     <motion.article
       layout="position"
       ref={setCardRef}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.38, ease: "easeOut" } }}
       className={`card-wrap ${selected ? 'selected' : ''} ${isDeselecting ? 'deselecting' : ''}`}
       onClick={handleClick}
@@ -6998,7 +6998,7 @@ const Card = forwardRef(({ game, view, onClick, onLongPress, selected, index, so
         className="card"
         ref={contentRef}
       >
-        <CardBackground game={game} view={view} />
+        <CardBackground game={game} view={view} priority={index < 4} />
         <div className="badge">
           <span className="card-rating-value">{getSortDisplayValue(game, sortBy)}</span>
         </div>

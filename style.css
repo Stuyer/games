@@ -1891,6 +1891,7 @@ body.dark .sort-dock-btn.active {
 .site-title-svg {
   height: 230px;
   width: auto;
+  aspect-ratio: 511 / 312;
   max-width: min(460px, 92vw);
   display: block;
   object-fit: contain;
