@@ -3337,6 +3337,7 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
   };
 
   const handleHeroPointerMove = (event) => {
+    if (event.pointerType === 'touch' || window.matchMedia('(max-width: 640px)').matches) return;
     heroGlowReturningRef.current = false;
     const rect = event.currentTarget.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -3348,6 +3349,7 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
   };
 
   const handleHeroPointerLeave = () => {
+    if (window.matchMedia('(max-width: 640px)').matches) return;
     heroGlowReturningRef.current = true;
     heroGlowTargetRef.current = { x: 18, y: 28 };
     if (!heroGlowFrameRef.current) animateHeroGlow();
@@ -6217,10 +6219,6 @@ const App = () => {
   };
 
   const closeGamePage = () => {
-    if (window.history.state?.gameId) {
-      window.history.back();
-      return;
-    }
     const url = new URL(window.location.href);
     url.searchParams.delete('game');
     window.history.pushState({}, '', url);
@@ -6433,7 +6431,7 @@ const App = () => {
       />
 
       {/* ═══ ПРАВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ ═══ */}
-      <nav className="site-header-right" ref={ratingInfoRef} aria-label="Настройки каталога">
+      <nav className={`site-header-right ${controlsCompact ? 'controls-fixed' : ''}`} ref={ratingInfoRef} aria-label="Настройки каталога">
         {isSignedIn ? (
           <button
             type="button"
@@ -7558,7 +7556,15 @@ const GamePage = ({ game, onBack, onOpenGame }) => {
   return (
     <main className="game-page">
       <div className="game-page-header">
-        <button className="game-page-back" onClick={onBack}>← Назад</button>
+        <button
+          type="button"
+          className="game-page-back"
+          onClick={onBack}
+          title="Вернуться на главную"
+          aria-label="Вернуться на главную"
+        >
+          ← На главную
+        </button>
         <div className="game-page-header-title">Карточка игры</div>
       </div>
 
