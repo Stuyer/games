@@ -5950,6 +5950,9 @@ const App = () => {
         return;
       }
 
+      // Do not operate the catalog behind a full-screen modal.
+      if (modalGame || compareModalOpen || rouletteOpen) return;
+
       if (key === 'escape' && ratingInfoOpen) {
         e.preventDefault();
         setRatingInfoOpen(false);
@@ -6725,10 +6728,10 @@ const App = () => {
               userSelect: 'none'
             }}
           >
-            {!isSignedIn ? (
+            {!isSignedIn && !viewedCatalogProfile ? (
               <>
                 <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎮</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 8, color: 'var(--text-color, #fff)' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 8, color: 'var(--text)' }}>
                   Войдите, чтобы видеть свои игры
                 </div>
                 <div style={{ fontSize: '0.92rem', opacity: 0.75, lineHeight: 1.5, marginBottom: 24 }}>
@@ -6763,7 +6766,7 @@ const App = () => {
                       borderRadius: '8px',
                       border: '1px solid var(--surface-border, rgba(255,255,255,0.15))',
                       background: 'var(--pill-bg, rgba(255,255,255,0.06))',
-                      color: 'var(--text-color, #fff)',
+                      color: 'var(--text)',
                       cursor: 'pointer',
                       fontSize: '0.92rem'
                     }}
@@ -6784,13 +6787,28 @@ const App = () => {
                 <div style={{ fontSize: '0.85rem', marginTop: 4, opacity: 0.75 }}>
                   Попробуйте изменить запрос или сбросить фильтры
                 </div>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ marginTop: 16 }}
+                  onClick={() => {
+                    setSearch('');
+                    setDebouncedSearch('');
+                    clearGenreFilters();
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('search');
+                    window.history.replaceState(window.history.state, '', url);
+                  }}
+                >
+                  Сбросить поиск и фильтры
+                </button>
               </>
             ) : (
               <>
                 <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>📦</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>Ваш каталог пока пуст</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{isExternalCatalog ? 'В этой библиотеке пока нет игр' : 'Ваш каталог пока пуст'}</div>
                 <div style={{ fontSize: '0.85rem', marginTop: 4, opacity: 0.75 }}>
-                  Добавьте первую игру через зелёную кнопку
+                  {isExternalCatalog ? 'Автор ещё не добавил игры в свою библиотеку' : 'Добавьте первую игру через зелёную кнопку'}
                 </div>
               </>
             )}
@@ -7252,11 +7270,11 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
             )}
             <div className="modal-info-row">
               <span className="modal-info-key">Год</span>
-              <span className="modal-info-val">{game.year || "2023"}</span>
+              <span className="modal-info-val">{game.year || 'Не указан'}</span>
             </div>
             <div className="modal-info-row">
               <span className="modal-info-key">Время</span>
-              <span className="modal-info-val">{game.playtime || "30 ч."}</span>
+              <span className="modal-info-val">{game.playtime || 'Не указано'}</span>
             </div>
           </div>
           <button
@@ -7272,7 +7290,7 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
       </div>
 
       {/* Нижний ряд: описание на всю ширину */}
-      <div id="modal-review">{REVIEWS[game.id] || "Описание..."}</div>
+      <div id="modal-review">{REVIEWS[game.id] || 'Автор пока не оставил отзыв.'}</div>
 
     </motion.div>
   );
@@ -7288,6 +7306,43 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => 
   const similarToggleBusyRef = useRef(false);
   const similarToggleTimerRef = useRef(null);
   const currentIndexRef = useRef(allGames ? allGames.findIndex(g => g.id === game.id) : 0);
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    const previousFocus = document.activeElement;
+    const dialog = dialogRef.current;
+    const getFocusable = () => [...dialog.querySelectorAll(
+      'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+    )].filter(element => element.getClientRects().length > 0);
+    const focusFirst = () => (getFocusable()[0] || dialog).focus();
+    const handleTab = event => {
+      if (event.key !== 'Tab') return;
+      const focusable = getFocusable();
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first) {
+        event.preventDefault();
+        dialog.focus();
+      } else if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const containFocus = event => {
+      if (!dialog.contains(event.target)) focusFirst();
+    };
+    focusFirst();
+    dialog.addEventListener('keydown', handleTab);
+    document.addEventListener('focusin', containFocus);
+    return () => {
+      dialog.removeEventListener('keydown', handleTab);
+      document.removeEventListener('focusin', containFocus);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, []);
 
   useEffect(() => () => {
     if (similarToggleTimerRef.current) clearTimeout(similarToggleTimerRef.current);
@@ -7365,7 +7420,12 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => 
       onClick={onClose}
     >
       <motion.div
+        ref={dialogRef}
         className="modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-label={displayGame.title}
+        tabIndex={-1}
         onClick={e => e.stopPropagation()}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -7512,8 +7572,8 @@ const GamePage = ({ game, onBack, onOpenGame }) => {
       <section className="game-page-section">
         <h2 className="game-page-section-title">Информация</h2>
         <div className="game-page-info">
-          <div className="game-page-info-item"><span className="game-page-info-key">Год</span><span className="game-page-info-value numeric">{game.year || '2023'}</span></div>
-          <div className="game-page-info-item"><span className="game-page-info-key">Время</span><span className="game-page-info-value numeric">{game.playtime || '30 ч.'}</span></div>
+          <div className="game-page-info-item"><span className="game-page-info-key">Год</span><span className="game-page-info-value numeric">{game.year || 'Не указан'}</span></div>
+          <div className="game-page-info-item"><span className="game-page-info-key">Время</span><span className="game-page-info-value numeric">{game.playtime || 'Не указано'}</span></div>
           <div className="game-page-info-item" style={{ gridColumn: '1 / -1' }}><span className="game-page-info-key">Студия</span><span className="game-page-info-value">{game.developer}</span></div>
         </div>
         <div className="game-page-genres" style={{ marginTop: 10 }}>
@@ -7536,7 +7596,7 @@ const GamePage = ({ game, onBack, onOpenGame }) => {
 
       <section className="game-page-section">
         <h2 className="game-page-section-title">Описание</h2>
-        <div className="game-page-review">{REVIEWS[game.id] || 'Описание...'}</div>
+        <div className="game-page-review">{REVIEWS[game.id] || 'Автор пока не оставил отзыв.'}</div>
         <button
           className="game-page-similar-toggle"
           type="button"

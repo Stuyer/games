@@ -3887,7 +3887,8 @@ body.dark #game-modal .modal-content.compare-mode h2 {
 }
 
 #modal-review {
-  text-align: justify;
+  text-align: left;
+  white-space: pre-line;
   line-height: 1.6;
   overflow-wrap: anywhere;
   font-size: 1.2rem;
@@ -4482,7 +4483,8 @@ body:not(.dark) .roulette-box .close-btn:hover {
   }
 
   .game-page-review {
-    text-align: justify;
+    text-align: left;
+    white-space: pre-line;
     font-size: 0.92rem;
     line-height: 1.6;
     overflow-wrap: anywhere;
