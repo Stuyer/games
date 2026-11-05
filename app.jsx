@@ -8,6 +8,12 @@ import './supabase-config.js';
 import './game-submission.js';
 import { GENRES, GENRE_ALIAS_INDEX } from './genres.js';
 import {
+  normalizeSearchPart,
+  splitSearchWords,
+  hasWordPrefixMatch,
+  getGameSearchData
+} from './game-aliases.js';
+import {
   getOrFetchSignedUrls,
   loadCoverImage,
   getCoverUrlSync,
@@ -1462,18 +1468,6 @@ const getSortDisplayValue = (game, sortBy = 'rating') => {
   return game?.ratings?.[sortBy] ?? '-';
 };
 
-const normalizeSearchPart = (value) =>
-  String(value ?? '').toLowerCase().replace(/ё/g, "е").trim();
-
-const splitSearchWords = (value) =>
-  normalizeSearchPart(value).split(/[^a-zа-я0-9]+/i).filter(Boolean);
-
-const hasWordPrefixMatch = (words, token) => {
-  const subTokens = Array.isArray(token) ? token : splitSearchWords(token);
-  if (!subTokens.length) return false;
-  return subTokens.every(sub => words.some(word => word.startsWith(sub)));
-};
-
 let memoryGameCatalogCache = null;
 
 const filterAndSortCatalogResults = (rows, queryWords, normalizedQuery, limit = 8) => {
@@ -1682,7 +1676,7 @@ const CardPreview = ({ game, view, onUpdateDisplay, interactive = false }) => {
   }, [view, display.scale, interactive, onUpdateDisplay]);
 
   const handlePointerDown = (e) => {
-    if (!interactive || !onUpdateDisplay || e.button !== 0) return;
+    if (!interactive || !onUpdateDisplay || e.button !== 0 || (e.pointerType === 'touch' && window.innerWidth <= 768)) return;
     e.preventDefault();
     isDraggingRef.current = true;
     setIsDragging(true);
@@ -1705,7 +1699,8 @@ const CardPreview = ({ game, view, onUpdateDisplay, interactive = false }) => {
     const deltaY = e.clientY - dragStartRef.current.startY;
 
     const scaleFactor = (display.scale ?? 100) / 100;
-    const sensitivity = 0.35 / scaleFactor;
+    const uiScale = typeof window !== 'undefined' && window.innerWidth > 2560 ? window.innerWidth / 1952 : 1;
+    const sensitivity = 0.35 / (scaleFactor * uiScale);
 
     const nextX = Math.min(100, Math.max(0, Math.round(dragStartRef.current.initialX - deltaX * sensitivity)));
     const nextY = Math.min(100, Math.max(0, Math.round(dragStartRef.current.initialY - deltaY * sensitivity)));
@@ -1754,7 +1749,7 @@ const CardPreview = ({ game, view, onUpdateDisplay, interactive = false }) => {
 // Свободный ввод названия запрещён: карточку можно создать только для игры,
 // которая уже есть в каталоге, — так справочник остаётся единственным источником
 // названий, студий, годов и жанров.
-const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, onSelect, onClear }) => {
+const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, libraryCatalogIds = new Set(), libraryGameTitles = new Set(), onSelect, onClear }) => {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
@@ -1903,11 +1898,20 @@ const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, onSe
 
   if (selected) {
     const meta = [selected.studio, selected.release_year].filter(value => value !== '' && value !== null && value !== undefined).join(' · ');
+    const isAlreadyInLibrary = !disabled && (
+      (selected.id && libraryCatalogIds.has(selected.id)) ||
+      (selected.title && libraryGameTitles.has(normalizeSearchPart(selected.title)))
+    );
     return (
-      <div className="catalog-selected" ref={rootRef}>
+      <div className={`catalog-selected ${isAlreadyInLibrary ? 'is-in-library' : ''}`} ref={rootRef}>
         <div className="catalog-selected-main">
           <span className="catalog-selected-title">{selected.title}</span>
           {meta && <span className="catalog-selected-meta">{meta}</span>}
+          {isAlreadyInLibrary && (
+            <span className="catalog-warning-badge" role="alert">
+              ⚠️ Эта игра уже есть в вашей библиотеке
+            </span>
+          )}
         </div>
         {!disabled && (
           <button type="button" className="catalog-selected-change" onClick={() => onClear?.()}>
@@ -1946,6 +1950,10 @@ const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, onSe
         <div className="catalog-results" id="game-catalog-results" role="listbox" aria-label="Результаты поиска игры">
           {results.map((row, index) => {
             const meta = [row.studio, row.release_year].filter(value => value !== '' && value !== null && value !== undefined).join(' · ');
+            const isRowInLibrary = !disabled && (
+              (row.id && libraryCatalogIds.has(row.id)) ||
+              (row.title && libraryGameTitles.has(normalizeSearchPart(row.title)))
+            );
             return (
               <button
                 key={row.id}
@@ -1962,6 +1970,9 @@ const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, onSe
                 {meta && <span className="catalog-option-meta">{meta}</span>}
                 {Array.isArray(row.genres) && row.genres.length > 0 && (
                   <span className="catalog-option-genres">{row.genres.join(' · ')}</span>
+                )}
+                {isRowInLibrary && (
+                  <span className="catalog-option-badge-in-library">Уже в библиотеке</span>
                 )}
               </button>
             );
@@ -2022,6 +2033,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
   const [status, setStatus] = useState('');
   const [statusError, setStatusError] = useState(false);
   const [moderatorMode, setModeratorMode] = useState(null);
+  const [userLibraryGames, setUserLibraryGames] = useState([]);
   const previewUrlRef = useRef('');
   const coverTaskRef = useRef(0);
   const submitLockRef = useRef(false);
@@ -2181,9 +2193,14 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
     window.siteSupabase.auth.getSession().then(async ({ data }) => {
       const user = data.session && data.session.user;
       if (!user) return;
-      const { data: profile } = await window.siteSupabase.from('profiles')
-        .select('is_moderator').eq('id', user.id).single();
-      setModeratorMode(Boolean(profile && profile.is_moderator));
+      const [profileRes, libraryRes] = await Promise.all([
+        window.siteSupabase.from('profiles').select('is_moderator').eq('id', user.id).maybeSingle(),
+        window.siteSupabase.from('games').select('id, catalog_id, title').eq('owner_id', user.id)
+      ]);
+      setModeratorMode(Boolean(profileRes.data && profileRes.data.is_moderator));
+      if (!libraryRes.error && Array.isArray(libraryRes.data)) {
+        setUserLibraryGames(libraryRes.data);
+      }
     }).catch(() => setModeratorMode(false));
   }, []);
 
@@ -2329,6 +2346,22 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
     }
   };
 
+  const libraryCatalogIds = useMemo(() => {
+    const set = new Set();
+    userLibraryGames.forEach(item => {
+      if (item.catalog_id && (!isEdit || item.id !== game?.id)) set.add(item.catalog_id);
+    });
+    return set;
+  }, [userLibraryGames, isEdit, game?.id]);
+
+  const libraryGameTitles = useMemo(() => {
+    const set = new Set();
+    userLibraryGames.forEach(item => {
+      if (item.title && (!isEdit || item.id !== game?.id)) set.add(normalizeSearchPart(item.title));
+    });
+    return set;
+  }, [userLibraryGames, isEdit, game?.id]);
+
   const currentPreviewDisplay = cardDisplay[previewView];
   const previewGame = {
     title: fields.title,
@@ -2381,6 +2414,8 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
                   selected={catalogGame}
                   initialQuery={catalogInitialQuery}
                   disabled={Boolean(isEdit && catalogId)}
+                  libraryCatalogIds={libraryCatalogIds}
+                  libraryGameTitles={libraryGameTitles}
                   onSelect={selectCatalogGame}
                   onClear={clearCatalogGame}
                 />
@@ -2556,9 +2591,19 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
               <button type="button" className={previewView === 'grid' ? 'active' : ''} onClick={() => setPreviewView('grid')} aria-pressed={previewView === 'grid'}>Сетка</button>
             </div>
             <div className="add-game-preview-controls-info">
-              <span className="add-game-preview-scale-badge" title="Масштаб обложки (скролльте колесико мыши над карточкой)">
+              <button
+                type="button"
+                className="add-game-preview-scale-badge"
+                onClick={() => {
+                  const currentScale = Number(currentPreviewDisplay.scale) || 100;
+                  const nextScale = currentScale >= 200 ? 100 : Math.min(200, currentScale + 25);
+                  updatePreviewDisplay('scale', nextScale);
+                }}
+                title="Нажмите, чтобы изменить масштаб (+25%), или крутите колёсико мыши над карточкой"
+                aria-label={`Масштаб обложки ${currentPreviewDisplay.scale}%. Нажмите для изменения на 25%`}
+              >
                 Масштаб: {currentPreviewDisplay.scale}%
-              </span>
+              </button>
               {(currentPreviewDisplay.x !== 50 || currentPreviewDisplay.y !== 50 || currentPreviewDisplay.scale !== 100) && (
                 <button
                   type="button"
@@ -2584,7 +2629,72 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
               onUpdateDisplay={updatePreviewDisplay}
             />
           </div>
-          <p className="add-game-hint">Перетаскивайте изображение мышью для позиционирования, крутите колёсико для масштабирования. Старайтесь сохранить масштаб на 100%.</p>
+          <div className="add-game-preview-mobile-axes" aria-label="Позиционирование обложки">
+            <div className="add-game-preview-axis">
+              <span className="add-game-preview-axis-label">По горизонтали</span>
+              <button
+                type="button"
+                className="add-game-preview-axis-step"
+                aria-label="Сместить влево"
+                disabled={(currentPreviewDisplay.x ?? 50) <= 0}
+                onClick={() => updatePreviewDisplay('x', Math.max(0, (currentPreviewDisplay.x ?? 50) - 5))}
+              >
+                ‹
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                aria-label="Позиция по горизонтали"
+                value={currentPreviewDisplay.x ?? 50}
+                onChange={event => updatePreviewDisplay('x', Number(event.target.value))}
+              />
+              <button
+                type="button"
+                className="add-game-preview-axis-step"
+                aria-label="Сместить вправо"
+                disabled={(currentPreviewDisplay.x ?? 50) >= 100}
+                onClick={() => updatePreviewDisplay('x', Math.min(100, (currentPreviewDisplay.x ?? 50) + 5))}
+              >
+                ›
+              </button>
+              <output className="add-game-preview-axis-value">{currentPreviewDisplay.x ?? 50}%</output>
+            </div>
+            <div className="add-game-preview-axis">
+              <span className="add-game-preview-axis-label">По вертикали</span>
+              <button
+                type="button"
+                className="add-game-preview-axis-step"
+                aria-label="Сместить вверх"
+                disabled={(currentPreviewDisplay.y ?? 50) <= 0}
+                onClick={() => updatePreviewDisplay('y', Math.max(0, (currentPreviewDisplay.y ?? 50) - 5))}
+              >
+                ‹
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                aria-label="Позиция по вертикали"
+                value={currentPreviewDisplay.y ?? 50}
+                onChange={event => updatePreviewDisplay('y', Number(event.target.value))}
+              />
+              <button
+                type="button"
+                className="add-game-preview-axis-step"
+                aria-label="Сместить вниз"
+                disabled={(currentPreviewDisplay.y ?? 50) >= 100}
+                onClick={() => updatePreviewDisplay('y', Math.min(100, (currentPreviewDisplay.y ?? 50) + 5))}
+              >
+                ›
+              </button>
+              <output className="add-game-preview-axis-value">{currentPreviewDisplay.y ?? 50}%</output>
+            </div>
+          </div>
+          <p className="add-game-hint add-game-hint-desktop">Перетаскивайте изображение мышью для позиционирования, крутите колёсико или нажмите кнопку масштаба для масштабирования. Старайтесь сохранить масштаб на 100%.</p>
+          <p className="add-game-hint add-game-hint-mobile">Настройте масштаб нажатием на кнопку масштаба (+25%). Старайтесь сохранить масштаб на 100%.</p>
         </section>
 
         {status && <p className={`add-game-status ${statusError ? 'error' : ''}`} role="status">{status}</p>}
@@ -3652,7 +3762,7 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
   };
 
   const handleHeroPointerMove = (event) => {
-    if (event.pointerType === 'touch' || window.matchMedia('(max-width: 640px)').matches) return;
+    if ((event.pointerType === 'touch' && window.innerWidth <= 860) || window.matchMedia('(max-width: 640px)').matches) return;
     heroGlowReturningRef.current = false;
     const rect = event.currentTarget.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -6342,7 +6452,7 @@ const App = () => {
     if (debouncedSearch.trim()) {
       const rawTokens = debouncedSearch.trim().split(/\s+/).filter(Boolean);
 
-      const detectedGenres = new Set();
+      const detectedGenreTokens = [];
       const excludedGenresSearch = new Set();
       const yearFilters = [];
       const ratingFilters = [];
@@ -6387,7 +6497,7 @@ const App = () => {
             if (isExclude) {
               excludedGenresSearch.add(matchedGenre.label);
             } else {
-              detectedGenres.add(matchedGenre.label);
+              detectedGenreTokens.push({ label: matchedGenre.label, token: cleanToken });
             }
           } else if (!isExclude) {
             textTokens.push(cleanToken);
@@ -6396,8 +6506,7 @@ const App = () => {
       }
 
       res = res.filter(g => {
-        const titleWords = splitSearchWords(g.title);
-        const devWords = splitSearchWords(g.developer);
+        const { titleWords, devWords } = getGameSearchData(g);
         const gameYear = parseInt(g.year, 10) || 0;
         const gameRating = calcRating(g.ratings);
 
@@ -6419,7 +6528,11 @@ const App = () => {
           return true;
         });
 
-        const matchesInclude = Array.from(detectedGenres).every(gen => g.genres.includes(gen));
+        const matchesInclude = detectedGenreTokens.every(({ label, token }) =>
+          g.genres.includes(label)
+          || hasWordPrefixMatch(titleWords, token)
+          || hasWordPrefixMatch(devWords, token)
+        );
         const matchesExclude = Array.from(excludedGenresSearch).every(gen => !g.genres.includes(gen));
         const matchesText = textTokens.every(tok =>
           hasWordPrefixMatch(titleWords, tok) || hasWordPrefixMatch(devWords, tok)
@@ -7490,6 +7603,7 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
         chartInstanceRef.current.destroy();
         chartInstanceRef.current = null;
       }
+      const uiScale = typeof window !== 'undefined' && window.innerWidth > 2560 ? window.innerWidth / 1952 : 1;
       const ctx = chartRef.current.getContext('2d');
       chartInstanceRef.current = new Chart(ctx, {
         type: 'radar',
@@ -7513,7 +7627,7 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
           layout: {
             padding: 0
           },
-          elements: { line: { borderWidth: 4 } },
+          elements: { line: { borderWidth: Math.round(4 * uiScale * 10) / 10 } },
           scales: {
             r: {
               angleLines: { color: 'rgba(255, 255, 255, 0.3)' },
@@ -7521,9 +7635,9 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
               pointLabels: {
                 color: 'white',
                 padding: 0,
-                font: { size: 13, family: 'Inter' }
+                font: { size: Math.round(13 * uiScale), family: 'Inter' }
               },
-              ticks: { backdropColor: 'transparent', color: 'rgba(255, 255, 255, 0.7)', showLabelBackdrop: false, stepSize: 2, font: { size: 11 } },
+              ticks: { backdropColor: 'transparent', color: 'rgba(255, 255, 255, 0.7)', showLabelBackdrop: false, stepSize: 2, font: { size: Math.round(11 * uiScale) } },
               suggestedMin: 0, suggestedMax: 10
             }
           },
@@ -7566,11 +7680,11 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
             <div className="criteria-wrapper">
               <div className={`criteria-view text-view ${!chartMode ? 'active' : 'hidden'}`}>
                 {Object.entries(game.ratings).filter(([k]) => k !== 'rating').map(([k, v]) => (
-                  <div key={k} style={{ marginBottom: 4 }}>{LABELS_FULL[k]}: <b>{v}</b></div>
+                  <div key={k} style={{ marginBottom: '0.25rem' }}>{LABELS_FULL[k]}: <b>{v}</b></div>
                 ))}
               </div>
               <div className={`criteria-view chart-view ${chartMode ? 'active' : 'hidden'}`}>
-                <div style={{ width: 350, height: 350 }}>
+                <div style={{ width: '21.875rem', height: '21.875rem' }}>
                   <canvas ref={chartRef}></canvas>
                 </div>
               </div>
@@ -7859,6 +7973,7 @@ const GamePage = ({ game, onBack, onOpenGame }) => {
       const textColor = isDark ? '#fff' : '#1a1a1a';
       const gridColor = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.22)';
       const criteriaKeys = Object.keys(game.ratings).filter(key => key !== 'rating');
+      const uiScale = typeof window !== 'undefined' && window.innerWidth > 2560 ? window.innerWidth / 1952 : 1;
 
       chartInstanceRef.current = new Chart(chartRef.current.getContext('2d'), {
         type: 'radar',
@@ -7881,7 +7996,7 @@ const GamePage = ({ game, onBack, onOpenGame }) => {
             r: {
               angleLines: { color: gridColor },
               grid: { color: gridColor },
-              pointLabels: { color: textColor, font: { size: 10, family: 'Inter' } },
+              pointLabels: { color: textColor, font: { size: Math.round(10 * uiScale), family: 'Inter' } },
               ticks: { display: false },
               suggestedMin: 0,
               suggestedMax: 10
@@ -8073,6 +8188,8 @@ const CompareModal = ({ selectedGameIds, onClose, theme }) => {
       const isDark = theme === 'dark' || document.body.classList.contains('dark');
       const textColor = isDark ? 'white' : '#000';
       const gridColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.4)';
+      const isMobileChart = typeof window !== 'undefined' && window.innerWidth <= 640;
+      const uiScale = typeof window !== 'undefined' && window.innerWidth > 2560 ? window.innerWidth / 1952 : 1;
 
       chartInstanceRef.current = new Chart(ctx, {
         type: 'radar',
@@ -8081,13 +8198,13 @@ const CompareModal = ({ selectedGameIds, onClose, theme }) => {
           responsive: true,
           maintainAspectRatio: false,
           animation: { duration: 420, easing: 'easeOutCubic' },
-          layout: { padding: 18 },
-          elements: { line: { borderWidth: 2 } },
+          layout: { padding: isMobileChart ? { top: 6, bottom: 6, left: 8, right: 8 } : Math.round(18 * uiScale) },
+          elements: { line: { borderWidth: Math.round(2 * uiScale * 10) / 10 } },
           scales: {
             r: {
               angleLines: { color: gridColor },
               grid: { color: gridColor },
-              pointLabels: { color: textColor, padding: 4, font: { size: 14, family: 'Inter' } },
+              pointLabels: { color: textColor, padding: isMobileChart ? 4 : Math.round(4 * uiScale), font: { size: isMobileChart ? 11.5 : Math.round(14 * uiScale), family: 'Inter' } },
               ticks: { display: false, backdropColor: 'transparent' },
               suggestedMin: 0,
               suggestedMax: 10
@@ -8255,7 +8372,7 @@ const CompareModal = ({ selectedGameIds, onClose, theme }) => {
 
           </div>
         </div>
-        <button className="toggle-chart-btn" onClick={() => setChartMode(!chartMode)} title={chartMode ? "Показать таблицу" : "Показать график"} style={{ bottom: 12, right: 18, width: 40, height: 40, fontSize: 20, position: 'absolute' }}>
+        <button className="toggle-chart-btn" onClick={() => setChartMode(!chartMode)} title={chartMode ? "Показать таблицу" : "Показать график"} style={{ bottom: '0.75rem', right: '1.125rem', width: '2.5rem', height: '2.5rem', fontSize: '1.25rem', position: 'absolute' }}>
           {chartMode ? "📝" : "🕸️"}
         </button>
       </motion.div>
@@ -8322,7 +8439,7 @@ const RouletteModal = ({ onClose, onSelect }) => {
   return (
     <motion.div id="roulette-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <div className="roulette-box" role="dialog" aria-modal="true" aria-label="Во что сыграть?" onClick={e => e.stopPropagation()}>
-        <button type="button" className="close-btn" onClick={onClose} aria-label="Закрыть рулетку" title="Закрыть" style={{ position: 'absolute', top: 15, right: 20, fontSize: 30, cursor: 'pointer' }}>×</button>
+        <button type="button" className="close-btn" onClick={onClose} aria-label="Закрыть рулетку" title="Закрыть" style={{ position: 'absolute', top: '0.9375rem', right: '1.25rem', fontSize: '1.875rem', cursor: 'pointer' }}>×</button>
         <h2>Во что сыграть?</h2>
         <div className="roulette-window" ref={windowRef}>
           <div className="roulette-marker"></div>
@@ -8335,7 +8452,7 @@ const RouletteModal = ({ onClose, onSelect }) => {
           </div>
         </div>
         {!tapeItems.length && <p style={{ color: '#aaa' }}>В каталоге пока нет игр.</p>}
-        <button id="spin-btn" onClick={spin} disabled={spinning || !tapeItems.length} style={{ background: spinning ? '#555' : '#e91e63', color: 'white', border: 'none', padding: '12px 30px', fontSize: '1.2rem', borderRadius: 30, cursor: spinning ? 'default' : 'pointer', transition: 'background 0.3s' }}>
+        <button id="spin-btn" onClick={spin} disabled={spinning || !tapeItems.length} style={{ background: spinning ? '#555' : '#e91e63', color: 'white', border: 'none', padding: '0.75rem 1.875rem', fontSize: '1.2rem', borderRadius: '1.875rem', cursor: spinning ? 'default' : 'pointer', transition: 'background 0.3s' }}>
           {spinning ? "Крутим..." : "Крутить!"}
         </button>
       </div>
