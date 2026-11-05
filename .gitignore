@@ -20,7 +20,8 @@ Thumbs.db
 
 # Local files and notes
 start-site.bat
-supabase/
+supabase/DEPLOYMENT.md
+supabase/ПОДКЛЮЧЕНИЕ.md
 *.txt
 !robots.txt
 

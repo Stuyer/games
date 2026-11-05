@@ -1,16 +1,12 @@
 User-agent: *
 Allow: /
-Allow: /index.html
 Allow: /favicons/
-Allow: /covers_ready/
 
 # Запрет индексации служебных и закрытых разделов
 Disallow: /moderation/
 Disallow: /supabase/
-Disallow: /account.html
+Disallow: /add-game
+Disallow: /submissions
 
 # Указание на карту сайта
 Sitemap: https://zvuxgg.ru/sitemap.xml
-
-# Для Яндекса (основное зеркало сайта)
-Host: https://zvuxgg.ru

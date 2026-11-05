@@ -147,11 +147,11 @@ import '../supabase-config.js';
         : await client.rpc('reject_game_submission', { p_submission_id: id, p_note: note });
       if (result.error) throw result.error;
 
-      // После решения заявки файл больше не нужен, если он не стал обложкой игры.
       // При редактировании старую обложку удаляем только после успешного одобрения.
+      // При отклонении обложка сохраняется, чтобы автор мог отправить заявку повторно.
       const obsoletePath = approve
         ? (oldImagePath && oldImagePath !== submission?.image_path ? oldImagePath : '')
-        : (submission?.game_id && oldImagePath === submission.image_path ? '' : submission?.image_path || '');
+        : '';
       let cleanupWarning = '';
       if (obsoletePath) {
         const { error: removeError } = await client.storage.from('game-covers').remove([obsoletePath]);

@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Chart } from 'chart.js/auto';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import './style.css';
 import './supabase-config.js';
 import './game-submission.js';
+import { GENRES, GENRE_ALIAS_INDEX } from './genres.js';
 import {
   getOrFetchSignedUrls,
   loadCoverImage,
@@ -94,11 +95,23 @@ const gameDataPromise = (async () => {
 
   const catalogOwnerId = targetProfile ? targetProfile.id : (user ? user.id : null);
 
-  const { data: rows, error } = await siteSupabase
+  // catalog_id появился в миграции 202611050001. Если фронтенд выкатили раньше,
+  // чем применили миграцию, личный каталог всё равно должен открываться.
+  const gameFields = [
+    'id', 'catalog_id', 'title', 'developer', 'release_year', 'playtime_hours',
+    'genres', 'ratings', 'review', 'image_path',
+    'background_position_list_x', 'background_position_list_y', 'background_scale_list',
+    'background_position_grid_x', 'background_position_grid_y', 'background_scale_grid'
+  ];
+  const loadCatalogRows = fields => siteSupabase
     .from('games')
-    .select('id, title, developer, release_year, playtime_hours, genres, ratings, review, image_path, background_position_list_x, background_position_list_y, background_scale_list, background_position_grid_x, background_position_grid_y, background_scale_grid')
+    .select(fields.join(', '))
     .eq('owner_id', catalogOwnerId)
     .order('created_at', { ascending: true });
+  let { data: rows, error } = await loadCatalogRows(gameFields);
+  if (error && String(error.message || '').includes('catalog_id')) {
+    ({ data: rows, error } = await loadCatalogRows(gameFields.filter(field => field !== 'catalog_id')));
+  }
   if (error) throw error;
   if (!rows.length) return { GAMES: [], REVIEWS: {}, catalogProfile: viewedCatalogProfile };
 
@@ -109,6 +122,7 @@ const gameDataPromise = (async () => {
     const cachedMemUrl = getCoverUrlSync(game.image_path);
     return {
       id: game.id,
+      catalogId: game.catalog_id || '',
       title: game.title,
       developer: game.developer,
       image: cachedMemUrl || imageByPath.get(game.image_path) || '',
@@ -247,6 +261,30 @@ const clearLocalAuthState = () => {
   }
   memoryProfileCache.clear();
   memoryLibrariesCache = null;
+};
+
+let activeScrollLocks = 0;
+let savedDocumentOverflow = '';
+let savedBodyOverflow = '';
+
+const useScrollLock = (locked) => {
+  useEffect(() => {
+    if (!locked) return undefined;
+    if (activeScrollLocks === 0) {
+      savedDocumentOverflow = document.documentElement.style.overflow;
+      savedBodyOverflow = document.body.style.overflow;
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    }
+    activeScrollLocks += 1;
+    return () => {
+      activeScrollLocks = Math.max(0, activeScrollLocks - 1);
+      if (activeScrollLocks === 0) {
+        document.documentElement.style.overflow = savedDocumentOverflow;
+        document.body.style.overflow = savedBodyOverflow;
+      }
+    };
+  }, [locked]);
 };
 
 const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
@@ -477,13 +515,15 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
   const [libraries, setLibraries] = useState(() => memoryLibrariesCache || []);
   const [loading, setLoading] = useState(() => !memoryLibrariesCache || memoryLibrariesCache.length === 0);
   const [error, setError] = useState('');
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const handleKeyDown = event => { if (event.key === 'Escape') onClose(); };
+    const handleKeyDown = event => { if (event.key === 'Escape') onCloseRef.current?.(); };
     window.addEventListener('keydown', handleKeyDown);
 
     if (memoryLibrariesCache && memoryLibrariesCache.length > 0) {
@@ -548,10 +588,9 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
     loadLibraries();
     return () => {
       active = false;
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -591,7 +630,7 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
               >
                 <span className="library-person-avatar">
                   {item.avatarUrl
-                    ? <img src={item.avatarUrl} alt="" />
+                    ? <img src={item.avatarUrl} alt="" width="36" height="36" loading="lazy" decoding="async" />
                     : <svg aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
                 </span>
                 <span className="library-person-name">
@@ -608,18 +647,9 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
   );
 };
 
-const CommentBody = ({ text, games, onOpenGame }) => {
+const CommentBody = ({ text, candidates, onOpenGame }) => {
   const source = String(text || '');
-  const candidates = (games || [])
-    .map(game => ({
-      game,
-      token: `@${String(game.title || '').trim()}`
-    }))
-    .filter(item => item.token.length > 1)
-    .sort((a, b) => b.token.length - a.token.length)
-    .map(item => ({ ...item, lowerToken: item.token.toLocaleLowerCase() }));
-
-  if (!source || !candidates.length || !onOpenGame) return source;
+  if (!source || !candidates?.length || !onOpenGame) return source;
   const lowerSource = source.toLocaleLowerCase();
   const parts = [];
   let cursor = 0;
@@ -677,13 +707,24 @@ const CommentsDrawer = ({ isOpen, onClose, profile, currentUser, games, onOpenGa
   const [actionId, setActionId] = useState('');
   const [isModerator, setIsModerator] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const mentionCandidates = useMemo(() => (games || [])
+    .map(game => ({
+      game,
+      token: `@${String(game.title || '').trim()}`
+    }))
+    .filter(item => item.token.length > 1)
+    .sort((a, b) => b.token.length - a.token.length)
+    .map(item => ({ ...item, lowerToken: item.token.toLocaleLowerCase() })), [games]);
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const handleKeyDown = event => { if (event.key === 'Escape') onClose(); };
+    const handleKeyDown = event => { if (event.key === 'Escape') onCloseRef.current?.(); };
     window.addEventListener('keydown', handleKeyDown);
 
     const loadComments = async () => {
@@ -742,7 +783,6 @@ const CommentsDrawer = ({ isOpen, onClose, profile, currentUser, games, onOpenGa
     loadComments();
     return () => {
       active = false;
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, profile?.id, currentUser?.id, refreshKey]);
@@ -840,7 +880,7 @@ const CommentsDrawer = ({ isOpen, onClose, profile, currentUser, games, onOpenGa
                         <span className="profile-comment-author">{authorName}</span>
                         <time className="profile-comment-date" dateTime={comment.created_at}>{dateLabel}</time>
                       </div>
-                      <p className="profile-comment-body"><CommentBody text={comment.body} games={games} onOpenGame={onOpenGame} /></p>
+                      <p className="profile-comment-body"><CommentBody text={comment.body} candidates={mentionCandidates} onOpenGame={onOpenGame} /></p>
                       {canDelete && <button
                         type="button"
                         className="profile-comment-delete"
@@ -1240,7 +1280,7 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
   return (
     <>
       <div className="profile-backdrop" onClick={onClose} />
-      <div className="profile-popover">
+      <div className="profile-popover" role="dialog" aria-modal="true" aria-label="Профиль">
         <div className="profile-header">
           <button
             type="button"
@@ -1251,7 +1291,7 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
             onClick={() => avatarInputRef.current?.click()}
           >
             {profile?.avatarUrl
-              ? <img src={profile.avatarUrl} alt="" />
+              ? <img src={profile.avatarUrl} alt="" width="48" height="48" decoding="async" />
               : <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
             <span className="profile-avatar-edit-icon" aria-hidden="true">✎</span>
           </button>
@@ -1423,7 +1463,46 @@ const getSortDisplayValue = (game, sortBy = 'rating') => {
 };
 
 const normalizeSearchPart = (value) =>
-  value.toLowerCase().replace(/ё/g, "е").trim();
+  String(value ?? '').toLowerCase().replace(/ё/g, "е").trim();
+
+const splitSearchWords = (value) =>
+  normalizeSearchPart(value).split(/[^a-zа-я0-9]+/i).filter(Boolean);
+
+const hasWordPrefixMatch = (words, token) => {
+  const subTokens = Array.isArray(token) ? token : splitSearchWords(token);
+  if (!subTokens.length) return false;
+  return subTokens.every(sub => words.some(word => word.startsWith(sub)));
+};
+
+let memoryGameCatalogCache = null;
+
+const filterAndSortCatalogResults = (rows, queryWords, normalizedQuery, limit = 8) => {
+  if (!Array.isArray(rows) || !queryWords.length) return [];
+  const matched = [];
+
+  for (const row of rows) {
+    const titleWords = splitSearchWords(row?.title);
+    if (!hasWordPrefixMatch(titleWords, queryWords)) continue;
+    const titleNorm = normalizeSearchPart(row?.title);
+    const rank = titleNorm === normalizedQuery
+      ? 0
+      : titleNorm.startsWith(normalizedQuery)
+        ? 1
+        : titleWords[0]?.startsWith(queryWords[0])
+          ? 2
+          : 3;
+    matched.push({ row, rank });
+  }
+
+  matched.sort((a, b) => {
+    if (a.rank !== b.rank) return a.rank - b.rank;
+    const yearDiff = (Number(b.row.release_year) || 0) - (Number(a.row.release_year) || 0);
+    if (yearDiff !== 0) return yearDiff;
+    return String(a.row.title || '').localeCompare(String(b.row.title || ''), 'ru');
+  });
+
+  return matched.slice(0, limit).map(item => item.row);
+};
 
 const formatGameCount = (value) => {
   const count = Number(value) || 0;
@@ -1447,37 +1526,7 @@ const formatSubmissionCount = (value) => {
 
 // Каждый жанр хранит только каноническое имя и список слов-синонимов через запятую.
 // Это упрощает расширение: добавляем новый жанр или уточняем его слова в одном месте.
-const GENRE_RULES = [
-  { label: "РПГ", aliases: "rpg, ролев" },
-  { label: "Экшен", aliases: "экшн, action" },
-  { label: "Инди", aliases: "indie, индю" },
-  { label: "Хоррор", aliases: "horror, ужас, страш, страх" },
-  { label: "Приключение", aliases: "приключ, adventure, адвенч" },
-  { label: "Шутер", aliases: "shooter, стрелял" },
-  { label: "Платформер", aliases: "platformer" },
-  { label: "Сюжетная", aliases: "сюжет, story, narrative" },
-  { label: "Кооператив", aliases: "кооп, coop, co-op, совместн" },
-  { label: "Головоломка", aliases: "головолом, пазл, puzzle" },
-  { label: "Фэнтези", aliases: "фентези, fantasy" },
-  { label: "Открытый мир", aliases: "открыт, open, мир" },
-  { label: "Стелс", aliases: "stealth" },
-  { label: "Соулс-лайк", aliases: "соулс, souls, сосалик" },
-  { label: "Киберпанк", aliases: "cyberpunk" },
-  { label: "Выживание", aliases: "выжива, выживал, survival" },
-  { label: "Карточная", aliases: "карточ, card" },
-  { label: "Метроидвания", aliases: "метроид, metroid" },
-  { label: "QTE", aliases: "qte, quick" },
-  { label: "Научная фантастика", aliases: "фантасти, scifi, sci-fi, научн, скайфай" },
-  { label: "Постапокалипсис", aliases: "постапокалип, постап, postap" },
-  { label: "Интерактивное кино", aliases: "интер, кино, inter" },
-];
-const GENRES = GENRE_RULES
-  .map(({ label }) => label)
-  .sort((a, b) => a.localeCompare(b, 'ru'));
-const GENRE_ALIAS_INDEX = GENRE_RULES.map(({ label, aliases }) => ({
-  label,
-  aliases: [label, ...aliases.split(",")].map(normalizeSearchPart).filter(Boolean),
-}));
+// Сами правила живут в genres.js, потому что их использует и импортёр каталога.
 
 const SEARCH_SUGGESTIONS = [
   {
@@ -1498,13 +1547,6 @@ const ADD_GAME_RATINGS = [
   ['story', 'Сюжет'], ['graphics', 'Графика'], ['gameplay', 'Геймплей'],
   ['main_character', 'Главный герой'], ['characters', 'Персонажи'],
   ['atmosphere', 'Атмосфера'], ['sound_design', 'Саунд-дизайн']
-];
-
-const ADD_GAME_GENRES = [
-  'Выживание', 'Головоломка', 'Инди', 'Интерактивное кино', 'Карточная', 'QTE', 'Киберпанк',
-  'Кооператив', 'Сюжетная', 'Метроидвания', 'Научная фантастика', 'Открытый мир', 'Платформер',
-  'Постапокалипсис', 'Приключение', 'РПГ', 'Соулс-лайк', 'Стелс', 'Фэнтези',
-  'Хоррор', 'Шутер', 'Экшен'
 ];
 
 const DEFAULT_CARD_DISPLAY = {
@@ -1573,20 +1615,21 @@ const CardBackground = ({ game, view, priority = false }) => {
 
   useEffect(() => {
     if (!inView) return;
-    if (imageUrl && !imageUrl.startsWith('http')) return;
+    const syncUrl = getCoverUrlSync(game?.imagePath);
+    if (syncUrl) {
+      setImageUrl(syncUrl);
+      return;
+    }
 
     let isCancelled = false;
     loadCoverImage(game?.imagePath, game?.image).then((url) => {
       if (!isCancelled && url) {
         setImageUrl(url);
-        if (game && !String(game.image || '').startsWith('blob:')) {
-          game.image = url;
-        }
       }
     });
 
     return () => { isCancelled = true; };
-  }, [inView, game, game?.imagePath, game?.image, imageUrl]);
+  }, [inView, game?.imagePath, game?.image]);
 
   return (
     <div
@@ -1707,8 +1750,249 @@ const CardPreview = ({ game, view, onUpdateDisplay, interactive = false }) => {
   );
 };
 
+// Автокомплит по общему справочнику игр (public.game_catalog).
+// Свободный ввод названия запрещён: карточку можно создать только для игры,
+// которая уже есть в каталоге, — так справочник остаётся единственным источником
+// названий, студий, годов и жанров.
+const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, onSelect, onClear }) => {
+  const [query, setQuery] = useState(initialQuery);
+  const [results, setResults] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [error, setError] = useState('');
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const rootRef = useRef(null);
+  const inputRef = useRef(null);
+  const wasSelectedRef = useRef(Boolean(selected));
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
+  useEffect(() => {
+    if (wasSelectedRef.current && !selected) {
+      inputRef.current?.focus();
+    }
+    wasSelectedRef.current = Boolean(selected);
+  }, [selected]);
+
+  useEffect(() => {
+    if (selected) return undefined;
+    const term = query.trim();
+    const queryWords = splitSearchWords(term);
+    if (!queryWords.length) {
+      setResults([]);
+      setBusy(false);
+      setSearched(false);
+      setError('');
+      setOpen(false);
+      return undefined;
+    }
+    let active = true;
+    setBusy(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const client = window.siteSupabase;
+        if (!client) throw new Error('Сервис временно недоступен.');
+        const normalizedTerm = normalizeSearchPart(term);
+        const { data, error: rpcError } = await client.rpc('search_game_catalog', {
+          p_query: term,
+          p_limit: 25
+        });
+        if (rpcError) throw rpcError;
+        if (!active) return;
+
+        let filtered = filterAndSortCatalogResults(data, queryWords, normalizedTerm, 8);
+
+        // Fallback на прямое чтение справочника, если в БД ещё не применена новая
+        // миграция search_game_catalog (например, при вводе 1 символа вроде "3"
+        // или нескольких префиксов слов вроде "Ju 3").
+        if (!filtered.length && (normalizedTerm.length < 2 || queryWords.length > 1)) {
+          if (!memoryGameCatalogCache) {
+            let { data: catalogRows, error: catalogError } = await client
+              .from('game_catalog')
+              .select('id, title, studio, release_year, genres')
+              .eq('is_stub', false);
+            if (catalogError && String(catalogError.message || '').includes('is_stub')) {
+              ({ data: catalogRows, error: catalogError } = await client
+                .from('game_catalog')
+                .select('id, title, studio, release_year, genres'));
+            }
+            if (!catalogError && Array.isArray(catalogRows)) {
+              memoryGameCatalogCache = catalogRows;
+            }
+          }
+          if (!active) return;
+          if (memoryGameCatalogCache) {
+            filtered = filterAndSortCatalogResults(memoryGameCatalogCache, queryWords, normalizedTerm, 8);
+          }
+        }
+
+        setResults(filtered);
+        setError('');
+        setSearched(true);
+        setOpen(true);
+        setActiveIndex(-1);
+      } catch (searchError) {
+        if (!active) return;
+        setResults([]);
+        setError(searchError.message || 'Не удалось выполнить поиск по каталогу.');
+        setSearched(true);
+        setOpen(true);
+      } finally {
+        if (active) setBusy(false);
+      }
+    }, 180);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+      setBusy(false);
+    };
+  }, [query, selected]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handlePointerDown = (event) => {
+      if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [open]);
+
+  const choose = (row) => {
+    if (!row) return;
+    setOpen(false);
+    setActiveIndex(-1);
+    setQuery('');
+    onSelect?.(row);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (!open && results.length) {
+        setOpen(true);
+        return;
+      }
+      if (results.length) setActiveIndex(current => (current + 1) % results.length);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (results.length) setActiveIndex(current => (current <= 0 ? results.length - 1 : current - 1));
+      return;
+    }
+    if (event.key === 'Enter') {
+      if (open && activeIndex >= 0 && results[activeIndex]) {
+        event.preventDefault();
+        choose(results[activeIndex]);
+      } else if (open && results.length === 1) {
+        event.preventDefault();
+        choose(results[0]);
+      }
+      return;
+    }
+    if (event.key === 'Escape' && open) {
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      setActiveIndex(-1);
+    }
+  };
+
+  if (selected) {
+    const meta = [selected.studio, selected.release_year].filter(value => value !== '' && value !== null && value !== undefined).join(' · ');
+    return (
+      <div className="catalog-selected" ref={rootRef}>
+        <div className="catalog-selected-main">
+          <span className="catalog-selected-title">{selected.title}</span>
+          {meta && <span className="catalog-selected-meta">{meta}</span>}
+        </div>
+        {!disabled && (
+          <button type="button" className="catalog-selected-change" onClick={() => onClear?.()}>
+            Изменить
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="catalog-search" ref={rootRef}>
+      <div className="catalog-search-row">
+        <input
+          ref={inputRef}
+          type="text"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls="game-catalog-results"
+          aria-autocomplete="list"
+          aria-activedescendant={activeIndex >= 0 ? `game-catalog-option-${activeIndex}` : undefined}
+          autoComplete="off"
+          spellCheck="false"
+          maxLength="120"
+          disabled={disabled}
+          value={query}
+          aria-label="Название игры из каталога"
+          placeholder="Начните вводить название игры"
+          onChange={event => setQuery(event.target.value)}
+          onFocus={() => { if (results.length) setOpen(true); }}
+          onKeyDown={handleKeyDown}
+        />
+        {busy && <span className="catalog-search-busy" aria-hidden="true">…</span>}
+      </div>
+      {open && (
+        <div className="catalog-results" id="game-catalog-results" role="listbox" aria-label="Результаты поиска игры">
+          {results.map((row, index) => {
+            const meta = [row.studio, row.release_year].filter(value => value !== '' && value !== null && value !== undefined).join(' · ');
+            return (
+              <button
+                key={row.id}
+                id={`game-catalog-option-${index}`}
+                type="button"
+                role="option"
+                aria-selected={index === activeIndex}
+                className={`catalog-option ${index === activeIndex ? 'active' : ''}`}
+                onMouseDown={event => event.preventDefault()}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => choose(row)}
+              >
+                <span className="catalog-option-title">{row.title}</span>
+                {meta && <span className="catalog-option-meta">{meta}</span>}
+                {Array.isArray(row.genres) && row.genres.length > 0 && (
+                  <span className="catalog-option-genres">{row.genres.join(' · ')}</span>
+                )}
+              </button>
+            );
+          })}
+          {!busy && error && <p className="catalog-empty catalog-empty-error">{error}</p>}
+          {!busy && !error && searched && results.length === 0 && (
+            <p className="catalog-empty">
+              Игры нет в каталоге. Справочник пополняется вручную — напишите автору: @zvuxoed.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AddGameForm = ({ game = null, submission = null, onComplete }) => {
   const isEdit = Boolean(game);
+  const initialReleaseYear = Number(game?.releaseYear || game?.year || '');
+  const initialCatalogGame = game?.catalogId
+    ? {
+      id: game.catalogId,
+      title: game.title || '',
+      studio: game.developer || '',
+      release_year: Number.isFinite(initialReleaseYear) && initialReleaseYear > 0 ? initialReleaseYear : null,
+      genres: game.genres || []
+    }
+    : null;
+  const [catalogGame, setCatalogGame] = useState(initialCatalogGame);
+  const [catalogId, setCatalogId] = useState(initialCatalogGame?.id || '');
+  const catalogInitialQuery = game && !initialCatalogGame ? (game.title || '') : '';
   const [fields, setFields] = useState(() => ({
     title: game?.title || '',
     developer: game?.developer || '',
@@ -1862,7 +2146,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
     : '-';
 
   const isTitleValid = Boolean(fields.title && fields.title.trim().length > 0);
-  const isDeveloperValid = Boolean(fields.developer && fields.developer.trim().length > 0);
+  const isDeveloperValid = Boolean(catalogId) || Boolean(fields.developer && fields.developer.trim().length > 0);
   const isYearValid = Boolean(
     fields.releaseYear !== '' &&
     fields.releaseYear !== null &&
@@ -1881,7 +2165,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
     Number(fields.playtimeHours) >= 0
   );
   const hasCover = Boolean(coverBlob || (isEdit && (coverPreview || game?.imagePath || game?.image)));
-  const isFormValid = isTitleValid && isDeveloperValid && isYearValid && isPlaytimeValid && hasCover && areAllRatingsSet;
+  const isFormValid = Boolean(catalogId) && isTitleValid && isDeveloperValid && isYearValid && isPlaytimeValid && hasCover && areAllRatingsSet;
 
   const navigateBack = () => {
     if (!busy && !compressing) window.location.assign('./');
@@ -1908,6 +2192,30 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
   }, []);
 
   const setValue = (key, value) => setFields(current => ({ ...current, [key]: value }));
+
+  const selectCatalogGame = (row) => {
+    const studio = row.studio || '';
+    const releaseYear = row.release_year === null || row.release_year === undefined ? '' : String(row.release_year);
+    setCatalogGame({
+      id: row.id,
+      title: row.title,
+      studio,
+      release_year: row.release_year ?? null,
+      genres: Array.isArray(row.genres) ? row.genres : []
+    });
+    setCatalogId(row.id);
+    setFields(current => ({ ...current, title: row.title, developer: studio, releaseYear }));
+    setSelectedGenres(Array.isArray(row.genres) ? row.genres : []);
+    setStatus('');
+    setStatusError(false);
+  };
+
+  const clearCatalogGame = () => {
+    setCatalogGame(null);
+    setCatalogId('');
+    setFields(current => ({ ...current, title: '', developer: '', releaseYear: '' }));
+    setSelectedGenres([]);
+  };
 
   const chooseCover = async file => {
     if (!file) return;
@@ -1985,8 +2293,13 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
       Number(trimmedPlaytimeHours) >= 0
     );
 
+    if (!catalogId) {
+      setStatus('Выберите игру из каталога: свободное название добавить нельзя.');
+      setStatusError(true);
+      return;
+    }
     if (!isTValid || !isDValid || !isYValid || !isPValid || !hasCover) {
-      setStatus('Заполните обязательные поля: название, разработчик, год выхода, время прохождения и добавьте обложку.');
+      setStatus('Укажите время прохождения и добавьте обложку: остальные данные берутся из каталога.');
       setStatusError(true);
       return;
     }
@@ -2002,6 +2315,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
     try {
       const result = await window.GameSubmission.submit(window.siteSupabase, {
         ...trimmedFields,
+        catalogId,
         genres: selectedGenres,
         ratings,
         cardDisplay
@@ -2061,42 +2375,38 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
         <div className="add-game-top-grid">
           <div className="add-game-details" aria-label="Данные игры">
             <div className="add-fields">
-              <label className="add-field">Название *
+              <div className="add-field add-field-catalog">
+                <span className="add-field-label">Название *</span>
+                <GameCatalogSearch
+                  selected={catalogGame}
+                  initialQuery={catalogInitialQuery}
+                  disabled={Boolean(isEdit && catalogId)}
+                  onSelect={selectCatalogGame}
+                  onClear={clearCatalogGame}
+                />
+              </div>
+            </div>
+            <div className="add-fields">
+              <label className="add-field">Студия
                 <input
                   type="text"
-                  maxLength="120"
-                  required
-                  value={fields.title}
-                  onChange={event => setValue('title', event.target.value)}
-                  onBlur={event => setValue('title', event.target.value.trim())}
-                  placeholder="Название игры"
+                  readOnly
+                  value={fields.developer}
+                  placeholder="Из каталога"
+                  title="Студия берётся из каталога игр"
                 />
               </label>
-              <label className="add-field">Разработчик *
+              <label className="add-field">Год выхода
                 <input
-                  type="text"
-                  maxLength="120"
-                  required
-                  value={fields.developer}
-                  onChange={event => setValue('developer', event.target.value)}
-                  onBlur={event => setValue('developer', event.target.value.trim())}
-                  placeholder="Студия-разработчик"
+                  type="number"
+                  readOnly
+                  value={fields.releaseYear}
+                  placeholder="Из каталога"
+                  title="Год выхода берётся из каталога игр"
                 />
               </label>
             </div>
             <div className="add-fields add-game-meta-fields">
-              <label className="add-field">Год выхода *
-                <input
-                  type="number"
-                  min="1950"
-                  max="2100"
-                  required
-                  value={fields.releaseYear}
-                  onChange={event => setValue('releaseYear', event.target.value)}
-                  onBlur={event => setValue('releaseYear', String(event.target.value).trim())}
-                  placeholder="Например, 2015"
-                />
-              </label>
               <label className="add-field">Ваше время прохождения, ч. *
                 <input
                   type="number"
@@ -2113,15 +2423,19 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
             </div>
             <div className="add-game-genre-block">
               <span className="add-game-section-label">Жанры</span>
-              <div className="add-game-genres">
-                {ADD_GAME_GENRES.map(genre => (
-                  <button key={genre} type="button" className={`add-game-genre ${selectedGenres.includes(genre) ? 'selected' : ''}`}
-                    aria-pressed={selectedGenres.includes(genre)}
-                    onClick={() => setSelectedGenres(current => current.includes(genre) ? current.filter(item => item !== genre) : [...current, genre])}>
-                    {genre}
-                  </button>
-                ))}
-              </div>
+              {catalogGame ? (
+                selectedGenres.length > 0 ? (
+                  <div className="add-game-genres add-game-genres-readonly">
+                    {selectedGenres.map(genre => (
+                      <span key={genre} className="add-game-genre selected">{genre}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="add-game-hint">В каталоге у этой игры не указаны жанры.</p>
+                )
+              ) : (
+                <p className="add-game-hint">Жанры подставятся из каталога выбранной игры.</p>
+              )}
             </div>
           </div>
 
@@ -2283,7 +2597,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
             title={!isFormValid
               ? (!areAllRatingsSet
                 ? 'Поставьте оценки по всем критериям (сейчас стоят прочерки "-")'
-                : 'Заполните обязательные поля и добавьте обложку')
+                : 'Выберите игру из каталога, укажите время прохождения и добавьте обложку')
               : ''}
           >
             {busy
@@ -2323,7 +2637,7 @@ const AddGamePage = ({ game = null, submission = null }) => {
         const user = authData.session?.user;
         if (!user) throw new Error('Войдите в аккаунт, чтобы изменить заявку.');
         const { data: baseRow, error } = await client.from('game_submissions')
-          .select('id, user_id, title, developer, release_year, genres, image_path, ratings, review, playtime_hours, status')
+          .select('id, user_id, catalog_id, title, developer, release_year, genres, image_path, ratings, review, playtime_hours, status')
           .eq('id', submissionId).eq('user_id', user.id).maybeSingle();
         if (error) throw error;
         let row = baseRow;
@@ -2338,6 +2652,7 @@ const AddGamePage = ({ game = null, submission = null }) => {
           ...row,
           game: {
             id: row.id,
+            catalogId: row.catalog_id || '',
             title: row.title,
             developer: row.developer,
             releaseYear: row.release_year ? String(row.release_year) : '',
@@ -2495,7 +2810,7 @@ const UserSubmissionsPage = () => {
       <section className="submissions-list" aria-live="polite">
         {rows.map(row => (
           <article className={`user-submission-card status-${row.status}`} key={row.id}>
-            {row.signedUrl && <img src={row.signedUrl} alt="" className="user-submission-cover" />}
+            {row.signedUrl && <img src={row.signedUrl} alt="" className="user-submission-cover" loading="lazy" decoding="async" />}
             <div className="user-submission-main">
               <div className="user-submission-title-row">
                 <h2>{row.title}</h2>
@@ -3101,7 +3416,7 @@ const ShareCardModal = ({ isOpen, onClose, stats, catalogProfile }) => {
 
   return (
     <div className="share-modal-backdrop" onClick={onClose}>
-      <div className="share-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="share-modal" role="dialog" aria-modal="true" aria-label="Карточка для соцсетей" onClick={(e) => e.stopPropagation()}>
         <div className="share-modal-header">
           <h3 className="share-modal-title">Карточка для соцсетей</h3>
           <button type="button" className="share-modal-close" onClick={onClose} aria-label="Закрыть">×</button>
@@ -3239,7 +3554,7 @@ const ShareCardModal = ({ isOpen, onClose, stats, catalogProfile }) => {
 };
 
 const StatsPage = ({ games = [], catalogProfile = null }) => {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const isDark = theme === 'dark';
 
   const toggleTheme = () => {
@@ -5643,10 +5958,9 @@ const App = () => {
   });
   const [isModerator, setIsModerator] = useState(() => {
     try {
-      const keys = Object.keys(sessionStorage).filter(k => k.startsWith('site_cached_profile_'));
-      if (keys.length > 0) {
-        const cached = JSON.parse(sessionStorage.getItem(keys[0]) || '{}');
-        return Boolean(cached.is_moderator);
+      if (loadedSessionUserId) {
+        const cached = getCachedProfile(loadedSessionUserId);
+        return Boolean(cached?.is_moderator);
       }
     } catch (_) { }
     return false;
@@ -5720,24 +6034,27 @@ const App = () => {
   useEffect(() => {
     const client = window.siteSupabase;
     if (!client) return;
+    let reloadTriggered = false;
+    const triggerReloadIfUserChanged = (userId) => {
+      if (!reloadTriggered && userId !== loadedSessionUserId) {
+        reloadTriggered = true;
+        loadedSessionUserId = userId;
+        window.location.reload();
+        return true;
+      }
+      return false;
+    };
     client.auth.getSession().then(({ data }) => {
-      const user = data.session && data.session.user ? data.session.user : null;
+      const user = data?.session?.user || null;
       const userId = user ? user.id : null;
+      if (triggerReloadIfUserChanged(userId)) return;
       setIsSignedIn(Boolean(userId));
       setCurrentUser(user);
-      if (userId !== loadedSessionUserId) {
-        loadedSessionUserId = userId;
-        window.location.reload();
-      }
-    });
+    }).catch(() => { });
     const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      const user = session && session.user ? session.user : null;
+      const user = session?.user || null;
       const userId = user ? user.id : null;
-      if (userId !== loadedSessionUserId) {
-        loadedSessionUserId = userId;
-        window.location.reload();
-        return;
-      }
+      if (triggerReloadIfUserChanged(userId)) return;
       setIsSignedIn(Boolean(session));
       setCurrentUser(user);
     });
@@ -5810,15 +6127,20 @@ const App = () => {
       }
     };
 
+    let lastFocusCheck = 0;
     const handleWindowFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusCheck < 15000) return;
+      lastFocusCheck = now;
       if (currentUser && window.siteSupabase) {
         const client = window.siteSupabase;
         client.from('profiles').select('is_moderator').eq('id', currentUser.id).single()
-          .then(({ data: prof }) => {
-            if (prof?.is_moderator) {
-              setIsModerator(true);
-              fetchModerationCount(client);
-            }
+          .then(({ data: prof, error }) => {
+            if (error || !active) return;
+            const isMod = Boolean(prof?.is_moderator);
+            setIsModerator(isMod);
+            if (isMod) fetchModerationCount(client);
+            else setModerationCount(0);
           }).catch(() => { });
       }
     };
@@ -5889,12 +6211,27 @@ const App = () => {
 
   // Scroll Listener
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-      setControlsCompact(window.scrollY > 68);
+    let ticking = false;
+    const updateScrollState = () => {
+      ticking = false;
+      const y = window.scrollY;
+      setShowScrollTop(prev => {
+        const next = y > 300;
+        return prev === next ? prev : next;
+      });
+      setControlsCompact(prev => {
+        const next = y > 68;
+        return prev === next ? prev : next;
+      });
     };
-    handleScroll();
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(updateScrollState);
+      }
+    };
+    updateScrollState();
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -5914,22 +6251,7 @@ const App = () => {
   }, [ratingInfoOpen]);
 
   // Scroll Lock for full-screen modals
-  useEffect(() => {
-    const shouldLockScroll = Boolean(modalGame || compareModalOpen || rouletteOpen);
-    const previousDocumentOverflow = document.documentElement.style.overflow;
-    const previousBodyOverflow = document.body.style.overflow;
-    if (shouldLockScroll) {
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.documentElement.style.overflow = previousDocumentOverflow;
-      document.body.style.overflow = previousBodyOverflow;
-    };
-  }, [modalGame, compareModalOpen, rouletteOpen]);
+  useScrollLock(Boolean(modalGame || compareModalOpen || rouletteOpen));
 
   useEffect(() => {
     const isEditableTarget = (el) => {
@@ -6074,15 +6396,20 @@ const App = () => {
       }
 
       res = res.filter(g => {
-        const gameTitle = normalizeSearchPart(g.title);
-        const gameDeveloper = normalizeSearchPart(g.developer);
+        const titleWords = splitSearchWords(g.title);
+        const devWords = splitSearchWords(g.developer);
         const gameYear = parseInt(g.year, 10) || 0;
         const gameRating = calcRating(g.ratings);
 
         const matchesYear = yearFilters.every(f => {
           if (f.type === 'min') return gameYear >= f.val;
           if (f.type === 'max') return gameYear <= f.val;
-          if (f.type === 'exact') return gameYear === f.val || gameTitle.includes(String(f.val)) || gameDeveloper.includes(String(f.val));
+          if (f.type === 'exact') {
+            const yearToken = String(f.val);
+            return gameYear === f.val
+              || hasWordPrefixMatch(titleWords, [yearToken])
+              || hasWordPrefixMatch(devWords, [yearToken]);
+          }
           return true;
         });
 
@@ -6095,7 +6422,7 @@ const App = () => {
         const matchesInclude = Array.from(detectedGenres).every(gen => g.genres.includes(gen));
         const matchesExclude = Array.from(excludedGenresSearch).every(gen => !g.genres.includes(gen));
         const matchesText = textTokens.every(tok =>
-          gameTitle.includes(tok) || gameDeveloper.includes(tok)
+          hasWordPrefixMatch(titleWords, tok) || hasWordPrefixMatch(devWords, tok)
         );
 
         return matchesYear && matchesRating && matchesInclude && matchesExclude && matchesText;
@@ -6130,14 +6457,16 @@ const App = () => {
     }
     genreClickTimerRef.current = setTimeout(() => {
       genreClickTimerRef.current = null;
-      if (excludedGenres.includes(genre)) {
-        setExcludedGenres(prev => prev.filter(item => item !== genre));
-      } else {
-        setSelectedGenres(prev => prev.includes(genre)
-          ? prev.filter(item => item !== genre)
-          : [...prev, genre]
+      setExcludedGenres(prevExcluded => {
+        if (prevExcluded.includes(genre)) {
+          return prevExcluded.filter(item => item !== genre);
+        }
+        setSelectedGenres(prevSelected => prevSelected.includes(genre)
+          ? prevSelected.filter(item => item !== genre)
+          : [...prevSelected, genre]
         );
-      }
+        return prevExcluded;
+      });
     }, 180);
   };
 
@@ -6197,7 +6526,7 @@ const App = () => {
     setExcludedGenres([]);
   };
 
-  const navigateToGame = (game) => {
+  const navigateToGame = useCallback((game) => {
     const url = new URL(window.location.href);
     url.searchParams.set('game', game.id);
     window.history.pushState({ gameId: game.id }, '', url);
@@ -6206,9 +6535,9 @@ const App = () => {
     setRouletteOpen(false);
     setSpeedDialOpen(false);
     window.scrollTo({ top: 0, behavior: 'auto' });
-  };
+  }, []);
 
-  const openGameFromComment = (game) => {
+  const openGameFromComment = useCallback((game) => {
     setCommentsDrawerOpen(false);
     setSpeedDialOpen(false);
     if (isMobile) {
@@ -6216,17 +6545,17 @@ const App = () => {
     } else {
       setModalGame(game);
     }
-  };
+  }, [isMobile, navigateToGame]);
 
-  const closeGamePage = () => {
+  const closeGamePage = useCallback(() => {
     const url = new URL(window.location.href);
     url.searchParams.delete('game');
     window.history.pushState({}, '', url);
     setGamePage(null);
     window.scrollTo({ top: 0, behavior: 'auto' });
-  };
+  }, []);
 
-  const handleCardClick = (game) => {
+  const handleCardClick = useCallback((game) => {
     if (compareMode) {
       setSelectedGames(prev => {
         const next = prev.includes(game.id) ? prev.filter(id => id !== game.id) : [...prev, game.id];
@@ -6240,9 +6569,9 @@ const App = () => {
     } else {
       setModalGame(game);
     }
-  };
+  }, [compareMode, isMobile, navigateToGame]);
 
-  const openGameEditor = (game) => {
+  const openGameEditor = useCallback((game) => {
     if (!isSignedIn) {
       setAuthModalTab('signin');
       setAuthModalOpen(true);
@@ -6251,13 +6580,13 @@ const App = () => {
     if (!canEditCatalog) return;
     setModalGame(null);
     window.open(`./add-game?edit=${encodeURIComponent(game.id)}`, '_blank', 'noopener,noreferrer');
-  };
+  }, [isSignedIn, canEditCatalog]);
 
-  const handleCardLongPress = (game) => {
+  const handleCardLongPress = useCallback((game) => {
     setCompareMode(true);
     setSelectedGames(prev => (prev.includes(game.id) ? prev : [...prev, game.id]));
     setSpeedDialOpen(false);
-  };
+  }, []);
 
   const handleCompareConfirm = () => {
     if (selectedGames.length < 2) return alert("Выберите хотя бы 2 игры.");
@@ -6284,7 +6613,7 @@ const App = () => {
   return (
     <div>
       {/* Scroll to Top */}
-      <button id="scroll-to-top" className={showScrollTop ? 'visible' : ''} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>↑</button>
+      <button id="scroll-to-top" type="button" className={showScrollTop ? 'visible' : ''} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Наверх" title="Наверх">↑</button>
 
       {/* Жанровая панель */}
       <aside
@@ -6326,7 +6655,7 @@ const App = () => {
 
       {/* ═══ SPEED DIAL (Веер-кнопка) ═══ */}
       <nav className={`speed-dial ${speedDialOpen ? 'open' : ''}`} id="speed-dial" aria-label="Быстрые действия">
-        <button className="speed-dial-main" onClick={() => { setSpeedDialOpen(o => !o); setShowGenrePanel(false); }} title="Меню">
+        <button type="button" className="speed-dial-main" onClick={() => { setSpeedDialOpen(o => !o); setShowGenrePanel(false); }} title="Меню" aria-label="Меню быстрых действий" aria-expanded={speedDialOpen}>
           <div className="menu__icon">
             <span></span>
             <span></span>
@@ -6457,7 +6786,7 @@ const App = () => {
             }}
           >
             {profileAvatarUrl
-              ? <img className="account-avatar-image" src={profileAvatarUrl} alt="" />
+              ? <img className="account-avatar-image" src={profileAvatarUrl} alt="" width="34" height="34" decoding="async" />
               : <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
             {isModerator && moderationCount > 0 && (
               <span
@@ -6550,7 +6879,7 @@ const App = () => {
               aria-label="Добавить новую игру"
               title="Добавить новую игру"
             >
-              <img className="add-game-svg" src="svg/addnew.svg" alt="Добавить новую игру" />
+              <img className="add-game-svg" src="/svg/addnew.svg" alt="Добавить новую игру" width="252" height="139" decoding="async" />
             </a>}
             <button
               className="find-libraries-trigger"
@@ -6563,7 +6892,7 @@ const App = () => {
                 setLibraryDrawerOpen(true);
               }}
             >
-              <img className="find-libraries-svg" src="svg/lib.svg" alt="Библиотеки других" />
+              <img className="find-libraries-svg" src="/svg/lib.svg" alt="Библиотеки других" width="278" height="98" decoding="async" />
             </button>
             {viewedCatalogProfile && (
               <button
@@ -6578,7 +6907,7 @@ const App = () => {
                   setCommentsDrawerOpen(true);
                 }}
               >
-                <img className="comments-svg" src="svg/comments.svg" alt="Комментарии" />
+                <img className="comments-svg" src="/svg/comments.svg" alt="Комментарии" width="314" height="91" decoding="async" />
               </button>
             )}
             {viewedCatalogProfile && (
@@ -6594,7 +6923,7 @@ const App = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <img className="stats-svg" src="svg/stats.svg" alt="Статистика" />
+                <img className="stats-svg" src="/svg/stats.svg" alt="Статистика" width="312" height="61" decoding="async" />
               </a>
             )}
           </nav>
@@ -6688,8 +7017,8 @@ const App = () => {
           {compareMode && (
             <>
               <div className="controls-separator" />
-              <button className="btn btn-green compare-confirm-btn" onClick={handleCompareConfirm}>Сравнить {selectedGames.length}</button>
-              <button className="btn btn-red" onClick={cancelCompare}>✕</button>
+              <button type="button" className="btn btn-green compare-confirm-btn" onClick={handleCompareConfirm}>Сравнить {selectedGames.length}</button>
+              <button type="button" className="btn btn-red" onClick={cancelCompare} aria-label="Отменить сравнение" title="Отменить сравнение">✕</button>
             </>
           )}
         </section>
@@ -6704,9 +7033,10 @@ const App = () => {
                 key={game.id}
                 game={game}
                 view={activeView}
-                onClick={() => handleCardClick(game)}
-                onLongPress={() => handleCardLongPress(game)}
+                onClick={handleCardClick}
+                onLongPress={handleCardLongPress}
                 selected={selectedGames.includes(game.id)}
+                compareMode={compareMode}
                 index={i}
                 sortBy={sortBy}
               />
@@ -6842,13 +7172,14 @@ const App = () => {
   );
 };
 
-const Card = forwardRef(({ game, view, onClick, onLongPress, selected, index, sortBy }, forwardedRef) => {
+const Card = memo(forwardRef(({ game, view, onClick, onLongPress, selected, compareMode = false, index, sortBy }, forwardedRef) => {
   const cardRef = useRef(null);
   const contentRef = useRef(null);
   const longPressTimerRef = useRef(null);
   const longPressTriggeredRef = useRef(false);
   const pointerStartRef = useRef({ x: 0, y: 0 });
   const previousSelectedRef = useRef(selected);
+  const tiltFrameRef = useRef(0);
   const [isDeselecting, setIsDeselecting] = useState(false);
 
   const clearLongPressTimer = () => {
@@ -6859,7 +7190,10 @@ const Card = forwardRef(({ game, view, onClick, onLongPress, selected, index, so
   };
 
   useEffect(() => {
-    return () => clearLongPressTimer();
+    return () => {
+      clearLongPressTimer();
+      if (tiltFrameRef.current) cancelAnimationFrame(tiltFrameRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -6880,30 +7214,41 @@ const Card = forwardRef(({ game, view, onClick, onLongPress, selected, index, so
   const handleMouseMove = (e) => {
     if (view === 'grid') return;
     if (!cardRef.current || !contentRef.current) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
 
-    const wrapper = cardRef.current;
-    const card = contentRef.current;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    if (tiltFrameRef.current) return;
+    tiltFrameRef.current = requestAnimationFrame(() => {
+      tiltFrameRef.current = 0;
+      const wrapper = cardRef.current;
+      const card = contentRef.current;
+      if (!wrapper || !card) return;
 
-    const rect = wrapper.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+      const rect = wrapper.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
 
-    const w = rect.width;
-    const h = rect.height;
+      const w = rect.width || 1;
+      const h = rect.height || 1;
 
-    // Normalize -1 to 1
-    const xNorm = (x / w) * 2 - 1;
-    const yNorm = (y / h) * 2 - 1;
+      const xNorm = (x / w) * 2 - 1;
+      const yNorm = (y / h) * 2 - 1;
 
-    const maxTilt = 5;
-    const rotateX = yNorm * maxTilt * -1;
-    const rotateY = xNorm * maxTilt;
+      const maxTilt = 5;
+      const rotateX = yNorm * maxTilt * -1;
+      const rotateY = xNorm * maxTilt;
 
-    card.style.transition = 'transform 0.1s ease-out';
-    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      card.style.transition = 'transform 0.1s ease-out';
+      card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    });
   };
 
   const handleMouseLeave = () => {
+    if (tiltFrameRef.current) {
+      cancelAnimationFrame(tiltFrameRef.current);
+      tiltFrameRef.current = 0;
+    }
     if (!contentRef.current) return;
     const card = contentRef.current;
     card.style.transition = 'transform 0.5s ease-out';
@@ -6920,7 +7265,7 @@ const Card = forwardRef(({ game, view, onClick, onLongPress, selected, index, so
     clearLongPressTimer();
     longPressTimerRef.current = setTimeout(() => {
       longPressTriggeredRef.current = true;
-      onLongPress();
+      onLongPress(game);
     }, 420);
   };
 
@@ -6949,7 +7294,7 @@ const Card = forwardRef(({ game, view, onClick, onLongPress, selected, index, so
       e.stopPropagation();
       return;
     }
-    onClick();
+    onClick(game);
   };
 
   const setCardRef = (node) => {
@@ -7001,6 +7346,7 @@ const Card = forwardRef(({ game, view, onClick, onLongPress, selected, index, so
       }}
       tabIndex={index === 0 ? 0 : -1}
       role="button"
+      aria-pressed={compareMode ? selected : undefined}
       aria-label={`Открыть карточку игры ${game.title}`}
       title={`Открыть карточку игры ${game.title}`}
       transition={{
@@ -7036,7 +7382,7 @@ const Card = forwardRef(({ game, view, onClick, onLongPress, selected, index, so
       </div>
     </motion.article>
   );
-});
+}));
 
 Card.displayName = 'Card';
 
@@ -7404,9 +7750,11 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => 
   // Keyboard navigation — подписка один раз, navigate берётся из ref
   useEffect(() => {
     const handleKey = (e) => {
+      const target = e.target;
+      const tag = (target?.tagName || '').toLowerCase();
+      if (target?.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select') return;
       if (e.key === 'ArrowDown') { e.preventDefault(); navigateRef.current(1); }
       if (e.key === 'ArrowUp') { e.preventDefault(); navigateRef.current(-1); }
-      if (e.key === 'Escape') { onClose(); }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
@@ -7818,6 +8166,9 @@ const CompareModal = ({ selectedGameIds, onClose, theme }) => {
     <motion.div id="game-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div
         className="modal-content compare-mode"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Сравнение игр"
         onClick={e => e.stopPropagation()}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -7970,7 +8321,7 @@ const RouletteModal = ({ onClose, onSelect }) => {
 
   return (
     <motion.div id="roulette-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <div className="roulette-box" onClick={e => e.stopPropagation()}>
+      <div className="roulette-box" role="dialog" aria-modal="true" aria-label="Во что сыграть?" onClick={e => e.stopPropagation()}>
         <button type="button" className="close-btn" onClick={onClose} aria-label="Закрыть рулетку" title="Закрыть" style={{ position: 'absolute', top: 15, right: 20, fontSize: 30, cursor: 'pointer' }}>×</button>
         <h2>Во что сыграть?</h2>
         <div className="roulette-window" ref={windowRef}>
@@ -8013,9 +8364,10 @@ gameDataPromise
   })
   .catch(error => {
     console.error('Не удалось загрузить данные каталога:', error);
-    document.getElementById('root').innerHTML =
-      '<div style="padding: 40px; text-align: center;">' +
-      '<div>Не удалось загрузить данные каталога.</div>' +
-      '<div style="margin-top: 12px; font-size: 0.9em; opacity: 0.75;">Попробуйте перезагрузить страницу позже.</div>' +
-      '</div>';
+    root.render(
+      <div style={{ padding: '40px', textAlign: 'center' }} role="alert">
+        <div>Не удалось загрузить данные каталога.</div>
+        <div style={{ marginTop: '12px', fontSize: '0.9em', opacity: 0.75 }}>Попробуйте перезагрузить страницу позже.</div>
+      </div>
+    );
   });

@@ -1,0 +1,982 @@
+{
+  "version": 1,
+  "games": [
+    {
+      "id": "the-witcher-3-wild-hunt",
+      "title": "The Witcher 3: Wild Hunt",
+      "studio": "CD Projekt Red",
+      "year": 2015,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "red-dead-redemption-2",
+      "title": "Red Dead Redemption 2",
+      "studio": "Rockstar Games",
+      "year": 2018,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "cyberpunk-2077",
+      "title": "Cyberpunk 2077",
+      "studio": "CD Projekt Red",
+      "year": 2020,
+      "genres": [
+        "Киберпанк",
+        "Научная фантастика",
+        "Открытый мир",
+        "РПГ",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "the-last-of-us-part-i",
+      "title": "The Last of Us Part I",
+      "studio": "Naughty Dog",
+      "year": 2023,
+      "genres": [
+        "Выживание",
+        "Постапокалипсис",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Хоррор",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "alan-wake-2",
+      "title": "Alan Wake 2",
+      "studio": "Remedy Entertainment",
+      "year": 2023,
+      "genres": [
+        "Выживание",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "clair-obscur-expedition-33",
+      "title": "Clair Obscur: Expedition 33",
+      "studio": "Sandfall Interactive",
+      "year": 2025,
+      "genres": [
+        "РПГ",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "hollow-knight-silksong",
+      "title": "Hollow Knight: Silksong",
+      "studio": "Team Cherry",
+      "year": 2025,
+      "genres": [
+        "Инди",
+        "Метроидвания",
+        "Платформер",
+        "Соулс-лайк",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "007-first-light",
+      "title": "007 First Light",
+      "studio": "IO Interactive",
+      "year": 2026,
+      "genres": [
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "split-fiction",
+      "title": "Split Fiction",
+      "studio": "Hazelight Studios",
+      "year": 2025,
+      "genres": [
+        "Головоломка",
+        "Кооператив",
+        "Научная фантастика",
+        "Платформер",
+        "Приключение",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "grand-theft-auto-v",
+      "title": "Grand Theft Auto V",
+      "studio": "Rockstar Games",
+      "year": 2013,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "hollow-knight",
+      "title": "Hollow Knight",
+      "studio": "Team Cherry",
+      "year": 2017,
+      "genres": [
+        "Инди",
+        "Метроидвания",
+        "Платформер",
+        "Соулс-лайк",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "divinity-original-sin-2",
+      "title": "Divinity: Original Sin 2",
+      "studio": "Larian Studios",
+      "year": 2017,
+      "genres": [
+        "Кооператив",
+        "Приключение",
+        "РПГ",
+        "Сюжетная",
+        "Фэнтези"
+      ]
+    },
+    {
+      "id": "silent-hill-2-remake",
+      "title": "Silent Hill 2 Remake",
+      "studio": "Bloober Team",
+      "year": 2024,
+      "genres": [
+        "Головоломка",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "the-last-of-us-part-ii",
+      "title": "The Last of Us Part II",
+      "studio": "Naughty Dog",
+      "year": 2025,
+      "genres": [
+        "Выживание",
+        "Постапокалипсис",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Хоррор",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "the-elder-scrolls-v-skyrim-special-edition",
+      "title": "The Elder Scrolls V: Skyrim Special Edition",
+      "studio": "Bethesda Game Studios",
+      "year": 2016,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "the-witcher-2-assassins-of-kings",
+      "title": "The Witcher 2: Assassins of Kings",
+      "studio": "CD Projekt Red",
+      "year": 2011,
+      "genres": [
+        "РПГ",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "the-callisto-protocol",
+      "title": "The Callisto Protocol",
+      "studio": "Striking Distance Studios",
+      "year": 2022,
+      "genres": [
+        "Выживание",
+        "Научная фантастика",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "resident-evil-requiem",
+      "title": "Resident Evil Requiem",
+      "studio": "Capcom",
+      "year": 2026,
+      "genres": [
+        "Выживание",
+        "Головоломка",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "black-myth-wukong",
+      "title": "Black Myth: Wukong",
+      "studio": "Game Science",
+      "year": 2024,
+      "genres": [
+        "РПГ",
+        "Соулс-лайк",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "dead-space-remake",
+      "title": "Dead Space Remake",
+      "studio": "Motive Studio",
+      "year": 2023,
+      "genres": [
+        "Выживание",
+        "Научная фантастика",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "the-walking-dead-season-two",
+      "title": "The Walking Dead: Season Two",
+      "studio": "Telltale Games",
+      "year": 2013,
+      "genres": [
+        "Интерактивное кино",
+        "Постапокалипсис",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "the-walking-dead",
+      "title": "The Walking Dead",
+      "studio": "Telltale Games",
+      "year": 2012,
+      "genres": [
+        "Интерактивное кино",
+        "Постапокалипсис",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "detroit-become-human",
+      "title": "Detroit: Become Human",
+      "studio": "Quantic Dream",
+      "year": 2018,
+      "genres": [
+        "Интерактивное кино",
+        "Научная фантастика",
+        "Приключение",
+        "Сюжетная",
+        "QTE"
+      ]
+    },
+    {
+      "id": "elden-ring",
+      "title": "Elden Ring",
+      "studio": "FromSoftware",
+      "year": 2022,
+      "genres": [
+        "Открытый мир",
+        "РПГ",
+        "Соулс-лайк",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "god-of-war-2018",
+      "title": "God of War",
+      "studio": "Santa Monica Studio",
+      "year": 2022,
+      "genres": [
+        "Приключение",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "the-witcher",
+      "title": "The Witcher",
+      "studio": "CD Projekt Red",
+      "year": 2007,
+      "genres": [
+        "РПГ",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "doom-the-dark-ages",
+      "title": "Doom: The Dark Ages",
+      "studio": "id Software",
+      "year": 2025,
+      "genres": [
+        "Научная фантастика",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "reanimal",
+      "title": "REANIMAL",
+      "studio": "Tarsier Studios",
+      "year": 2026,
+      "genres": [
+        "Головоломка",
+        "Кооператив",
+        "Платформер",
+        "Приключение",
+        "Стелс",
+        "Хоррор",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "resident-evil-4-remake",
+      "title": "Resident Evil 4 Remake",
+      "studio": "Capcom",
+      "year": 2023,
+      "genres": [
+        "Выживание",
+        "Головоломка",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "dead-island-2",
+      "title": "Dead Island 2",
+      "studio": "Dambuster Studios",
+      "year": 2024,
+      "genres": [
+        "Постапокалипсис",
+        "Приключение",
+        "РПГ",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "batman-arkham-knight",
+      "title": "Batman: Arkham Knight",
+      "studio": "Rocksteady Studios",
+      "year": 2015,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "heavy-rain",
+      "title": "Heavy Rain",
+      "studio": "Quantic Dream",
+      "year": 2019,
+      "genres": [
+        "Интерактивное кино",
+        "Приключение",
+        "Сюжетная",
+        "QTE"
+      ]
+    },
+    {
+      "id": "resident-evil-village",
+      "title": "Resident Evil Village",
+      "studio": "Capcom",
+      "year": 2021,
+      "genres": [
+        "Выживание",
+        "Головоломка",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "half-life-2",
+      "title": "Half Life 2",
+      "studio": "Valve",
+      "year": 2004,
+      "genres": [
+        "Головоломка",
+        "Научная фантастика",
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "it-takes-two",
+      "title": "It Takes Two",
+      "studio": "Hazelight Studios",
+      "year": 2021,
+      "genres": [
+        "Головоломка",
+        "Кооператив",
+        "Платформер",
+        "Приключение",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "pragmata",
+      "title": "PRAGMATA",
+      "studio": "Capcom",
+      "year": 2026,
+      "genres": [
+        "Научная фантастика",
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "ori-and-the-will-of-the-wisps",
+      "title": "Ori and the Will of the Wisps",
+      "studio": "Moon Studios",
+      "year": 2020,
+      "genres": [
+        "Головоломка",
+        "Инди",
+        "Метроидвания",
+        "Открытый мир",
+        "Платформер",
+        "Приключение",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "little-nightmares-2",
+      "title": "Little Nightmares 2",
+      "studio": "Tarsier Studios",
+      "year": 2021,
+      "genres": [
+        "Головоломка",
+        "Инди",
+        "Платформер",
+        "Стелс",
+        "Сюжетная",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "outlast-2",
+      "title": "Outlast 2",
+      "studio": "Red Barrels",
+      "year": 2017,
+      "genres": [
+        "Выживание",
+        "Инди",
+        "Стелс",
+        "Сюжетная",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "resident-evil-7-biohazard",
+      "title": "Resident Evil 7: Biohazard",
+      "studio": "Capcom",
+      "year": 2017,
+      "genres": [
+        "Выживание",
+        "Головоломка",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "what-remains-of-edith-finch",
+      "title": "What Remains of Edith Finch",
+      "studio": "Giant Sparrow",
+      "year": 2017,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "portal-2",
+      "title": "Portal 2",
+      "studio": "Valve",
+      "year": 2011,
+      "genres": [
+        "Головоломка",
+        "Кооператив",
+        "Научная фантастика",
+        "Платформер",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "high-on-life",
+      "title": "High on Life",
+      "studio": "Squanch Games",
+      "year": 2022,
+      "genres": [
+        "Метроидвания",
+        "Научная фантастика",
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "alan-wake",
+      "title": "Alan Wake",
+      "studio": "Remedy Entertainment",
+      "year": 2021,
+      "genres": [
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "atomic-heart",
+      "title": "Atomic Heart",
+      "studio": "Mundfish",
+      "year": 2023,
+      "genres": [
+        "Научная фантастика",
+        "Открытый мир",
+        "РПГ",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "beyond-two-souls",
+      "title": "Beyond: Two Souls",
+      "studio": "Quantic Dream",
+      "year": 2019,
+      "genres": [
+        "Интерактивное кино",
+        "Научная фантастика",
+        "Приключение",
+        "Сюжетная",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "outlast",
+      "title": "Outlast",
+      "studio": "Red Barrels",
+      "year": 2013,
+      "genres": [
+        "Выживание",
+        "Инди",
+        "Стелс",
+        "Сюжетная",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "doom-eternal",
+      "title": "Doom Eternal",
+      "studio": "id Software",
+      "year": 2020,
+      "genres": [
+        "Научная фантастика",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "inside",
+      "title": "Inside",
+      "studio": "Playdead",
+      "year": 2016,
+      "genres": [
+        "Головоломка",
+        "Инди",
+        "Научная фантастика",
+        "Платформер",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "inscryption",
+      "title": "Inscryption",
+      "studio": "Daniel Mullins Games",
+      "year": 2021,
+      "genres": [
+        "Головоломка",
+        "Инди",
+        "Карточная",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "hellblade-senua-s-sacrifice",
+      "title": "Hellblade: Senua's Sacrifice",
+      "studio": "Ninja Theory",
+      "year": 2017,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "Сюжетная",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "a-plague-tale-innocence",
+      "title": "A Plague Tale: Innocence",
+      "studio": "Asobo Studio",
+      "year": 2019,
+      "genres": [
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "resident-evil-2-remake",
+      "title": "Resident Evil 2 Remake",
+      "studio": "Capcom",
+      "year": 2019,
+      "genres": [
+        "Выживание",
+        "Головоломка",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "little-nightmares",
+      "title": "Little Nightmares",
+      "studio": "Tarsier Studios",
+      "year": 2017,
+      "genres": [
+        "Головоломка",
+        "Инди",
+        "Платформер",
+        "Стелс",
+        "Сюжетная",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "thronebreaker-the-witcher-tales",
+      "title": "Thronebreaker: The Witcher Tales",
+      "studio": "CD Projekt Red",
+      "year": 2018,
+      "genres": [
+        "Головоломка",
+        "Карточная",
+        "РПГ",
+        "Сюжетная",
+        "Фэнтези"
+      ]
+    },
+    {
+      "id": "doom-2016",
+      "title": "Doom (2016)",
+      "studio": "id Software",
+      "year": 2016,
+      "genres": [
+        "Научная фантастика",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "limbo",
+      "title": "Limbo",
+      "studio": "Playdead",
+      "year": 2011,
+      "genres": [
+        "Головоломка",
+        "Инди",
+        "Платформер"
+      ]
+    },
+    {
+      "id": "a-way-out",
+      "title": "A Way Out",
+      "studio": "Hazelight Studios",
+      "year": 2018,
+      "genres": [
+        "Инди",
+        "Кооператив",
+        "Приключение",
+        "Сюжетная",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "scorn",
+      "title": "Scorn",
+      "studio": "Ebb Software",
+      "year": 2022,
+      "genres": [
+        "Выживание",
+        "Головоломка",
+        "Приключение",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "firewatch",
+      "title": "Firewatch",
+      "studio": "Campo Santo",
+      "year": 2016,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "still-wakes-the-deep",
+      "title": "Still Wakes the Deep",
+      "studio": "The Chinese Room",
+      "year": 2024,
+      "genres": [
+        "Инди",
+        "Научная фантастика",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "far-cry-3",
+      "title": "Far Cry 3",
+      "studio": "Ubisoft Montreal",
+      "year": 2012,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "stray",
+      "title": "Stray",
+      "studio": "BlueTwelve Studio",
+      "year": 2022,
+      "genres": [
+        "Головоломка",
+        "Инди",
+        "Киберпанк",
+        "Научная фантастика",
+        "Приключение",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "lies-of-p",
+      "title": "Lies of P",
+      "studio": "Nough Studio",
+      "year": 2023,
+      "genres": [
+        "РПГ",
+        "Соулс-лайк",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "ori-and-the-blind-forest-definitive-edition",
+      "title": "Ori and the Blind Forest: Definitive Edition",
+      "studio": "Moon Studios",
+      "year": 2016,
+      "genres": [
+        "Головоломка",
+        "Инди",
+        "Метроидвания",
+        "Открытый мир",
+        "Платформер",
+        "Приключение",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "shadow-of-the-colossus",
+      "title": "Shadow of the Colossus",
+      "studio": "Team Ico",
+      "year": 2018,
+      "genres": [
+        "Головоломка",
+        "Платформер",
+        "Приключение",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "just-cause-3",
+      "title": "Just Cause 3",
+      "studio": "Avalanche Studios",
+      "year": 2015,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "dredge",
+      "title": "DREDGE",
+      "studio": "Black Salt Games",
+      "year": 2023,
+      "genres": [
+        "Выживание",
+        "Инди",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "kholat",
+      "title": "Kholat",
+      "studio": "IMGN.PRO",
+      "year": 2015,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "my-friend-pedro",
+      "title": "My Friend Pedro",
+      "studio": "DeadToast Entertainment",
+      "year": 2019,
+      "genres": [
+        "Инди",
+        "Платформер",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "fahrenheit-indigo-prophecy-remastered",
+      "title": "Fahrenheit: Indigo Prophecy Remastered",
+      "studio": "Quantic Dream",
+      "year": 2015,
+      "genres": [
+        "Интерактивное кино",
+        "Научная фантастика",
+        "Приключение",
+        "Сюжетная",
+        "QTE"
+      ]
+    },
+    {
+      "id": "mafia-ii",
+      "title": "Mafia II",
+      "studio": "2K Czech",
+      "year": 2010,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "fran-bow",
+      "title": "Fran Bow",
+      "studio": "Killmonday Games",
+      "year": 2015,
+      "genres": [
+        "Головоломка",
+        "Инди",
+        "Хоррор",
+        "Приключение",
+        "Сюжетная",
+        "Фэнтези"
+      ]
+    }
+  ]
+}

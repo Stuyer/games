@@ -47,11 +47,10 @@
       'image/png': 'png',
       'image/gif': 'gif',
       'image/bmp': 'bmp',
-      'image/svg+xml': 'svg',
       'image/avif': 'avif',
       'image/webp': 'webp'
     };
-    return extensions[contentType] || 'img';
+    return extensions[contentType] || 'webp';
   }
 
   async function submit(supabase, values, cover, existingGame = null, existingSubmission = null) {
@@ -85,9 +84,9 @@
     const trimmedHours = values.playtimeHours !== null && values.playtimeHours !== undefined ? String(values.playtimeHours).trim() : '';
     const trimmedReview = (values.review || '').trim();
 
-    if (!trimmedTitle) throw new Error('Заполните название игры.');
-    if (!trimmedDev) throw new Error('Заполните разработчика игры.');
-    if (!trimmedYear || isNaN(Number(trimmedYear))) throw new Error('Укажите год выхода игры.');
+    if (!values.catalogId) throw new Error('Выберите игру из каталога: свободное название добавить нельзя.');
+    if (!trimmedTitle) throw new Error('Выберите игру из каталога.');
+    if (!trimmedYear || isNaN(Number(trimmedYear))) throw new Error('У игры в каталоге не указан год выхода.');
     if (trimmedHours === '' || isNaN(Number(trimmedHours))) {
       throw new Error('Укажите время прохождения игры.');
     }
@@ -95,6 +94,7 @@
 
     const game = {
       id: submissionId,
+      catalog_id: values.catalogId,
       title: trimmedTitle,
       developer: trimmedDev,
       release_year: Number(trimmedYear),
@@ -117,6 +117,7 @@
       if (existingSubmission) {
         result = await supabase.from('game_submissions')
           .update({
+            catalog_id: game.catalog_id,
             title: game.title,
             developer: game.developer,
             release_year: game.release_year,
@@ -137,6 +138,7 @@
       } else if (existingGame && profile.is_moderator) {
         result = await supabase.from('games')
           .update({
+            catalog_id: game.catalog_id,
             title: game.title,
             developer: game.developer,
             release_year: game.release_year,
