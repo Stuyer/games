@@ -977,6 +977,653 @@
         "Сюжетная",
         "Фэнтези"
       ]
+    },
+    {
+      "id": "baldurs-gate-3",
+      "title": "Baldur's Gate 3",
+      "studio": "Larian Studios",
+      "year": 2023,
+      "genres": [
+        "РПГ",
+        "Приключение",
+        "Сюжетная",
+        "Кооператив",
+        "Фэнтези"
+      ]
+    },
+    {
+      "id": "mass-effect-legendary-edition",
+      "title": "Mass Effect Legendary Edition",
+      "studio": "BioWare",
+      "year": 2021,
+      "genres": [
+        "РПГ",
+        "Экшен",
+        "Шутер",
+        "Сюжетная",
+        "Научная фантастика"
+      ]
+    },
+    {
+      "id": "bioshock-infinite",
+      "title": "BioShock Infinite",
+      "studio": "Irrational Games",
+      "year": 2013,
+      "genres": [
+        "Экшен",
+        "Приключение",
+        "Шутер",
+        "Сюжетная",
+        "Научная фантастика"
+      ]
+    },
+    {
+      "id": "dishonored",
+      "title": "Dishonored",
+      "studio": "Arkane Studios",
+      "year": 2012,
+      "genres": [
+        "Приключение",
+        "Шутер",
+        "Сюжетная",
+        "Стелс"
+      ]
+    },
+    {
+      "id": "dishonored-2",
+      "title": "Dishonored 2",
+      "studio": "Arkane Studios",
+      "year": 2016,
+      "genres": [
+        "Приключение",
+        "Шутер",
+        "Сюжетная",
+        "Стелс"
+      ]
+    },
+    {
+      "id": "metro-2033",
+      "title": "Metro 2033",
+      "studio": "4A Games",
+      "year": 2010,
+      "genres": [
+        "Экшен",
+        "Хоррор",
+        "Приключение",
+        "Шутер",
+        "Сюжетная",
+        "Стелс",
+        "Выживание",
+        "Постапокалипсис"
+      ]
+    },
+    {
+      "id": "metro-last-light",
+      "title": "Metro Last Light",
+      "studio": "4A Games",
+      "year": 2013,
+      "genres": [
+        "Экшен",
+        "Хоррор",
+        "Приключение",
+        "Шутер",
+        "Сюжетная",
+        "Стелс",
+        "Выживание",
+        "Постапокалипсис"
+      ]
+    },
+    {
+      "id": "metro-exodus",
+      "title": "Metro Exodus",
+      "studio": "4A Games",
+      "year": 2019,
+      "genres": [
+        "Экшен",
+        "Хоррор",
+        "Приключение",
+        "Шутер",
+        "Сюжетная",
+        "Стелс",
+        "Выживание",
+        "Постапокалипсис"
+      ]
+    },
+    {
+      "id": "stalker-shadow-of-chernobyl",
+      "title": "S.T.A.L.K.E.R.: Shadow of Chernobyl",
+      "studio": "GSC Game World",
+      "year": 2007,
+      "genres": [
+        "Экшен",
+        "Приключение",
+        "Шутер",
+        "Сюжетная",
+        "Выживание",
+        "Научная фантастика",
+        "Постапокалипсис"
+      ]
+    },
+    {
+      "id": "stalker-2-heart-of-chornobyl",
+      "title": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+      "studio": "GSC Game World",
+      "year": 2025,
+      "genres": [
+        "Экшен",
+        "Приключение",
+        "Шутер",
+        "Сюжетная",
+        "Выживание",
+        "Научная фантастика",
+        "Постапокалипсис"
+      ]
+    },
+    {
+      "id": "fallout-3",
+      "title": "Fallout 3",
+      "studio": "Bethesda Game Studios",
+      "year": 2008,
+      "genres": [
+        "Открытый мир",
+        "Постапокалипсис",
+        "Приключение",
+        "РПГ",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "fallout-new-vegas",
+      "title": "Fallout: New Vegas",
+      "studio": "Obsidian Entertainment",
+      "year": 2010,
+      "genres": [
+        "Открытый мир",
+        "Постапокалипсис",
+        "Приключение",
+        "РПГ",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "fallout-4",
+      "title": "Fallout 4",
+      "studio": "Bethesda Game Studios",
+      "year": 2015,
+      "genres": [
+        "Выживание",
+        "Открытый мир",
+        "Постапокалипсис",
+        "Приключение",
+        "РПГ",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "assassins-creed-ii",
+      "title": "Assassin's Creed II",
+      "studio": "Ubisoft Montreal",
+      "year": 2009,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "assassins-creed-iv-black-flag",
+      "title": "Assassin's Creed IV: Black Flag",
+      "studio": "Ubisoft Montreal",
+      "year": 2013,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "assassins-creed-odyssey",
+      "title": "Assassin's Creed Odyssey",
+      "studio": "Ubisoft Quebec",
+      "year": 2018,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "assassins-creed-valhalla",
+      "title": "Assassin's Creed Valhalla",
+      "studio": "Ubisoft Montreal",
+      "year": 2020,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "assassins-creed-shadows",
+      "title": "Assassin's Creed Shadows",
+      "studio": "Ubisoft Quebec",
+      "year": 2025,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "kingdom-come-deliverance",
+      "title": "Kingdom Come: Deliverance",
+      "studio": "Warhorse Studios",
+      "year": 2018,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "kingdom-come-deliverance-ii",
+      "title": "Kingdom Come: Deliverance II",
+      "studio": "Warhorse Studios",
+      "year": 2025,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "death-stranding",
+      "title": "Death Stranding",
+      "studio": "Kojima Productions",
+      "year": 2019,
+      "genres": [
+        "Научная фантастика",
+        "Открытый мир",
+        "Постапокалипсис",
+        "Приключение",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "death-stranding-2-on-the-beach",
+      "title": "Death Stranding 2: On the Beach",
+      "studio": "Kojima Productions",
+      "year": 2025,
+      "genres": [
+        "Научная фантастика",
+        "Открытый мир",
+        "Постапокалипсис",
+        "Приключение",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "control",
+      "title": "Control",
+      "studio": "Remedy Entertainment",
+      "year": 2019,
+      "genres": [
+        "Метроидвания",
+        "Научная фантастика",
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "max-payne",
+      "title": "Max Payne",
+      "studio": "Remedy Entertainment",
+      "year": 2001,
+      "genres": [
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "max-payne-2-the-fall-of-max-payne",
+      "title": "Max Payne 2: The Fall of Max Payne",
+      "studio": "Remedy Entertainment",
+      "year": 2003,
+      "genres": [
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "max-payne-3",
+      "title": "Max Payne 3",
+      "studio": "Rockstar Studios",
+      "year": 2012,
+      "genres": [
+        "Приключение",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "subnautica",
+      "title": "Subnautica",
+      "studio": "Unknown Worlds Entertainment",
+      "year": 2018,
+      "genres": [
+        "Выживание",
+        "Инди",
+        "Научная фантастика",
+        "Открытый мир",
+        "Приключение",
+        "Хоррор"
+      ]
+    },
+    {
+      "id": "subnautica-below-zero",
+      "title": "Subnautica: Below Zero",
+      "studio": "Unknown Worlds Entertainment",
+      "year": 2021,
+      "genres": [
+        "Выживание",
+        "Инди",
+        "Научная фантастика",
+        "Открытый мир",
+        "Приключение"
+      ]
+    },
+    {
+      "id": "disco-elysium",
+      "title": "Disco Elysium",
+      "studio": "ZA/UM",
+      "year": 2019,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "РПГ",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "devil-may-cry-5",
+      "title": "Devil May Cry 5",
+      "studio": "Capcom",
+      "year": 2019,
+      "genres": [
+        "Приключение",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "dmc-devil-may-cry",
+      "title": "DmC: Devil May Cry",
+      "studio": "Ninja Theory",
+      "year": 2013,
+      "genres": [
+        "Платформер",
+        "Приключение",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "metal-gear-solid-v-the-phantom-pain",
+      "title": "Metal Gear Solid V: The Phantom Pain",
+      "studio": "Kojima Productions",
+      "year": 2015,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "metal-gear-solid-delta-snake-eater",
+      "title": "Metal Gear Solid Delta: Snake Eater",
+      "studio": "Konami",
+      "year": 2025,
+      "genres": [
+        "Выживание",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "uncharted-4-a-thiefs-end",
+      "title": "Uncharted 4: A Thief's End",
+      "studio": "Naughty Dog",
+      "year": 2016,
+      "genres": [
+        "Головоломка",
+        "Платформер",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Шутер",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "uncharted-the-lost-legacy",
+      "title": "Uncharted: The Lost Legacy",
+      "studio": "Naughty Dog",
+      "year": 2017,
+      "genres": [
+        "Головоломка",
+        "Платформер",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Шутер",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "horizon-zero-dawn",
+      "title": "Horizon Zero Dawn",
+      "studio": "Guerrilla Games",
+      "year": 2017,
+      "genres": [
+        "Научная фантастика",
+        "Открытый мир",
+        "Постапокалипсис",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "horizon-forbidden-west",
+      "title": "Horizon Forbidden West",
+      "studio": "Guerrilla Games",
+      "year": 2022,
+      "genres": [
+        "Научная фантастика",
+        "Открытый мир",
+        "Постапокалипсис",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "ghost-of-tsushima",
+      "title": "Ghost of Tsushima",
+      "studio": "Sucker Punch Productions",
+      "year": 2020,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "marvels-spider-man-remastered",
+      "title": "Marvel's Spider-Man Remastered",
+      "studio": "Insomniac Games",
+      "year": 2022,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "marvels-spider-man-miles-morales",
+      "title": "Marvel's Spider-Man: Miles Morales",
+      "studio": "Insomniac Games",
+      "year": 2020,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "marvels-spider-man-2",
+      "title": "Marvel's Spider-Man 2",
+      "studio": "Insomniac Games",
+      "year": 2023,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "hogwarts-legacy",
+      "title": "Hogwarts Legacy",
+      "studio": "Avalanche Software",
+      "year": 2023,
+      "genres": [
+        "Головоломка",
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "life-is-strange",
+      "title": "Life is Strange",
+      "studio": "Dontnod Entertainment",
+      "year": 2015,
+      "genres": [
+        "Головоломка",
+        "Интерактивное кино",
+        "Приключение",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "life-is-strange-before-the-storm",
+      "title": "Life is Strange: Before the Storm",
+      "studio": "Deck Nine",
+      "year": 2017,
+      "genres": [
+        "Интерактивное кино",
+        "Приключение",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "life-is-strange-2",
+      "title": "Life is Strange 2",
+      "studio": "Dontnod Entertainment",
+      "year": 2018,
+      "genres": [
+        "Интерактивное кино",
+        "Приключение",
+        "Сюжетная"
+      ]
+    },
+    {
+      "id": "until-dawn",
+      "title": "Until Dawn",
+      "studio": "Supermassive Games",
+      "year": 2015,
+      "genres": [
+        "Выживание",
+        "Интерактивное кино",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "QTE"
+      ]
+    },
+    {
+      "id": "project-zomboid",
+      "title": "Project Zomboid",
+      "studio": "The Indie Stone",
+      "year": 2013,
+      "genres": [
+        "Приключение",
+        "Кооператив",
+        "Открытый мир",
+        "Выживание",
+        "Постапокалипсис"
+      ]
     }
   ]
 }
