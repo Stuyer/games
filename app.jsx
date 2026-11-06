@@ -517,6 +517,22 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
   );
 };
 
+const USER_LIBRARY_TITLES = [
+  { min: 151, tier: 7, label: 'Щупал траву в 2012-м' },
+  { min: 100, tier: 6, label: 'Ветеран геймдева' },
+  { min: 50, tier: 5, label: 'Почти задрот' },
+  { min: 30, tier: 4, label: 'Опытный геймер' },
+  { min: 15, tier: 3, label: 'Бывалый игрок' },
+  { min: 5, tier: 2, label: 'Диванный эксперт' },
+  { min: 1, tier: 1, label: 'NPC' },
+  { min: 0, tier: 0, label: 'Новичок' }
+];
+
+const getUserLibraryTitle = (count) => {
+  const num = Math.max(0, Math.floor(Number(count) || 0));
+  return USER_LIBRARY_TITLES.find(item => num >= item.min) || USER_LIBRARY_TITLES[USER_LIBRARY_TITLES.length - 1];
+};
+
 const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
   const [libraries, setLibraries] = useState(() => memoryLibrariesCache || []);
   const [loading, setLoading] = useState(() => !memoryLibrariesCache || memoryLibrariesCache.length === 0);
@@ -626,26 +642,30 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
             {loading && <p className="library-drawer-message">Загружаю список…</p>}
             {!loading && error && <p className="library-drawer-message" role="status">{error}</p>}
             {!loading && !error && libraries.length === 0 && <p className="library-drawer-message">Пока нет публичных библиотек.</p>}
-            {!loading && !error && libraries.map(item => (
-              <button
-                type="button"
-                className="library-person"
-                key={item.profile_id}
-                onClick={() => onSelectProfile(item.username)}
-                aria-label={`Открыть библиотеку ${item.display_name}, ${formatGameCount(item.game_count)}`}
-              >
-                <span className="library-person-avatar">
-                  {item.avatarUrl
-                    ? <img src={item.avatarUrl} alt="" width="36" height="36" loading="lazy" decoding="async" />
-                    : <svg aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
-                </span>
-                <span className="library-person-name">
-                  <strong>{item.display_name || item.username}</strong>
-                  <small>@{item.username}</small>
-                </span>
-                <span className="library-person-count">{formatGameCount(item.game_count)}</span>
-              </button>
-            ))}
+            {!loading && !error && libraries.map(item => {
+              const userTitle = getUserLibraryTitle(item.game_count);
+              return (
+                <button
+                  type="button"
+                  className="library-person"
+                  key={item.profile_id}
+                  onClick={() => onSelectProfile(item.username)}
+                  aria-label={`Открыть библиотеку ${item.display_name || item.username} (${userTitle.label}), ${formatGameCount(item.game_count)}`}
+                >
+                  <span className="library-person-avatar">
+                    {item.avatarUrl
+                      ? <img src={item.avatarUrl} alt="" width="36" height="36" loading="lazy" decoding="async" />
+                      : <svg aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
+                  </span>
+                  <span className="library-person-name">
+                    <strong>{item.display_name || item.username}</strong>
+                    <small>@{item.username}</small>
+                    <span className={`library-person-title tier-${userTitle.tier}`}>[{userTitle.label}]</span>
+                  </span>
+                  <span className="library-person-count">{formatGameCount(item.game_count)}</span>
+                </button>
+              );
+            })}
           </div>
         </motion.aside>
       </motion.div>}
@@ -3142,8 +3162,8 @@ const UserSubmissionsPage = () => {
       : (row.moderated_at ? `Проверена ${formatSubmissionDate(row.moderated_at)}` : (row.created_at ? `Отправлена ${formatSubmissionDate(row.created_at)}` : ''));
     const ratingEntries = row.ratings
       ? SUBMISSION_CRITERIA_ORDER
-          .filter(key => row.ratings[key] !== undefined && row.ratings[key] !== null)
-          .map(key => [key, row.ratings[key]])
+        .filter(key => row.ratings[key] !== undefined && row.ratings[key] !== null)
+        .map(key => [key, row.ratings[key]])
       : [];
 
     return (

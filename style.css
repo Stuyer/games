@@ -342,7 +342,8 @@ body.rating-editing {
 }
 
 .library-person-name strong,
-.library-person-name small {
+.library-person-name small,
+.library-person-title {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -354,9 +355,80 @@ body.rating-editing {
 }
 
 .library-person-name small {
-  margin-top: 0.125rem;
+  margin-top: 0.1rem;
   font-size: .72rem;
   opacity: .62;
+}
+
+.library-person-title {
+  margin-top: 0.15rem;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* 0: Новичок */
+.library-person-title.tier-0 {
+  color: #64748b;
+}
+body.dark .library-person-title.tier-0 {
+  color: #94a3b8;
+}
+
+/* 1-4: NPC */
+.library-person-title.tier-1 {
+  color: #78716c;
+}
+body.dark .library-person-title.tier-1 {
+  color: #a8a29e;
+}
+
+/* 5-14: Диванный эксперт */
+.library-person-title.tier-2 {
+  color: #16a34a;
+}
+body.dark .library-person-title.tier-2 {
+  color: #4ade80;
+}
+
+/* 15-29: Бывалый игрок */
+.library-person-title.tier-3 {
+  color: #0284c7;
+}
+body.dark .library-person-title.tier-3 {
+  color: #38bdf8;
+}
+
+/* 30-49: Опытный геймер */
+.library-person-title.tier-4 {
+  color: #4f46e5;
+}
+body.dark .library-person-title.tier-4 {
+  color: #818cf8;
+}
+
+/* 50-99: Почти задрот */
+.library-person-title.tier-5 {
+  color: #9333ea;
+}
+body.dark .library-person-title.tier-5 {
+  color: #c084fc;
+}
+
+/* 100-150: Ветеран геймдева */
+.library-person-title.tier-6 {
+  color: #d97706;
+}
+body.dark .library-person-title.tier-6 {
+  color: #fbbf24;
+}
+
+/* 151+: Щупал траву в 2012-м */
+.library-person-title.tier-7 {
+  color: #e11d48;
+}
+body.dark .library-person-title.tier-7 {
+  color: #fb7185;
 }
 
 .library-person-count {
