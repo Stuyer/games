@@ -6425,7 +6425,7 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
 
 const App = () => {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
-  const [view, setView] = useState(localStorage.getItem('view') || 'list');
+  const [view, setView] = useState(localStorage.getItem('view') || 'grid');
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [profileAvatarUrl, setProfileAvatarUrl] = useState(() => {
