@@ -1358,7 +1358,7 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
                 <button
                   type="button"
                   className="profile-moderation-link"
-                  onClick={() => { window.location.href = './moderation/moderation.html'; }}
+                  onClick={() => { window.location.href = './moderation'; }}
                 >
                   Открыть список заявок
                 </button>
@@ -2847,11 +2847,46 @@ const AddGamePage = ({ game = null, submission = null }) => {
   );
 };
 
+const getDismissedSubmissionsKey = (userId) => `site_dismissed_submissions_${userId || 'anon'}`;
+
+const readDismissedSubmissionIds = (userId) => {
+  if (!userId) return new Set();
+  try {
+    const raw = localStorage.getItem(getDismissedSubmissionsKey(userId));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch (_) {
+    return new Set();
+  }
+};
+
+const addDismissedSubmissionIds = (userId, ids) => {
+  if (!userId || !ids?.length) return;
+  try {
+    const current = readDismissedSubmissionIds(userId);
+    ids.forEach(id => { if (id) current.add(id); });
+    localStorage.setItem(getDismissedSubmissionsKey(userId), JSON.stringify([...current]));
+  } catch (_) { }
+};
+
+const formatSubmissionDate = (isoString) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+const SUBMISSION_CRITERIA_ORDER = ['story', 'gameplay', 'graphics', 'atmosphere', 'characters', 'sound_design', 'main_character'];
+
 const UserSubmissionsPage = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState('');
+  const [clearingGroup, setClearingGroup] = useState('');
+  const [activeGroup, setActiveGroup] = useState('all');
+  const [userId, setUserId] = useState('');
+  const [brokenCovers, setBrokenCovers] = useState(() => new Set());
 
   const loadSubmissions = async () => {
     setLoading(true);
@@ -2862,19 +2897,120 @@ const UserSubmissionsPage = () => {
       if (authError) throw authError;
       const user = authData.session?.user;
       if (!user) throw new Error('Войдите в аккаунт, чтобы просматривать заявки.');
-      const { data, error: rowsError } = await client
-        .from('game_submissions')
-        .select('id, title, developer, release_year, genres, image_path, ratings, review, playtime_hours, status, moderator_note, game_id, created_at, moderated_at, background_position_list_x, background_position_list_y, background_scale_list, background_position_grid_x, background_position_grid_y, background_scale_grid')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (rowsError) throw rowsError;
-      const paths = (data || []).map(row => row.image_path).filter(Boolean);
-      const signed = paths.length
-        ? await client.storage.from('game-covers').createSignedUrls(paths, 600)
-        : { data: [], error: null };
-      if (signed.error) throw signed.error;
-      const urlByPath = new Map((signed.data || []).map(item => [item.path, item.signedUrl]));
-      setRows((data || []).map(row => ({ ...row, signedUrl: urlByPath.get(row.image_path) || '' })));
+      setUserId(user.id);
+
+      const dismissedIds = readDismissedSubmissionIds(user.id);
+
+      const baseFields = 'id, catalog_id, title, developer, release_year, genres, image_path, ratings, review, playtime_hours, status, moderator_note, game_id, created_at, moderated_at, background_position_list_x, background_position_list_y, background_scale_list, background_position_grid_x, background_position_grid_y, background_scale_grid';
+      let [submissionsRes, libraryRes] = await Promise.all([
+        client
+          .from('game_submissions')
+          .select(baseFields)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        client
+          .from('games')
+          .select('id, catalog_id, title, image_path')
+          .eq('owner_id', user.id)
+      ]);
+
+      if (submissionsRes.error && String(submissionsRes.error.message || '').includes('catalog_id')) {
+        submissionsRes = await client
+          .from('game_submissions')
+          .select(baseFields.replace('catalog_id, ', ''))
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+      }
+      if (submissionsRes.error) throw submissionsRes.error;
+
+      const libraryGames = (!libraryRes.error && Array.isArray(libraryRes.data)) ? libraryRes.data : [];
+      const libraryImageByGameId = new Map();
+      const libraryImageByCatalogId = new Map();
+      const libraryImageByTitle = new Map();
+      libraryGames.forEach(g => {
+        if (!g.image_path) return;
+        if (g.id) libraryImageByGameId.set(g.id, g.image_path);
+        if (g.catalog_id) libraryImageByCatalogId.set(g.catalog_id, g.image_path);
+        if (g.title) libraryImageByTitle.set(normalizeSearchPart(g.title), g.image_path);
+      });
+
+      const rawRows = (submissionsRes.data || []).filter(row => !dismissedIds.has(row.id));
+
+      // Убираем дубликаты одной и той же игры, оставляя самую актуальную заявку
+      // (приоритет: на проверке -> отклонённая -> самая свежая принятая)
+      const statusPriority = { pending: 3, rejected: 2, approved: 1 };
+      const sortedRows = [...rawRows].sort((a, b) => {
+        const prioDiff = (statusPriority[b.status] || 0) - (statusPriority[a.status] || 0);
+        if (prioDiff !== 0) return prioDiff;
+        const timeA = new Date(a.moderated_at || a.created_at || 0).getTime();
+        const timeB = new Date(b.moderated_at || b.created_at || 0).getTime();
+        return timeB - timeA;
+      });
+
+      const deduplicated = [];
+      const entryByKey = new Map();
+
+      sortedRows.forEach(row => {
+        const titleKey = normalizeSearchPart(row.title);
+        const keys = [
+          row.catalog_id ? `cat:${row.catalog_id}` : '',
+          row.game_id ? `game:${row.game_id}` : '',
+          titleKey ? `title:${titleKey}` : `id:${row.id}`
+        ].filter(Boolean);
+
+        let existing = null;
+        for (const k of keys) {
+          if (entryByKey.has(k)) {
+            existing = entryByKey.get(k);
+            break;
+          }
+        }
+
+        const fallbackLibraryImage =
+          (row.game_id && libraryImageByGameId.get(row.game_id)) ||
+          (row.catalog_id && libraryImageByCatalogId.get(row.catalog_id)) ||
+          (titleKey && libraryImageByTitle.get(titleKey)) ||
+          '';
+
+        if (!existing) {
+          const entry = {
+            ...row,
+            duplicateIds: [row.id],
+            candidatePaths: [row.image_path, fallbackLibraryImage].filter(Boolean)
+          };
+          deduplicated.push(entry);
+          keys.forEach(k => entryByKey.set(k, entry));
+        } else {
+          if (!existing.duplicateIds.includes(row.id)) {
+            existing.duplicateIds.push(row.id);
+          }
+          if (row.image_path && !existing.candidatePaths.includes(row.image_path)) {
+            existing.candidatePaths.push(row.image_path);
+          }
+          if (fallbackLibraryImage && !existing.candidatePaths.includes(fallbackLibraryImage)) {
+            existing.candidatePaths.push(fallbackLibraryImage);
+          }
+          keys.forEach(k => entryByKey.set(k, existing));
+        }
+      });
+
+      // Сортируем итоговый список по дате (новые сверху)
+      deduplicated.sort((a, b) => {
+        const timeA = new Date(a.moderated_at || a.created_at || 0).getTime();
+        const timeB = new Date(b.moderated_at || b.created_at || 0).getTime();
+        return timeB - timeA;
+      });
+
+      const allPaths = [...new Set(deduplicated.flatMap(row => row.candidatePaths).filter(Boolean))];
+      const urlByPath = allPaths.length
+        ? await getOrFetchSignedUrls(client, 'game-covers', allPaths, 3600)
+        : new Map();
+
+      setBrokenCovers(new Set());
+      setRows(deduplicated.map(row => {
+        const validUrl = row.candidatePaths.map(p => urlByPath.get(p)).find(Boolean) || '';
+        return { ...row, signedUrl: validUrl };
+      }));
     } catch (loadError) {
       setError(loadError.message || 'Не удалось загрузить заявки.');
     } finally {
@@ -2885,16 +3021,27 @@ const UserSubmissionsPage = () => {
   useEffect(() => { loadSubmissions(); }, []);
 
   const deleteSubmission = async (row) => {
-    if (!window.confirm(`Удалить заявку «${row.title}»?`)) return;
+    const isPending = row.status === 'pending';
+    const confirmText = isPending
+      ? `Отменить и удалить заявку «${row.title}»?`
+      : `Удалить заявку «${row.title}» из истории?`;
+    if (!window.confirm(confirmText)) return;
+
+    const targetIds = Array.isArray(row.duplicateIds) && row.duplicateIds.length ? row.duplicateIds : [row.id];
     setDeletingId(row.id);
+    setError('');
     try {
-      const { error: deleteError } = await window.siteSupabase
+      const client = window.siteSupabase;
+      const { error: deleteError } = await client
         .from('game_submissions')
         .delete()
-        .eq('id', row.id)
-        .eq('status', 'rejected');
+        .in('id', targetIds);
       if (deleteError) throw deleteError;
-      if (row.image_path) await window.siteSupabase.storage.from('game-covers').remove([row.image_path]);
+
+      if (row.status !== 'approved' && row.image_path) {
+        await client.storage.from('game-covers').remove([row.image_path]).catch(() => { });
+      }
+      if (userId) addDismissedSubmissionIds(userId, targetIds);
       setRows(current => current.filter(item => item.id !== row.id));
     } catch (deleteError) {
       setError(deleteError.message || 'Не удалось удалить заявку.');
@@ -2903,52 +3050,272 @@ const UserSubmissionsPage = () => {
     }
   };
 
-  const statusLabel = { pending: 'На проверке', approved: 'Одобрена', rejected: 'Отклонена' };
+  const clearSubmissionsGroup = async (groupKey, groupTitle, groupItems) => {
+    if (!groupItems.length) return;
+    if (!window.confirm(`Удалить все заявки из раздела «${groupTitle}» (${groupItems.length} шт.)?`)) return;
+
+    const targetIds = groupItems.flatMap(item => (Array.isArray(item.duplicateIds) && item.duplicateIds.length ? item.duplicateIds : [item.id]));
+    setClearingGroup(groupKey);
+    setError('');
+    try {
+      const client = window.siteSupabase;
+      const { error: deleteError } = await client
+        .from('game_submissions')
+        .delete()
+        .in('id', targetIds);
+      if (deleteError) throw deleteError;
+
+      const removablePaths = groupItems
+        .filter(item => item.status !== 'approved' && item.image_path)
+        .map(item => item.image_path);
+      if (removablePaths.length) {
+        await client.storage.from('game-covers').remove(removablePaths).catch(() => { });
+      }
+      if (userId) addDismissedSubmissionIds(userId, targetIds);
+      const removedRowIds = new Set(groupItems.map(item => item.id));
+      setRows(current => current.filter(item => !removedRowIds.has(item.id)));
+    } catch (deleteError) {
+      setError(deleteError.message || 'Не удалось очистить раздел.');
+    } finally {
+      setClearingGroup('');
+    }
+  };
+
+  const statusLabel = { pending: 'На проверке', approved: 'Принята', rejected: 'Отклонена' };
+
+  const groups = useMemo(() => {
+    const approved = rows.filter(r => r.status === 'approved');
+    const pending = rows.filter(r => r.status === 'pending');
+    const rejected = rows.filter(r => r.status === 'rejected');
+    const list = [
+      {
+        key: 'pending',
+        title: 'На проверке',
+        subtitle: 'Ожидают решения модератора',
+        emptyText: 'Нет заявок на проверке',
+        items: pending,
+        canClearAll: false
+      },
+      {
+        key: 'rejected',
+        title: 'Отклонённые',
+        subtitle: 'Можно исправить замечания и отправить повторно',
+        emptyText: 'Нет отклонённых заявок',
+        items: rejected,
+        canClearAll: true
+      },
+      {
+        key: 'approved',
+        title: 'Принятые',
+        subtitle: 'Одобрены и добавлены в вашу библиотеку',
+        emptyText: 'Нет принятых заявок в истории',
+        items: approved,
+        canClearAll: true
+      }
+    ];
+    // Непустые разделы показываем первыми, чтобы сразу видеть актуальные карточки
+    return [...list].sort((a, b) => Number(b.items.length > 0) - Number(a.items.length > 0));
+  }, [rows]);
+
+  const counts = useMemo(() => ({
+    all: rows.length,
+    approved: rows.filter(r => r.status === 'approved').length,
+    pending: rows.filter(r => r.status === 'pending').length,
+    rejected: rows.filter(r => r.status === 'rejected').length
+  }), [rows]);
+
+  const visibleGroups = useMemo(
+    () => (activeGroup === 'all' ? groups : groups.filter(g => g.key === activeGroup)),
+    [groups, activeGroup]
+  );
+
+  const renderSubmissionCard = (row) => {
+    const avgScore = row.ratings ? calcRating(row.ratings) : null;
+    const hasValidCover = Boolean(row.signedUrl && !brokenCovers.has(row.id));
+    const metaParts = [
+      row.developer,
+      row.release_year,
+      row.playtime_hours == null ? '' : `${Math.round(Number(row.playtime_hours))} ч.`
+    ].filter(Boolean);
+    const dateText = row.status === 'pending'
+      ? (row.created_at ? `Отправлена ${formatSubmissionDate(row.created_at)}` : '')
+      : (row.moderated_at ? `Проверена ${formatSubmissionDate(row.moderated_at)}` : (row.created_at ? `Отправлена ${formatSubmissionDate(row.created_at)}` : ''));
+    const ratingEntries = row.ratings
+      ? SUBMISSION_CRITERIA_ORDER
+          .filter(key => row.ratings[key] !== undefined && row.ratings[key] !== null)
+          .map(key => [key, row.ratings[key]])
+      : [];
+
+    return (
+      <article className={`user-submission-card status-${row.status}`} key={row.id}>
+        <div className="user-submission-cover-wrap">
+          {hasValidCover ? (
+            <img
+              src={row.signedUrl}
+              alt=""
+              className="user-submission-cover"
+              loading="lazy"
+              decoding="async"
+              onError={() => setBrokenCovers(prev => {
+                const next = new Set(prev);
+                next.add(row.id);
+                return next;
+              })}
+            />
+          ) : (
+            <div className="user-submission-cover-placeholder" aria-hidden="true">
+              <span className="user-submission-cover-icon">🎮</span>
+              <span className="user-submission-cover-fallback-title">{row.title}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="user-submission-main">
+          <div className="user-submission-title-row">
+            <div className="user-submission-title-group">
+              <h2>{row.title}</h2>
+              {(metaParts.length > 0 || dateText) && (
+                <p className="user-submission-meta">
+                  {metaParts.join(' · ')}
+                  {metaParts.length > 0 && dateText ? ' · ' : ''}
+                  {dateText && <span className="user-submission-date">{dateText}</span>}
+                </p>
+              )}
+            </div>
+            <div className="user-submission-badges">
+              {avgScore && <span className="user-submission-avg" title="Средняя оценка">★ {avgScore}</span>}
+              <span className="user-submission-status">{statusLabel[row.status] || row.status}</span>
+            </div>
+          </div>
+
+          {Array.isArray(row.genres) && row.genres.length > 0 && (
+            <div className="user-submission-genres" aria-label="Жанры">
+              {row.genres.map(genre => (
+                <span key={genre} className="user-submission-genre-tag">{genre}</span>
+              ))}
+            </div>
+          )}
+
+          {ratingEntries.length > 0 && (
+            <div className="user-submission-ratings-grid" aria-label="Оценки по критериям">
+              {ratingEntries.map(([key, value]) => (
+                <span key={key} className="user-submission-rating-chip">
+                  <span className="user-submission-rating-label">{LABELS[key] || key}</span>
+                  <strong>{value}</strong>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {row.review && <p className="user-submission-review">{row.review}</p>}
+
+          {row.status === 'rejected' && row.moderator_note && (
+            <p className="user-submission-note"><strong>Причина отказа:</strong> {row.moderator_note}</p>
+          )}
+
+          <div className="user-submission-actions">
+            {row.status === 'rejected' && (
+              <a className="btn primary" href={`./add-game?submission=${encodeURIComponent(row.id)}`}>
+                Изменить и отправить снова
+              </a>
+            )}
+            <button
+              type="button"
+              className="btn danger"
+              onClick={() => deleteSubmission(row)}
+              disabled={deletingId === row.id}
+            >
+              {deletingId === row.id
+                ? 'Удаление…'
+                : row.status === 'pending'
+                  ? 'Отменить заявку'
+                  : 'Удалить из истории'}
+            </button>
+          </div>
+        </div>
+      </article>
+    );
+  };
+
   return (
     <main className="submissions-page">
       <header className="submissions-header">
         <a className="add-game-back-link" href="./">← Вернуться в каталог</a>
         <div>
           <h1>Мои заявки</h1>
-          <p>Отправленные карточки и решения модерации</p>
+          <p>История отправленных карточек и статус модерации</p>
         </div>
         <button type="button" className="btn" onClick={loadSubmissions} disabled={loading}>Обновить</button>
       </header>
+
+      {!loading && rows.length > 0 && (
+        <nav className="submissions-tabs" aria-label="Фильтр заявок по статусу">
+          {[
+            { id: 'all', label: 'Все', count: counts.all },
+            { id: 'approved', label: 'Принятые', count: counts.approved },
+            { id: 'pending', label: 'На проверке', count: counts.pending },
+            { id: 'rejected', label: 'Отклонённые', count: counts.rejected }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`submissions-tab tab-${tab.id} ${activeGroup === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveGroup(tab.id)}
+              aria-pressed={activeGroup === tab.id}
+            >
+              <span>{tab.label}</span>
+              <span className="submissions-tab-count">{tab.count}</span>
+            </button>
+          ))}
+        </nav>
+      )}
+
       {loading && <p className="submissions-message">Загружаю заявки…</p>}
       {error && <p className="submissions-message error">{error}</p>}
-      {!loading && !error && rows.length === 0 && <p className="submissions-message">Заявок пока нет.</p>}
-      <section className="submissions-list" aria-live="polite">
-        {rows.map(row => (
-          <article className={`user-submission-card status-${row.status}`} key={row.id}>
-            {row.signedUrl && <img src={row.signedUrl} alt="" className="user-submission-cover" loading="lazy" decoding="async" />}
-            <div className="user-submission-main">
-              <div className="user-submission-title-row">
-                <h2>{row.title}</h2>
-                <span className="user-submission-status">{statusLabel[row.status] || row.status}</span>
-              </div>
-              <p className="user-submission-meta">
-                {[row.developer, row.release_year, row.playtime_hours == null ? '' : `${Math.round(Number(row.playtime_hours))} ч.`].filter(Boolean).join(' · ')}
-              </p>
-              {Array.isArray(row.genres) && row.genres.length > 0 && <p className="user-submission-meta">Жанры: {row.genres.join(' · ')}</p>}
-              {row.review && <p className="user-submission-review">{row.review}</p>}
-              {row.ratings && <p className="user-submission-ratings">{Object.entries(row.ratings).map(([key, value]) => `${LABELS[key] || key}: ${value}`).join(' · ')}</p>}
-              {row.status === 'rejected' && row.moderator_note && (
-                <p className="user-submission-note"><strong>Причина отказа:</strong> {row.moderator_note}</p>
-              )}
-              <div className="user-submission-actions">
-                {row.status === 'rejected' && (
-                  <>
-                    <a className="btn" href={`./add-game?submission=${encodeURIComponent(row.id)}`} target="_blank" rel="noopener noreferrer">Изменить и отправить снова</a>
-                    <button type="button" className="btn danger" onClick={() => deleteSubmission(row)} disabled={deletingId === row.id}>
-                      {deletingId === row.id ? 'Удаление…' : 'Удалить'}
-                    </button>
-                  </>
+      {!loading && !error && rows.length === 0 && (
+        <div className="submissions-empty-box">
+          <p className="submissions-message">В истории заявок пока пусто.</p>
+        </div>
+      )}
+
+      {!loading && rows.length > 0 && (
+        <div className="submissions-groups" aria-live="polite">
+          {visibleGroups.map(group => (
+            <section
+              key={group.key}
+              className={`submissions-group group-${group.key} ${group.items.length === 0 ? 'is-empty' : ''}`}
+              aria-labelledby={`submissions-group-${group.key}`}
+            >
+              <div className="submissions-group-header">
+                <div className="submissions-group-title-wrap">
+                  <span className={`submissions-group-dot dot-${group.key}`} aria-hidden="true" />
+                  <h2 id={`submissions-group-${group.key}`}>{group.title}</h2>
+                  <span className="submissions-group-count">{group.items.length}</span>
+                  <span className="submissions-group-subtitle">{group.subtitle}</span>
+                </div>
+                {group.canClearAll && group.items.length > 1 && (
+                  <button
+                    type="button"
+                    className="submissions-clear-group-btn"
+                    onClick={() => clearSubmissionsGroup(group.key, group.title, group.items)}
+                    disabled={clearingGroup === group.key}
+                  >
+                    {clearingGroup === group.key ? 'Очищаю…' : 'Очистить раздел'}
+                  </button>
                 )}
               </div>
-            </div>
-          </article>
-        ))}
-      </section>
+
+              {group.items.length > 0 ? (
+                <div className="submissions-list">
+                  {group.items.map(renderSubmissionCard)}
+                </div>
+              ) : (
+                <p className="submissions-group-empty">{group.emptyText}</p>
+              )}
+            </section>
+          ))}
+        </div>
+      )}
     </main>
   );
 };

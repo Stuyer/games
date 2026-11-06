@@ -35,7 +35,8 @@ function extensionlessPageRoutes() {
   const routes = [
     ['add-game', 'add-game.html'],
     ['stats', 'stats.html'],
-    ['submissions', 'submissions.html']
+    ['submissions', 'submissions.html'],
+    ['moderation', 'moderation/index.html']
   ];
   return {
     name: 'extensionless-page-routes',
@@ -57,8 +58,10 @@ function extensionlessPageRoutes() {
       for (const [route, source] of routes) {
         const sourceFile = resolve(output, source);
         if (!existsSync(sourceFile)) continue;
-        const routeDir = resolve(output, route);
-        cpSync(sourceFile, resolve(routeDir, 'index.html'), { recursive: true });
+        const targetFile = resolve(output, route, 'index.html');
+        if (sourceFile !== targetFile) {
+          cpSync(sourceFile, targetFile, { recursive: true });
+        }
       }
     }
   };
@@ -75,7 +78,7 @@ export default defineConfig({
         'add-game': resolve(root, 'add-game.html'),
         stats: resolve(root, 'stats.html'),
         submissions: resolve(root, 'submissions.html'),
-        moderation: resolve(root, 'moderation/moderation.html')
+        moderation: resolve(root, 'moderation/index.html')
       },
       output: {
         manualChunks: {
