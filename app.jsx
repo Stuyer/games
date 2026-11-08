@@ -48,6 +48,35 @@ let loadedSessionUserId = null;
 let viewedCatalogProfile = null;
 const gameDataPromise = (async () => {
   if (!siteSupabase) throw new Error('Сервис временно недоступен.');
+  const initialUrlParams = new URLSearchParams(window.location.search);
+  const tokenHash = initialUrlParams.get('token_hash');
+  const otpType = initialUrlParams.get('type') || 'signup';
+  if (tokenHash) {
+    try {
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('token_hash');
+      cleanUrl.searchParams.delete('type');
+      const cleanPath = cleanUrl.pathname.replace(/\/index\.html$/, '/') || '/';
+      window.history.replaceState(null, '', cleanPath + (cleanUrl.search ? cleanUrl.search : '') + cleanUrl.hash);
+    } catch (_) { }
+    try {
+      let { error: verifyError } = await siteSupabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: otpType
+      });
+      if (verifyError && otpType === 'signup') {
+        ({ error: verifyError } = await siteSupabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: 'email'
+        }));
+      }
+      if (verifyError) {
+        console.warn('Не удалось подтвердить почту по токену:', verifyError);
+      }
+    } catch (verifyErr) {
+      console.warn('Ошибка при проверке токена подтверждения:', verifyErr);
+    }
+  }
   // getSession restores the persisted browser session without requiring an
   // immediate Auth network request (which may fail behind an unstable proxy).
   const { data: authData, error: authError } = await siteSupabase.auth.getSession();
