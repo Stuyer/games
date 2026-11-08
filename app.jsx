@@ -8561,19 +8561,28 @@ const CompareModal = ({ selectedGameIds, onClose, theme }) => {
     );
   };
 
-  // Calculate max ratings for highlighting
-  const maxRatings = useMemo(() => {
+  const criteriaRowKeys = useMemo(
+    () => Object.keys(LABELS_FULL).filter(key => key !== 'rating' && key !== 'year' && key !== 'playtime'),
+    []
+  );
+
+  // Calculate max ratings and tie state per row
+  const { maxRatings, tiedRows } = useMemo(() => {
     const max = {};
-    Object.keys(LABELS_FULL).filter(key => key !== 'year' && key !== 'playtime').forEach(key => {
-      let m = -Infinity;
-      gamesToCompare.forEach(g => {
-        const val = parseFloat(key === 'rating' ? calcRating(g.ratings) : (g.ratings[key] || 0));
-        if (val > m) m = val;
-      });
-      if (m > 0) max[key] = m;
+    const tied = {};
+    const allKeys = ['rating', ...criteriaRowKeys];
+    allKeys.forEach(key => {
+      if (!gamesToCompare.length) return;
+      const values = gamesToCompare.map(g =>
+        parseFloat(key === 'rating' ? calcRating(g.ratings) : (g.ratings?.[key] ?? 0))
+      );
+      const maxVal = Math.max(...values);
+      const isAllSame = gamesToCompare.length > 1 && values.every(v => v === values[0]);
+      if (maxVal > 0) max[key] = maxVal;
+      tied[key] = isAllSame;
     });
-    return max;
-  }, [gamesToCompare]);
+    return { maxRatings: max, tiedRows: tied };
+  }, [gamesToCompare, criteriaRowKeys]);
 
   useEffect(() => {
     if (!chartMode || !chartRef.current || allGamesToCompare.length === 0) return;
@@ -8698,7 +8707,7 @@ const CompareModal = ({ selectedGameIds, onClose, theme }) => {
   return (
     <motion.div id="game-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div
-        className="modal-content compare-mode"
+        className={`modal-content compare-mode ${chartMode ? 'is-chart-mode' : 'is-table-mode'}`}
         role="dialog"
         aria-modal="true"
         aria-label="Сравнение игр"
@@ -8708,44 +8717,103 @@ const CompareModal = ({ selectedGameIds, onClose, theme }) => {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
       >
-        <button type="button" className="close-btn" onClick={onClose} aria-label="Закрыть сравнение" title="Закрыть">×</button>
-        <h2>Сравнение игр</h2>
+        <div className="compare-top-bar">
+          <h2>Сравнение игр</h2>
+          <div className="compare-top-right">
+            <button
+              type="button"
+              className="toggle-chart-btn compare-icon-btn"
+              onClick={() => setChartMode(!chartMode)}
+              title={chartMode ? "Показать таблицу" : "Показать график"}
+              aria-label={chartMode ? "Показать таблицу" : "Показать график"}
+            >
+              {chartMode ? "📝" : "🕸️"}
+            </button>
+            <button
+              type="button"
+              className="close-btn compare-icon-btn"
+              onClick={onClose}
+              aria-label="Закрыть сравнение"
+              title="Закрыть"
+            >
+              ×
+            </button>
+          </div>
+        </div>
 
-        <div className={`criteria ${chartMode ? 'chart-mode' : ''}`} style={{ width: '100%', boxSizing: 'border-box', margin: 0, marginBottom: 20 }}>
+        <div className={`criteria ${chartMode ? 'chart-mode' : ''}`} style={{ width: '100%', boxSizing: 'border-box', margin: 0 }}>
           <div className="criteria-wrapper">
             {/* Table View */}
             <div className={`criteria-view text-view ${!chartMode ? 'active' : 'hidden'}`} style={{ width: '100%' }}>
               <div className="compare-table-wrapper">
-                <table className="compare-table">
+                <table
+                  className="compare-table"
+                  style={{ '--compare-games-count': Math.max(1, gamesToCompare.length) }}
+                >
                   <thead>
                     <tr>
-                      <th>
-                        <div className="compare-header-cell">
-                          <div className="compare-header-title">Критерий</div>
-                          <div className="compare-header-criteria-icon" aria-hidden="true">⚖️</div>
-                        </div>
-                      </th>
-                      {gamesToCompare.map(g => (
-                        <th key={g.id} title={g.title}>
-                          <div className="compare-header-cell">
-                            <div className="compare-header-title">{g.title}</div>
-                            <img src={g.image} alt={g.title} className="compare-header-img" loading="lazy" />
-                          </div>
-                        </th>
-                      ))}
+                      <th className="compare-criteria-col" aria-label="Критерий" />
+                      {gamesToCompare.map(g => {
+                        const overallVal = calcRating(g.ratings);
+                        const isBestOverall = !tiedRows.rating && parseFloat(overallVal) === maxRatings.rating;
+                        return (
+                          <th key={g.id} className="compare-game-col" title={g.title}>
+                            <div className="compare-header-cell">
+                              <div className="compare-cover-card">
+                                {isBestOverall && (
+                                  <span className="compare-best-badge">ЛУЧШАЯ</span>
+                                )}
+                                {g.image ? (
+                                  <img src={g.image} alt={g.title} className="compare-header-img" loading="lazy" />
+                                ) : (
+                                  <span className="compare-cover-placeholder">обложка</span>
+                                )}
+                              </div>
+                              <div className="compare-header-title">{g.title}</div>
+                              <div className="compare-overall-block">
+                                <span className={`compare-overall-value ${isBestOverall ? 'is-best' : ''}`}>
+                                  {overallVal}
+                                </span>
+                                <span className="compare-overall-label">
+                                  общ. рейт.
+                                </span>
+                              </div>
+                            </div>
+                          </th>
+                        );
+                      })}
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.keys(LABELS_FULL).filter(key => key !== 'year' && key !== 'playtime').map(key => (
-                      <tr key={key}>
-                        <td><b>{LABELS_FULL[key]}</b></td>
-                        {gamesToCompare.map(g => {
-                          const val = key === 'rating' ? calcRating(g.ratings) : g.ratings[key];
-                          const isMax = parseFloat(val) === maxRatings[key];
-                          return <td key={g.id} className={isMax ? 'highlight-max' : ''}>{val}</td>
-                        })}
-                      </tr>
-                    ))}
+                    {criteriaRowKeys.map(key => {
+                      const isRowTied = Boolean(tiedRows[key]);
+                      return (
+                        <tr key={key} className="compare-row">
+                          <td className="compare-criteria-cell">
+                            <div className="compare-criteria-label-wrap">
+                              <span className="compare-criteria-name">{LABELS_FULL[key]}</span>
+                              {isRowTied && <span className="compare-tie-label">поровну</span>}
+                            </div>
+                          </td>
+                          {gamesToCompare.map(g => {
+                            const val = g.ratings?.[key];
+                            const numVal = parseFloat(val ?? 0);
+                            const isMax = !isRowTied && numVal === maxRatings[key];
+                            const barPercent = Math.max(0, Math.min(100, (numVal / 10) * 100));
+                            return (
+                              <td key={g.id} className={`compare-value-cell ${isMax ? 'highlight-max' : ''}`}>
+                                <div className={`compare-score-card ${isMax ? 'is-best' : ''}`}>
+                                  <div className="compare-score-num">{val ?? '—'}</div>
+                                  <div className="compare-score-bar-track" aria-hidden="true">
+                                    <div className="compare-score-bar-fill" style={{ width: `${barPercent}%` }} />
+                                  </div>
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -8788,9 +8856,6 @@ const CompareModal = ({ selectedGameIds, onClose, theme }) => {
 
           </div>
         </div>
-        <button className="toggle-chart-btn" onClick={() => setChartMode(!chartMode)} title={chartMode ? "Показать таблицу" : "Показать график"} style={{ bottom: '0.75rem', right: '1.125rem', width: '2.5rem', height: '2.5rem', fontSize: '1.25rem', position: 'absolute' }}>
-          {chartMode ? "📝" : "🕸️"}
-        </button>
       </motion.div>
     </motion.div>
   );
