@@ -7204,13 +7204,6 @@ const App = () => {
               <span>⚖️</span> {compareMode ? 'Отмена сравнения' : 'Сравнить игры'}
             </button>
           </div>
-          {compareMode && !isMobile && (
-            <div className="sd-item">
-              <button type="button" className="sd-label" style={{ background: 'rgba(46,139,87,0.18)', borderColor: 'rgba(46,139,87,0.35)' }} onClick={() => { handleCompareConfirm(); setSpeedDialOpen(false); }}>
-                <span>✓</span> Подтвердить выбор
-              </button>
-            </div>
-          )}
           {/* Жанры */}
           <div className="sd-item">
             <button type="button" className="sd-label" title="Фильтр по жанрам" style={selectedGenres.length > 0 ? { borderColor: 'rgba(197,165,128,0.6)', background: 'rgba(197,165,128,0.1)' } : {}} onClick={() => { setShowGenrePanel(o => !o); setSpeedDialOpen(false); }}>
@@ -7543,6 +7536,17 @@ const App = () => {
               )}
             </AnimatePresence>
           </div>
+          {(selectedGenres.length > 0 || excludedGenres.length > 0) && (
+            <button
+              type="button"
+              className="btn genre-reset-btn"
+              onClick={() => { setSelectedGenres([]); setExcludedGenres([]); }}
+              title="Сбросить выбранные и исключённые жанры"
+              aria-label="Сбросить жанры"
+            >
+              🏷️ Сбросить <span className="genre-reset-count">{selectedGenres.length + excludedGenres.length}</span>
+            </button>
+          )}
           {compareMode && (
             <>
               <div className="controls-separator" />

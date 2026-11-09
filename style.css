@@ -2224,23 +2224,116 @@ body.dark .sort-dock-btn.active {
 
 #search,
 .controls-bar .compare-confirm-btn,
+.controls-bar .genre-reset-btn,
 .controls-bar .btn-red {
   height: 2rem;
   box-sizing: border-box;
 }
 
 .controls-bar .compare-confirm-btn,
+.controls-bar .genre-reset-btn,
 .controls-bar .btn-red {
   display: inline-flex;
   align-items: center;
+  gap: 0.375rem;
   line-height: 1;
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
 }
 
+.controls-bar .genre-reset-btn:hover {
+  transform: none;
+}
+
+.genre-reset-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  box-sizing: border-box;
+  background: var(--genre-accent-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .controls-bar .compare-confirm-btn:hover,
 .controls-bar .btn-red:hover {
   transform: none;
+}
+
+/* Кнопка «Сравнить»: матовый фон для читаемости поверх любого контента */
+.controls-bar .compare-confirm-btn {
+  background: rgba(236, 246, 240, 0.82);
+  border-color: rgba(46, 139, 87, 0.45);
+  color: #1f6b43;
+  font-weight: 600;
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+
+.controls-bar .compare-confirm-btn:hover {
+  background: rgba(222, 240, 230, 0.92);
+}
+
+body.dark .controls-bar .compare-confirm-btn {
+  background: rgba(30, 48, 38, 0.78);
+  border-color: rgba(86, 190, 130, 0.5);
+  color: #7fe0a8;
+}
+
+body.dark .controls-bar .compare-confirm-btn:hover {
+  background: rgba(38, 62, 49, 0.9);
+}
+
+/* Кнопка «Сбросить жанры» и «✕ отмена сравнения»: тот же матовый фон */
+.controls-bar .genre-reset-btn,
+.controls-bar .btn-red {
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  font-weight: 600;
+}
+
+.controls-bar .genre-reset-btn {
+  background: rgba(250, 247, 242, 0.82);
+  border-color: rgba(28, 25, 23, 0.18);
+  color: #1c1917;
+}
+
+.controls-bar .genre-reset-btn:hover {
+  background: rgba(240, 235, 227, 0.92);
+}
+
+.controls-bar .btn-red {
+  background: rgba(253, 236, 240, 0.82);
+  border-color: rgba(220, 20, 60, 0.4);
+  color: #b3173a;
+}
+
+.controls-bar .btn-red:hover {
+  background: rgba(250, 222, 229, 0.92);
+}
+
+body.dark .controls-bar .genre-reset-btn {
+  background: rgba(33, 30, 27, 0.78);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f4f1ea;
+}
+
+body.dark .controls-bar .genre-reset-btn:hover {
+  background: rgba(48, 43, 38, 0.9);
+}
+
+body.dark .controls-bar .btn-red {
+  background: rgba(58, 28, 36, 0.78);
+  border-color: rgba(255, 110, 135, 0.45);
+  color: #ff8fa6;
+}
+
+body.dark .controls-bar .btn-red:hover {
+  background: rgba(78, 34, 46, 0.9);
 }
 
 #grid {
