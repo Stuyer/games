@@ -1,17 +1,18 @@
 (function () {
-  const MAX_COVER_SIZE = 184320; // 180 КБ
-  const MAX_WIDTH = 1200;
-  const MAX_HEIGHT = 1400;
+  const MAX_COVER_SIZE = 204800; // 200 КБ
+  const MAX_WIDTH = 1400;
+  const MAX_HEIGHT = 1600;
 
   async function compressCover(file) {
     if (!file || !file.type.startsWith('image/')) throw new Error('Выберите файл изображения.');
 
+    // Если файл уже меньше или равен 200 КБ, загружаем без изменений
+    if (file.size <= MAX_COVER_SIZE) {
+      return file;
+    }
+
     const bitmap = await createImageBitmap(file);
     try {
-      const needsResize = bitmap.width > MAX_WIDTH || bitmap.height > MAX_HEIGHT;
-      const isAcceptableWebp = file.type === 'image/webp' && file.size <= MAX_COVER_SIZE && !needsResize;
-      if (isAcceptableWebp) return file;
-
       let scale = Math.min(1, MAX_WIDTH / bitmap.width, MAX_HEIGHT / bitmap.height);
       const canvas = document.createElement('canvas');
       let blob = null;
@@ -22,19 +23,19 @@
         context.fillStyle = '#ffffff';
         context.fillRect(0, 0, canvas.width, canvas.height);
         context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        let quality = 0.88;
+        let quality = 0.92;
         blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
         if (!blob || blob.type !== 'image/webp') {
           throw new Error('Браузер не смог преобразовать изображение в WebP. Используйте актуальную версию Chrome или Edge.');
         }
-        while (blob.size > MAX_COVER_SIZE && quality > 0.45) {
-          quality = Math.max(0.45, quality - 0.07);
+        while (blob.size > MAX_COVER_SIZE && quality > 0.55) {
+          quality = Math.max(0.55, quality - 0.05);
           blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
         }
         if (blob && blob.size <= MAX_COVER_SIZE) break;
-        scale *= 0.82;
+        scale *= 0.85;
       }
-      if (!blob || blob.size > MAX_COVER_SIZE) throw new Error('Не удалось сжать обложку до 180 КБ. Выберите другое изображение.');
+      if (!blob || blob.size > MAX_COVER_SIZE) throw new Error('Не удалось сжать обложку до 200 КБ. Выберите другое изображение.');
       return blob;
     } finally {
       bitmap.close();

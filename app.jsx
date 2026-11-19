@@ -2313,7 +2313,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
       setCoverPreview(previewUrl);
       setCoverSize(compressed === file
         ? `Исходный файл сохранён без изменений: ${(compressed.size / 1024).toFixed(0)} КБ.`
-        : `После сжатия: ${(compressed.size / 1024).toFixed(0)} КБ из 180 КБ.`);
+        : `После сжатия: ${(compressed.size / 1024).toFixed(0)} КБ из 200 КБ.`);
     } catch (error) {
       if (taskId !== coverTaskRef.current) return;
       setCoverFile(null);
@@ -2533,7 +2533,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
               {coverPreview && <img className="add-game-cover" src={coverPreview} alt="Предпросмотр сжатой обложки" />}
               <span>{coverPreview ? 'Заменить картинку' : 'Выбрать или перетащить картинку'}</span>
             </label>
-            <p className="add-game-hint">{isEdit ? 'Можно оставить текущую обложку. Большие файлы сжимаются до 180 КБ. Рекомендуемое соотношение сторон - 16:9' : 'Большие файлы сжимаются до 180 КБ. Рекомендуемое соотношение сторон - 16:9'}</p>
+            <p className="add-game-hint">{isEdit ? 'Можно оставить текущую обложку. Большие файлы сжимаются до 200 КБ. Рекомендуемое соотношение сторон - 16:9' : 'Большие файлы сжимаются до 200 КБ. Рекомендуемое соотношение сторон - 16:9'}</p>
             {coverSize && <p className="add-game-hint">{coverSize}</p>}
           </div>
         </div>

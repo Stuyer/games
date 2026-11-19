@@ -1624,6 +1624,36 @@
         "Выживание",
         "Постапокалипсис"
       ]
+    },
+    {
+      "id": "the-walking-dead-new-frontier",
+      "title": "The Walking Dead: A New Frontier",
+      "studio": "Telltale Games",
+      "year": 2016,
+      "genres": [
+        "Интерактивное кино",
+        "Постапокалипсис",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Экшен",
+        "QTE"
+      ]
+    },
+    {
+      "id": "the-walking-dead-final-season",
+      "title": "The Walking Dead: The Final Season",
+      "studio": "Telltale Games",
+      "year": 2018,
+      "genres": [
+        "Интерактивное кино",
+        "Постапокалипсис",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Экшен",
+        "QTE"
+      ]
     }
   ]
 }
