@@ -2257,7 +2257,10 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
   }, []);
 
-  const setValue = (key, value) => setFields(current => ({ ...current, [key]: value }));
+  const setValue = (key, value) => {
+    const finalValue = key === 'review' && typeof value === 'string' ? value.slice(0, 310) : value;
+    setFields(current => ({ ...current, [key]: finalValue }));
+  };
 
   const selectCatalogGame = (row) => {
     const studio = row.studio || '';
@@ -2361,6 +2364,11 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
 
     if (!catalogId) {
       setStatus('Выберите игру из каталога: свободное название добавить нельзя.');
+      setStatusError(true);
+      return;
+    }
+    if (trimmedReview.length > 310) {
+      setStatus('Описание игры не должно превышать 310 символов.');
       setStatusError(true);
       return;
     }
@@ -2540,9 +2548,14 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
 
         <div className="add-game-editor-grid">
           <label className="add-game-review-block">
-            <span className="add-game-section-label">Обзор</span>
+            <div className="add-game-review-header">
+              <span className="add-game-section-label">Обзор</span>
+              <span className={`add-game-review-counter ${(fields.review || '').length >= 310 ? 'at-limit' : ''}`} aria-live="polite">
+                {(fields.review || '').length} / 310
+              </span>
+            </div>
             <textarea
-              maxLength="8000"
+              maxLength={310}
               value={fields.review}
               onChange={event => setValue('review', event.target.value)}
               onBlur={event => setValue('review', event.target.value.trim())}
@@ -6592,6 +6605,9 @@ const App = () => {
   const reorderInitialListRef = useRef(null);
   const dragInitialListRef = useRef(null);
   const dragCloneRef = useRef(null);
+  const dragCleanupTimerRef = useRef(null);
+  const activeMoveHandlerRef = useRef(null);
+  const activeUpHandlerRef = useRef(null);
   const lastSwapTimeRef = useRef(0);
 
   const activeView = isMobile ? 'list' : view;
@@ -7029,44 +7045,47 @@ const App = () => {
     excludedGenres.length > 0
   );
 
-  const cancelReorderMode = useCallback(() => {
-    if (dragCloneRef.current) {
-      if (dragCloneRef.current.parentNode) dragCloneRef.current.remove();
-      dragCloneRef.current = null;
+  const cleanupActiveDragImmediate = useCallback(() => {
+    if (dragCleanupTimerRef.current) {
+      clearTimeout(dragCleanupTimerRef.current);
+      dragCleanupTimerRef.current = null;
     }
-    const start = dragStartRef.current;
-    if (start?.cardContent) {
-      start.cardContent.style.opacity = '';
-      start.cardContent.style.visibility = '';
-      start.cardWrap?.classList.remove('reorder-dragging');
+    if (activeMoveHandlerRef.current) {
+      window.removeEventListener('pointermove', activeMoveHandlerRef.current);
+      activeMoveHandlerRef.current = null;
     }
+    if (activeUpHandlerRef.current) {
+      window.removeEventListener('pointerup', activeUpHandlerRef.current);
+      window.removeEventListener('pointercancel', activeUpHandlerRef.current);
+      window.removeEventListener('blur', activeUpHandlerRef.current);
+      activeUpHandlerRef.current = null;
+    }
+
+    document.querySelectorAll('.reorder-drag-ghost, #reorder-active-drag-clone').forEach(el => el.remove());
+    document.querySelectorAll('.card-wrap.reorder-dragging').forEach(w => w.classList.remove('reorder-dragging'));
+    document.querySelectorAll('.card').forEach(c => {
+      c.style.opacity = '';
+      c.style.visibility = '';
+    });
     document.body.classList.remove('is-reordering-drag');
+
+    dragCloneRef.current = null;
     isDraggingCardRef.current = false;
     dragStartRef.current = { startX: 0, startY: 0, gameId: null, rating: null, cardWrap: null, cardContent: null, initialRect: null };
-
-    if (reorderInitialListRef.current) {
-      setGamesList(reorderInitialListRef.current);
-    }
-    setIsReorderMode(false);
     setDraggedGameId(null);
     setDraggedRating(null);
   }, []);
 
-  const commitReorderMode = useCallback(() => {
-    if (dragCloneRef.current) {
-      if (dragCloneRef.current.parentNode) dragCloneRef.current.remove();
-      dragCloneRef.current = null;
+  const cancelReorderMode = useCallback(() => {
+    cleanupActiveDragImmediate();
+    if (reorderInitialListRef.current) {
+      setGamesList(reorderInitialListRef.current);
     }
-    const start = dragStartRef.current;
-    if (start?.cardContent) {
-      start.cardContent.style.opacity = '';
-      start.cardContent.style.visibility = '';
-      start.cardWrap?.classList.remove('reorder-dragging');
-    }
-    document.body.classList.remove('is-reordering-drag');
-    isDraggingCardRef.current = false;
-    dragStartRef.current = { startX: 0, startY: 0, gameId: null, rating: null, cardWrap: null, cardContent: null, initialRect: null };
+    setIsReorderMode(false);
+  }, [cleanupActiveDragImmediate]);
 
+  const commitReorderMode = useCallback(() => {
+    cleanupActiveDragImmediate();
     const profileId = viewedCatalogProfile?.id || currentUser?.id;
     try {
       localStorage.setItem(getCustomOrderKey(profileId), JSON.stringify(gamesList.map(g => g.id)));
@@ -7074,9 +7093,7 @@ const App = () => {
 
     reorderInitialListRef.current = [...gamesList];
     setIsReorderMode(false);
-    setDraggedGameId(null);
-    setDraggedRating(null);
-  }, [gamesList, viewedCatalogProfile, currentUser]);
+  }, [cleanupActiveDragImmediate, viewedCatalogProfile, currentUser, gamesList]);
 
   useEffect(() => {
     if (!canEditCatalog && isReorderMode) {
@@ -7101,15 +7118,16 @@ const App = () => {
       document.body.classList.add('is-reorder-mode');
     } else {
       document.body.classList.remove('is-reorder-mode');
-      if (draggedGameId || draggedRating) {
-        setDraggedGameId(null);
-        setDraggedRating(null);
-      }
+      document.body.classList.remove('is-reordering-drag');
+      setDraggedGameId(null);
+      setDraggedRating(null);
     }
     return () => {
       document.body.classList.remove('is-reorder-mode');
+      document.body.classList.remove('is-reordering-drag');
+      document.querySelectorAll('.reorder-drag-ghost, #reorder-active-drag-clone').forEach(el => el.remove());
     };
-  }, [isReorderMode, draggedGameId, draggedRating]);
+  }, [isReorderMode]);
 
   useEffect(() => {
     if (!isReorderMode) return;
@@ -7175,9 +7193,67 @@ const App = () => {
     });
   }, [viewedCatalogProfile, currentUser]);
 
+  const getUntransformedRect = (element) => {
+    if (!element) return null;
+    const rect = element.getBoundingClientRect();
+    const style = window.getComputedStyle(element);
+    const transform = style.transform || style.webkitTransform;
+
+    if (!transform || transform === 'none') {
+      return {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    try {
+      const matrix = new DOMMatrix(transform);
+      return {
+        left: rect.left - matrix.m41,
+        top: rect.top - matrix.m42,
+        width: rect.width,
+        height: rect.height
+      };
+    } catch (_) {
+      return {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height
+      };
+    }
+  };
+
   const handleReorderDragStart = useCallback((game, e) => {
     if (!canEditCatalog) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    if (dragCleanupTimerRef.current) {
+      clearTimeout(dragCleanupTimerRef.current);
+      dragCleanupTimerRef.current = null;
+    }
+    if (activeMoveHandlerRef.current) {
+      window.removeEventListener('pointermove', activeMoveHandlerRef.current);
+      activeMoveHandlerRef.current = null;
+    }
+    if (activeUpHandlerRef.current) {
+      window.removeEventListener('pointerup', activeUpHandlerRef.current);
+      window.removeEventListener('pointercancel', activeUpHandlerRef.current);
+      window.removeEventListener('blur', activeUpHandlerRef.current);
+      activeUpHandlerRef.current = null;
+    }
+
+    document.querySelectorAll('.reorder-drag-ghost, #reorder-active-drag-clone').forEach(el => el.remove());
+    document.querySelectorAll('.card-wrap.reorder-dragging').forEach(w => w.classList.remove('reorder-dragging'));
+    document.querySelectorAll('.card').forEach(c => {
+      c.style.opacity = '';
+      c.style.visibility = '';
+    });
+    document.body.classList.remove('is-reordering-drag');
+    dragCloneRef.current = null;
+    isDraggingCardRef.current = false;
 
     const rating = calcRating(game.ratings);
     const cardWrap = e.currentTarget.closest('.card-wrap');
@@ -7219,6 +7295,9 @@ const App = () => {
           setDraggedRating(start.rating);
           document.body.classList.add('is-reordering-drag');
           start.cardWrap.classList.add('reorder-dragging');
+
+          // Clean up any lingering ghosts first
+          document.querySelectorAll('.reorder-drag-ghost, #reorder-active-drag-clone').forEach(el => el.remove());
 
           // Create floating wrapper + cloned card attached to document.body
           const ghost = document.createElement('div');
@@ -7308,6 +7387,8 @@ const App = () => {
       window.removeEventListener('pointerup', handleWindowPointerUp);
       window.removeEventListener('pointercancel', handleWindowPointerUp);
       window.removeEventListener('blur', handleWindowPointerUp);
+      activeMoveHandlerRef.current = null;
+      activeUpHandlerRef.current = null;
 
       document.body.classList.remove('is-reordering-drag');
 
@@ -7344,45 +7425,75 @@ const App = () => {
           }
 
           // Animate clone smoothly back to initial spot
-          clone.style.transition = 'transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          clone.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          void clone.offsetHeight;
           clone.style.transform = `translate3d(${start.initialRect.left}px, ${start.initialRect.top}px, 0) scale(1) rotate(0)`;
 
-          setTimeout(() => {
-            if (clone.parentNode) clone.remove();
-            dragCloneRef.current = null;
-            if (start.cardContent) {
-              start.cardContent.style.opacity = '';
-              start.cardContent.style.visibility = '';
+          if (dragCleanupTimerRef.current) clearTimeout(dragCleanupTimerRef.current);
+          const currentClone = clone;
+          dragCleanupTimerRef.current = setTimeout(() => {
+            dragCleanupTimerRef.current = null;
+            if (currentClone?.parentNode) currentClone.remove();
+            document.querySelectorAll('.reorder-drag-ghost, #reorder-active-drag-clone').forEach(el => el.remove());
+            if (dragCloneRef.current === currentClone) {
+              dragCloneRef.current = null;
             }
-            start.cardWrap?.classList.remove('reorder-dragging');
-            setDraggedGameId(null);
-            setDraggedRating(null);
-            isDraggingCardRef.current = false;
-          }, 330);
-        } else {
-          // Settled in its new slot in the group
-          // Find the active card-wrap for this game in the DOM
-          const currentWrap = document.querySelector(`.card-wrap[data-game-id="${start.gameId}"]`) || start.cardWrap;
-          const targetRect = currentWrap.getBoundingClientRect();
-
-          clone.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
-          clone.style.transform = `translate3d(${targetRect.left}px, ${targetRect.top}px, 0) scale(1) rotate(0)`;
-
-          setTimeout(() => {
-            if (clone.parentNode) clone.remove();
-            dragCloneRef.current = null;
-            if (start.cardContent) {
-              start.cardContent.style.opacity = '';
-              start.cardContent.style.visibility = '';
+            const activeWrap = document.querySelector(`.card-wrap[data-game-id="${start.gameId}"]`) || start.cardWrap;
+            const activeContent = activeWrap?.querySelector('.card') || start.cardContent;
+            if (activeContent) {
+              activeContent.style.opacity = '';
+              activeContent.style.visibility = '';
             }
-            start.cardWrap?.classList.remove('reorder-dragging');
+            activeWrap?.classList.remove('reorder-dragging');
             setDraggedGameId(null);
             setDraggedRating(null);
             isDraggingCardRef.current = false;
           }, 230);
+        } else {
+          // Settled in its new slot in the group
+          // Find the active card-wrap for this game in the DOM
+          const currentWrap = document.querySelector(`.card-wrap[data-game-id="${start.gameId}"]`) || start.cardWrap;
+          const targetRect = getUntransformedRect(currentWrap) || currentWrap.getBoundingClientRect();
+
+          const curX = (upEvent.clientX ?? start.startX) - start.grabOffsetX;
+          const curY = (upEvent.clientY ?? start.startY) - start.grabOffsetY;
+          const distToTarget = Math.hypot(curX - targetRect.left, curY - targetRect.top);
+
+          const finishSettle = () => {
+            if (dragCleanupTimerRef.current) {
+              clearTimeout(dragCleanupTimerRef.current);
+              dragCleanupTimerRef.current = null;
+            }
+            if (clone?.parentNode) clone.remove();
+            document.querySelectorAll('.reorder-drag-ghost, #reorder-active-drag-clone').forEach(el => el.remove());
+            dragCloneRef.current = null;
+            const activeWrap = document.querySelector(`.card-wrap[data-game-id="${start.gameId}"]`) || currentWrap;
+            const activeContent = activeWrap?.querySelector('.card') || start.cardContent;
+            if (activeContent) {
+              activeContent.style.opacity = '';
+              activeContent.style.visibility = '';
+            }
+            activeWrap?.classList.remove('reorder-dragging');
+            setDraggedGameId(null);
+            setDraggedRating(null);
+            isDraggingCardRef.current = false;
+          };
+
+          if (distToTarget < 10) {
+            // Immediately in slot, zero delay / no hang
+            finishSettle();
+          } else {
+            clone.style.transition = 'transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1)';
+            void clone.offsetHeight;
+            clone.style.transform = `translate3d(${targetRect.left}px, ${targetRect.top}px, 0) scale(1) rotate(0)`;
+
+            if (dragCleanupTimerRef.current) clearTimeout(dragCleanupTimerRef.current);
+            dragCleanupTimerRef.current = setTimeout(finishSettle, 170);
+          }
         }
       } else {
         if (clone?.parentNode) clone.remove();
+        document.querySelectorAll('.reorder-drag-ghost, #reorder-active-drag-clone').forEach(el => el.remove());
         dragCloneRef.current = null;
         if (start.cardContent) {
           start.cardContent.style.opacity = '';
@@ -7397,11 +7508,14 @@ const App = () => {
       dragStartRef.current = { startX: 0, startY: 0, gameId: null, rating: null, cardWrap: null, cardContent: null, initialRect: null };
     };
 
+    activeMoveHandlerRef.current = handleWindowPointerMove;
+    activeUpHandlerRef.current = handleWindowPointerUp;
+
     window.addEventListener('pointermove', handleWindowPointerMove, { passive: true });
     window.addEventListener('pointerup', handleWindowPointerUp);
     window.addEventListener('pointercancel', handleWindowPointerUp);
     window.addEventListener('blur', handleWindowPointerUp);
-  }, [gamesList, moveGameInList]);
+  }, [canEditCatalog, activeView, gamesList, moveGameInList]);
 
   const ratingGroupCounts = useMemo(() => {
     const counts = {};
@@ -8391,7 +8505,7 @@ const Card = memo(forwardRef(({
 
   return (
     <motion.article
-      layout="position"
+      layout={isDragging ? false : "position"}
       ref={setCardRef}
       data-game-id={game.id}
       data-game-rating={calcRating(game.ratings)}

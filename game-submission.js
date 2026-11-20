@@ -92,6 +92,9 @@
       throw new Error('Укажите время прохождения игры.');
     }
     if (!imagePath) throw new Error('Добавьте обложку игры.');
+    if (trimmedReview.length > 310) {
+      throw new Error('Описание игры не должно превышать 310 символов.');
+    }
 
     const game = {
       id: submissionId,
