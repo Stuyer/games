@@ -152,7 +152,7 @@ body.rating-editing {
   position: fixed;
   right: 1.25rem;
   top: 1.25rem;
-  z-index: 2200;
+  z-index: 2750;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1572,13 +1572,13 @@ body.dark .library-person-title.tier-7 {
 }
 
 .site-header.rating-info-active {
-  z-index: 2200;
+  z-index: 2750;
 }
 
 .rating-info-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 2750;
   background: rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(1px);
   -webkit-backdrop-filter: blur(1px);
@@ -1614,7 +1614,7 @@ body.dark .library-person-title.tier-7 {
   position: fixed;
   top: 4.375rem;
   right: 5rem;
-  z-index: 2300;
+  z-index: 2800 !important;
   width: min(25rem, calc(100vw - 2.5rem));
   max-height: min(70vh, 32.5rem);
   overflow-y: auto;
@@ -1686,7 +1686,7 @@ body.dark .library-person-title.tier-7 {
 .profile-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 2750;
   background: rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(1px);
   -webkit-backdrop-filter: blur(1px);
@@ -1696,7 +1696,7 @@ body.dark .library-person-title.tier-7 {
   position: fixed;
   top: 4.375rem;
   right: 5rem;
-  z-index: 2100;
+  z-index: 2800 !important;
   width: min(26.25rem, calc(100vw - 2.5rem));
   max-height: calc(100vh - 6.25rem);
   overflow-y: auto;
@@ -2065,7 +2065,7 @@ body.dark .library-person-title.tier-7 {
   -webkit-backdrop-filter: blur(12px);
   position: sticky;
   top: 0.625rem;
-  z-index: 1000;
+  z-index: 2600 !important;
   transition: box-shadow 0.22s ease;
 }
 
@@ -2225,7 +2225,9 @@ body.dark .sort-dock-btn.active {
 #search,
 .controls-bar .compare-confirm-btn,
 .controls-bar .genre-reset-btn,
-.controls-bar .btn-red {
+.controls-bar .btn-red,
+.controls-bar .reorder-toggle-btn,
+.controls-bar .reorder-cancel-btn {
   height: 2rem;
   box-sizing: border-box;
 }
@@ -2741,7 +2743,7 @@ body.dark .search-suggestions {
 .auth-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2800;
+  z-index: 2900;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -2752,7 +2754,7 @@ body.dark .search-suggestions {
   top: 42%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 2850;
+  z-index: 2950;
   width: min(26.25rem, calc(100vw - 2rem));
   max-height: calc(100vh - 2.5rem);
   overflow-y: auto;
@@ -4532,7 +4534,7 @@ body.dark #game-modal .modal-content.compare-mode {
 /* Genre Panel Base */
 .genre-panel {
   position: fixed;
-  z-index: 1150;
+  z-index: 2700 !important;
   display: flex;
   flex-direction: column;
   opacity: 0;
@@ -4906,8 +4908,9 @@ body:not(.dark) .roulette-box .close-btn:hover {
     bottom: 10rem;
     width: min(17.5rem, calc(100vw - 1.25rem));
     max-width: none;
-    max-height: 58vh;
+    max-height: calc(100vh - 5rem);
     box-sizing: border-box;
+    z-index: 2700 !important;
   }
 
   .sort-dock {
@@ -5590,7 +5593,7 @@ body:not(.dark) .roulette-box .close-btn:hover {
   left: 1.5rem;
   bottom: 5.75rem;
   width: min(23rem, calc(100vw - 3rem));
-  max-height: none;
+  max-height: calc(100vh - 4.5rem);
   padding: 0;
   background: var(--genre-panel-bg);
   border: 1px solid color-mix(in srgb, var(--genre-accent) 24%, transparent);
@@ -5598,6 +5601,7 @@ body:not(.dark) .roulette-box .close-btn:hover {
   box-shadow: var(--genre-panel-shadow);
   color: var(--text);
   overflow: hidden;
+  z-index: 2700 !important;
 }
 
 .genre-panel::before {
@@ -5670,7 +5674,8 @@ body:not(.dark) .roulette-box .close-btn:hover {
   align-content: start;
   gap: 0.3125rem;
   padding: 0.125rem 1rem 0.75rem;
-  overflow-y: visible;
+  overflow-y: auto;
+  max-height: calc(100vh - 8.5rem);
   scrollbar-width: thin;
   scrollbar-color: var(--genre-accent) transparent;
 }
@@ -5759,8 +5764,9 @@ body.dark .genre-tag.excluded::after {
     right: 0.75rem;
     bottom: calc(5.375rem + env(safe-area-inset-bottom));
     width: auto;
-    max-height: none;
+    max-height: calc(100vh - 5rem);
     border-radius: 1.375rem;
+    z-index: 2700 !important;
   }
 
   .genre-filter-tools {
@@ -8566,3 +8572,331 @@ body:not(.dark) .stats-deviation-legend-dot.neg {
     font-size: calc(100vw / 122);
   }
 }
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ ПЕРЕМЕЩЕНИЯ КАРТОЧЕК С ОДИНАКОВЫМ РЕЙТИНГОМ
+   ═══════════════════════════════════════════════ */
+
+.reorder-btn-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.reorder-toggle-btn {
+  height: 2rem;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--surface-border);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px) saturate(90%);
+  -webkit-backdrop-filter: blur(14px) saturate(90%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 0.1875rem 0.875rem rgba(0, 0, 0, 0.08);
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: border-color 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s;
+  user-select: none;
+}
+
+body.dark .reorder-toggle-btn {
+  background: rgba(30, 30, 34, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0.1875rem 0.875rem rgba(0, 0, 0, 0.22);
+}
+
+/* Обычный режим: маленькая квадратная иконка той же высоты и скругления */
+.reorder-toggle-btn:not(.active) {
+  width: 2rem;
+  min-width: 2rem;
+  padding: 0;
+  font-size: 1.05rem;
+}
+
+.reorder-toggle-btn:not(.active):hover {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(168, 133, 255, 0.6);
+  color: #a885ff;
+}
+
+body.dark .reorder-toggle-btn:not(.active):hover {
+  background: rgba(38, 38, 44, 0.95);
+  border-color: rgba(168, 133, 255, 0.6);
+  color: #c4a9ff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0.25rem 1rem rgba(168, 133, 255, 0.22);
+}
+
+body:not(.dark) .reorder-toggle-btn:not(.active):hover {
+  border-color: #8b5cf6;
+  color: #7c3aed;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Активный режим: кнопка подсвечивается фиолетовым и меняется на «✓ Готово» */
+.reorder-toggle-btn.active {
+  padding: 0 0.85rem;
+  border-color: #a885ff;
+  background: rgba(168, 133, 255, 0.22);
+  color: #d6bfff;
+  font-weight: 600;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 16px rgba(168, 133, 255, 0.35);
+}
+
+body:not(.dark) .reorder-toggle-btn.active {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.18);
+  color: #6d28d9;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 14px rgba(139, 92, 246, 0.25);
+}
+
+.reorder-toggle-btn.active:hover {
+  background: rgba(168, 133, 255, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 20px rgba(168, 133, 255, 0.5);
+}
+
+body:not(.dark) .reorder-toggle-btn.active:hover {
+  background: rgba(139, 92, 246, 0.26);
+}
+
+.reorder-toggle-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.reorder-btn-check {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* Кнопка крестик (отмена изменений) рядом с «Готово» */
+.reorder-cancel-btn {
+  height: 2rem;
+  width: 2rem;
+  min-width: 2rem;
+  padding: 0;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  border: 1px solid var(--surface-border);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px) saturate(90%);
+  -webkit-backdrop-filter: blur(14px) saturate(90%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 0.1875rem 0.875rem rgba(0, 0, 0, 0.08);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1;
+  transition: border-color 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s;
+  user-select: none;
+}
+
+body.dark .reorder-cancel-btn {
+  background: rgba(30, 30, 34, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0.1875rem 0.875rem rgba(0, 0, 0, 0.22);
+  color: #bbb;
+}
+
+.reorder-cancel-btn:hover {
+  background: rgba(254, 242, 242, 0.95);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ef4444;
+}
+
+body.dark .reorder-cancel-btn:hover {
+  background: rgba(58, 28, 36, 0.95);
+  border-color: rgba(255, 110, 135, 0.55);
+  color: #ff8fa6;
+}
+
+/* Подсказка при наведении: «Изменить порядок» */
+.reorder-tooltip {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  background: #1e1e22;
+  color: #f3f3f5;
+  font-size: 0.76rem;
+  font-weight: 500;
+  padding: 0.32rem 0.62rem;
+  border-radius: 0.45rem;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+body:not(.dark) .reorder-tooltip {
+  background: #2a2a2e;
+  color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.reorder-btn-wrap:hover .reorder-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Поле поиска в режиме перемещения */
+#search:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Контейнер подсказки над сеткой */
+.reorder-banner-container {
+  overflow: hidden;
+  max-width: calc(var(--card-w) + 2.5rem);
+  margin: 0 auto;
+}
+
+/* Подсказка над сеткой: «Режим перемещения: перетаскивай карточки с одинаковой оценкой» */
+.reorder-banner-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0 1.25rem;
+  padding: 0.55rem 1rem;
+  border-radius: 0.625rem;
+  background: rgba(241, 118, 52, 0.08);
+  border: 1px dashed rgba(241, 118, 52, 0.4);
+  color: #f17634;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: center;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+body:not(.dark) .reorder-banner-hint {
+  background: rgba(241, 118, 52, 0.1);
+  color: #c95116;
+  border-color: rgba(201, 81, 22, 0.45);
+}
+
+@media (max-width: 640px) {
+  .reorder-toggle-btn.active {
+    padding: 0 0.55rem;
+    font-size: 0.8rem;
+  }
+
+  .reorder-esc-hint {
+    display: none !important;
+  }
+}
+
+/* Карточки в режиме перемещения: пунктирная рамка, курсор grab, эффект дыхания */
+.card-wrap.reorder-movable {
+  touch-action: none;
+}
+
+.card-wrap.reorder-movable .card {
+  cursor: grab;
+  outline: 2px dashed rgba(168, 133, 255, 0.7);
+  outline-offset: -2px;
+  animation: reorderBreathe 2.6s ease-in-out infinite;
+}
+
+body:not(.dark) .card-wrap.reorder-movable .card {
+  outline-color: rgba(139, 92, 246, 0.65);
+}
+
+@keyframes reorderBreathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.014);
+  }
+}
+
+.card-wrap.reorder-movable:hover .card {
+  outline-color: #a885ff;
+}
+
+body:not(.dark) .card-wrap.reorder-movable:hover .card {
+  outline-color: #8b5cf6;
+}
+
+/* Карточки других групп тускнеют при перетаскивании до 30-40% прозрачности */
+.card-wrap.reorder-dimmed {
+  opacity: 0.35 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease;
+}
+
+/* Перетаскиваемая карточка: пустое пространство (слот) в сетке */
+.card-wrap.reorder-dragging {
+  z-index: 100 !important;
+  position: relative;
+  touch-action: none;
+}
+
+.card-wrap.reorder-dragging > .card {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Плавающий клон при перетаскивании */
+.reorder-drag-ghost {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+  z-index: 2400 !important;
+  box-sizing: border-box !important;
+  will-change: transform;
+  transform-origin: center center;
+}
+
+.reorder-drag-ghost .card {
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  outline: 2.5px solid #a885ff !important;
+  outline-offset: -2px;
+  box-shadow: 0 1.5rem 3.5rem rgba(0, 0, 0, 0.6) !important;
+  cursor: grabbing !important;
+  animation: none !important;
+}
+
+body:not(.dark) .reorder-drag-ghost .card {
+  outline-color: #8b5cf6 !important;
+  box-shadow: 0 1.5rem 3.5rem rgba(0, 0, 0, 0.28) !important;
+}
+
+/* Глобальное состояние перетаскивания */
+body.is-reordering-drag,
+body.is-reordering-drag * {
+  cursor: grabbing !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Скрытие всплывающих окон в режиме перемещения, чтобы не мешать обзору */
+body.is-reorder-mode .card-wrap .popup,
+body.is-reorder-mode .card-wrap .genres-popup {
+  display: none !important;
+}
+

@@ -6472,6 +6472,33 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
 };
 
 
+const getCustomOrderKey = (profileId) => `site_games_order_${profileId || 'default'}`;
+
+const getOrderedGames = (games, profileId) => {
+  if (!games || !games.length) return [];
+  try {
+    const key = getCustomOrderKey(profileId);
+    const saved = localStorage.getItem(key);
+    if (!saved) return [...games];
+    const idOrder = JSON.parse(saved);
+    if (!Array.isArray(idOrder) || !idOrder.length) return [...games];
+
+    const orderMap = new Map();
+    idOrder.forEach((id, index) => {
+      orderMap.set(id, index);
+    });
+
+    return [...games].sort((a, b) => {
+      const idxA = orderMap.has(a.id) ? orderMap.get(a.id) : 999999;
+      const idxB = orderMap.has(b.id) ? orderMap.get(b.id) : 999999;
+      return idxA - idxB;
+    });
+  } catch (_) {
+    return [...games];
+  }
+};
+
+
 const App = () => {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [view, setView] = useState(localStorage.getItem('view') || 'grid');
@@ -6546,6 +6573,26 @@ const App = () => {
   const searchInputRef = useRef(null);
   const searchWrapperRef = useRef(null);
   const ratingInfoRef = useRef(null);
+
+  const [gamesList, setGamesList] = useState(() => {
+    const profileId = viewedCatalogProfile?.id || loadedSessionUserId;
+    return getOrderedGames(GAMES, profileId);
+  });
+
+  useEffect(() => {
+    const profileId = viewedCatalogProfile?.id || currentUser?.id;
+    setGamesList(getOrderedGames(GAMES, profileId));
+  }, [viewedCatalogProfile, currentUser]);
+
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [draggedGameId, setDraggedGameId] = useState(null);
+  const [draggedRating, setDraggedRating] = useState(null);
+  const isDraggingCardRef = useRef(false);
+  const dragStartRef = useRef({ startX: 0, startY: 0, gameId: null, rating: null, cardWrap: null, cardContent: null, initialRect: null });
+  const reorderInitialListRef = useRef(null);
+  const dragInitialListRef = useRef(null);
+  const dragCloneRef = useRef(null);
+  const lastSwapTimeRef = useRef(0);
 
   const activeView = isMobile ? 'list' : view;
   const requestedProfile = new URLSearchParams(window.location.search).get('profile');
@@ -6848,6 +6895,7 @@ const App = () => {
 
       // Focus Search (/ or .)
       if (key === '/' || key === '.') {
+        if (isReorderMode) return;
         e.preventDefault();
         if (searchInputRef.current) {
           searchInputRef.current.focus();
@@ -6859,11 +6907,11 @@ const App = () => {
 
     window.addEventListener('keydown', handleGlobalShortcuts);
     return () => window.removeEventListener('keydown', handleGlobalShortcuts);
-  }, [modalGame, compareModalOpen, rouletteOpen, ratingInfoOpen, searchFocused, showGenrePanel, speedDialOpen]);
+  }, [modalGame, compareModalOpen, rouletteOpen, ratingInfoOpen, searchFocused, showGenrePanel, speedDialOpen, isReorderMode]);
 
   // Filter Logic
   const filteredGames = useMemo(() => {
-    let res = GAMES;
+    let res = gamesList;
 
     if (debouncedSearch.trim()) {
       const rawTokens = debouncedSearch.trim().split(/\s+/).filter(Boolean);
@@ -6972,7 +7020,397 @@ const App = () => {
     }[sortBy] || (g => g.ratings[sortBy] ?? 0);
 
     return [...res].sort((a, b) => getSortValue(b) - getSortValue(a));
-  }, [debouncedSearch, selectedGenres, excludedGenres, sortBy]);
+  }, [gamesList, debouncedSearch, selectedGenres, excludedGenres, sortBy]);
+
+  const isFilterActive = Boolean(
+    search.trim() ||
+    debouncedSearch.trim() ||
+    selectedGenres.length > 0 ||
+    excludedGenres.length > 0
+  );
+
+  const cancelReorderMode = useCallback(() => {
+    if (dragCloneRef.current) {
+      if (dragCloneRef.current.parentNode) dragCloneRef.current.remove();
+      dragCloneRef.current = null;
+    }
+    const start = dragStartRef.current;
+    if (start?.cardContent) {
+      start.cardContent.style.opacity = '';
+      start.cardContent.style.visibility = '';
+      start.cardWrap?.classList.remove('reorder-dragging');
+    }
+    document.body.classList.remove('is-reordering-drag');
+    isDraggingCardRef.current = false;
+    dragStartRef.current = { startX: 0, startY: 0, gameId: null, rating: null, cardWrap: null, cardContent: null, initialRect: null };
+
+    if (reorderInitialListRef.current) {
+      setGamesList(reorderInitialListRef.current);
+    }
+    setIsReorderMode(false);
+    setDraggedGameId(null);
+    setDraggedRating(null);
+  }, []);
+
+  const commitReorderMode = useCallback(() => {
+    if (dragCloneRef.current) {
+      if (dragCloneRef.current.parentNode) dragCloneRef.current.remove();
+      dragCloneRef.current = null;
+    }
+    const start = dragStartRef.current;
+    if (start?.cardContent) {
+      start.cardContent.style.opacity = '';
+      start.cardContent.style.visibility = '';
+      start.cardWrap?.classList.remove('reorder-dragging');
+    }
+    document.body.classList.remove('is-reordering-drag');
+    isDraggingCardRef.current = false;
+    dragStartRef.current = { startX: 0, startY: 0, gameId: null, rating: null, cardWrap: null, cardContent: null, initialRect: null };
+
+    const profileId = viewedCatalogProfile?.id || currentUser?.id;
+    try {
+      localStorage.setItem(getCustomOrderKey(profileId), JSON.stringify(gamesList.map(g => g.id)));
+    } catch (_) {}
+
+    reorderInitialListRef.current = [...gamesList];
+    setIsReorderMode(false);
+    setDraggedGameId(null);
+    setDraggedRating(null);
+  }, [gamesList, viewedCatalogProfile, currentUser]);
+
+  useEffect(() => {
+    if (!canEditCatalog && isReorderMode) {
+      cancelReorderMode();
+    }
+  }, [canEditCatalog, isReorderMode, cancelReorderMode]);
+
+  useEffect(() => {
+    if (isFilterActive && isReorderMode) {
+      cancelReorderMode();
+    }
+  }, [isFilterActive, isReorderMode, cancelReorderMode]);
+
+  useEffect(() => {
+    if (sortBy !== 'rating' && isReorderMode) {
+      cancelReorderMode();
+    }
+  }, [sortBy, isReorderMode, cancelReorderMode]);
+
+  useEffect(() => {
+    if (isReorderMode) {
+      document.body.classList.add('is-reorder-mode');
+    } else {
+      document.body.classList.remove('is-reorder-mode');
+      if (draggedGameId || draggedRating) {
+        setDraggedGameId(null);
+        setDraggedRating(null);
+      }
+    }
+    return () => {
+      document.body.classList.remove('is-reorder-mode');
+    };
+  }, [isReorderMode, draggedGameId, draggedRating]);
+
+  useEffect(() => {
+    if (!isReorderMode) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelReorderMode();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isReorderMode, cancelReorderMode]);
+
+  const toggleReorderMode = () => {
+    if (!canEditCatalog) return;
+    if (isReorderMode) {
+      commitReorderMode();
+    } else {
+      if (isFilterActive) return;
+      if (sortBy !== 'rating') {
+        setSortBy('rating');
+      }
+      if (compareMode) {
+        setCompareMode(false);
+        setSelectedGames([]);
+      }
+      reorderInitialListRef.current = [...gamesList];
+      setIsReorderMode(true);
+    }
+  };
+
+  const moveGameInList = useCallback((sourceId, targetId, expectedRating, saveToStorage = false) => {
+    if (!canEditCatalog) return;
+    setGamesList(prev => {
+      const sourceIndex = prev.findIndex(g => g.id === sourceId);
+      const targetIndex = prev.findIndex(g => g.id === targetId);
+      if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) return prev;
+
+      const sourceGame = prev[sourceIndex];
+      const targetGame = prev[targetIndex];
+
+      const sRating = calcRating(sourceGame.ratings);
+      const tRating = calcRating(targetGame.ratings);
+
+      if (Math.abs(sRating - expectedRating) > 0.05 || Math.abs(tRating - expectedRating) > 0.05) return prev;
+
+      const nextList = [...prev];
+      nextList.splice(sourceIndex, 1);
+      const newTargetIndex = nextList.findIndex(g => g.id === targetId);
+      if (newTargetIndex === -1) return prev;
+
+      const insertIndex = sourceIndex < targetIndex ? newTargetIndex + 1 : newTargetIndex;
+      nextList.splice(insertIndex, 0, sourceGame);
+
+      if (saveToStorage) {
+        const profileId = viewedCatalogProfile?.id || currentUser?.id;
+        try {
+          localStorage.setItem(getCustomOrderKey(profileId), JSON.stringify(nextList.map(g => g.id)));
+        } catch (_) {}
+      }
+
+      return nextList;
+    });
+  }, [viewedCatalogProfile, currentUser]);
+
+  const handleReorderDragStart = useCallback((game, e) => {
+    if (!canEditCatalog) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    const rating = calcRating(game.ratings);
+    const cardWrap = e.currentTarget.closest('.card-wrap');
+    const cardContent = cardWrap?.querySelector('.card');
+    if (!cardWrap || !cardContent) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initialRect = cardWrap.getBoundingClientRect();
+    const grabOffsetX = startX - initialRect.left;
+    const grabOffsetY = startY - initialRect.top;
+
+    dragStartRef.current = {
+      startX,
+      startY,
+      grabOffsetX,
+      grabOffsetY,
+      gameId: game.id,
+      rating,
+      cardWrap,
+      cardContent,
+      initialRect
+    };
+    dragInitialListRef.current = [...gamesList];
+    isDraggingCardRef.current = false;
+
+    const handleWindowPointerMove = (moveEvent) => {
+      const start = dragStartRef.current;
+      if (!start.gameId) return;
+
+      const dx = moveEvent.clientX - start.startX;
+      const dy = moveEvent.clientY - start.startY;
+      const dist = Math.hypot(dx, dy);
+
+      if (!isDraggingCardRef.current) {
+        if (dist > 4) {
+          isDraggingCardRef.current = true;
+          setDraggedGameId(start.gameId);
+          setDraggedRating(start.rating);
+          document.body.classList.add('is-reordering-drag');
+          start.cardWrap.classList.add('reorder-dragging');
+
+          // Create floating wrapper + cloned card attached to document.body
+          const ghost = document.createElement('div');
+          ghost.id = 'reorder-active-drag-clone';
+          ghost.className = `card-wrap reorder-drag-ghost ${activeView === 'grid' ? 'grid-view' : ''}`;
+          ghost.style.position = 'fixed';
+          ghost.style.top = '0px';
+          ghost.style.left = '0px';
+          ghost.style.width = `${start.initialRect.width}px`;
+          ghost.style.height = `${start.initialRect.height}px`;
+          ghost.style.zIndex = '999999';
+          ghost.style.pointerEvents = 'none';
+          ghost.style.transform = `translate3d(${moveEvent.clientX - start.grabOffsetX}px, ${moveEvent.clientY - start.grabOffsetY}px, 0) scale(1.04) rotate(1.2deg)`;
+
+          const cardClone = start.cardContent.cloneNode(true);
+          cardClone.style.opacity = '1';
+          cardClone.style.visibility = 'visible';
+          ghost.appendChild(cardClone);
+
+          document.body.appendChild(ghost);
+          dragCloneRef.current = ghost;
+
+          // Hide original card content inside cardWrap so placeholder is visible
+          start.cardContent.style.opacity = '0';
+          start.cardContent.style.visibility = 'hidden';
+        } else {
+          return;
+        }
+      }
+
+      // Move clone
+      if (dragCloneRef.current) {
+        dragCloneRef.current.style.transform = `translate3d(${moveEvent.clientX - start.grabOffsetX}px, ${moveEvent.clientY - start.grabOffsetY}px, 0) scale(1.04) rotate(1.2deg)`;
+      }
+
+      // Auto-scroll near edges of viewport
+      if (moveEvent.clientY < 75) {
+        window.scrollBy({ top: -9, behavior: 'auto' });
+      } else if (moveEvent.clientY > window.innerHeight - 75) {
+        window.scrollBy({ top: 9, behavior: 'auto' });
+      }
+
+      // Check for live swap under pointer
+      const underElem = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+      const targetWrap = underElem?.closest('.card-wrap[data-game-id]');
+      let targetId = null;
+
+      if (targetWrap) {
+        const tId = targetWrap.getAttribute('data-game-id');
+        const tRating = parseFloat(targetWrap.getAttribute('data-game-rating'));
+        if (tId && tId !== start.gameId && !isNaN(tRating) && Math.abs(tRating - start.rating) < 0.05) {
+          targetId = tId;
+        }
+      } else {
+        const groupCards = [...document.querySelectorAll('.card-wrap[data-game-rating]')].filter(c => {
+          const r = parseFloat(c.getAttribute('data-game-rating'));
+          return !isNaN(r) && Math.abs(r - start.rating) < 0.05;
+        });
+        let minDist = Infinity;
+        let closestId = null;
+        for (const card of groupCards) {
+          const rect = card.getBoundingClientRect();
+          const clampX = Math.max(rect.left, Math.min(moveEvent.clientX, rect.right));
+          const clampY = Math.max(rect.top, Math.min(moveEvent.clientY, rect.bottom));
+          const d = Math.hypot(moveEvent.clientX - clampX, moveEvent.clientY - clampY);
+          if (d < minDist) {
+            minDist = d;
+            closestId = card.getAttribute('data-game-id');
+          }
+        }
+        if (minDist <= 55 && closestId && closestId !== start.gameId) {
+          targetId = closestId;
+        }
+      }
+
+      if (targetId && targetId !== start.gameId) {
+        const now = Date.now();
+        if (now - lastSwapTimeRef.current > 160) {
+          lastSwapTimeRef.current = now;
+          moveGameInList(start.gameId, targetId, start.rating, false);
+        }
+      }
+    };
+
+    const handleWindowPointerUp = (upEvent) => {
+      window.removeEventListener('pointermove', handleWindowPointerMove);
+      window.removeEventListener('pointerup', handleWindowPointerUp);
+      window.removeEventListener('pointercancel', handleWindowPointerUp);
+      window.removeEventListener('blur', handleWindowPointerUp);
+
+      document.body.classList.remove('is-reordering-drag');
+
+      const start = dragStartRef.current;
+      const clone = dragCloneRef.current;
+
+      if (isDraggingCardRef.current && clone && start.cardWrap) {
+        // Check if dropped far away from rating group
+        const groupCards = [...document.querySelectorAll('.card-wrap[data-game-rating]')].filter(c => {
+          const r = parseFloat(c.getAttribute('data-game-rating'));
+          return !isNaN(r) && Math.abs(r - start.rating) < 0.05;
+        });
+
+        let minDist = Infinity;
+        const clientX = upEvent.clientX ?? start.startX;
+        const clientY = upEvent.clientY ?? start.startY;
+
+        for (const card of groupCards) {
+          const rect = card.getBoundingClientRect();
+          const clampX = Math.max(rect.left, Math.min(clientX, rect.right));
+          const clampY = Math.max(rect.top, Math.min(clientY, rect.bottom));
+          const d = Math.hypot(clientX - clampX, clientY - clampY);
+          if (d < minDist) {
+            minDist = d;
+          }
+        }
+
+        const isFarAway = minDist > 100;
+
+        if (isFarAway) {
+          // Revert list to state before this drag started
+          if (dragInitialListRef.current) {
+            setGamesList(dragInitialListRef.current);
+          }
+
+          // Animate clone smoothly back to initial spot
+          clone.style.transition = 'transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          clone.style.transform = `translate3d(${start.initialRect.left}px, ${start.initialRect.top}px, 0) scale(1) rotate(0)`;
+
+          setTimeout(() => {
+            if (clone.parentNode) clone.remove();
+            dragCloneRef.current = null;
+            if (start.cardContent) {
+              start.cardContent.style.opacity = '';
+              start.cardContent.style.visibility = '';
+            }
+            start.cardWrap?.classList.remove('reorder-dragging');
+            setDraggedGameId(null);
+            setDraggedRating(null);
+            isDraggingCardRef.current = false;
+          }, 330);
+        } else {
+          // Settled in its new slot in the group
+          // Find the active card-wrap for this game in the DOM
+          const currentWrap = document.querySelector(`.card-wrap[data-game-id="${start.gameId}"]`) || start.cardWrap;
+          const targetRect = currentWrap.getBoundingClientRect();
+
+          clone.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          clone.style.transform = `translate3d(${targetRect.left}px, ${targetRect.top}px, 0) scale(1) rotate(0)`;
+
+          setTimeout(() => {
+            if (clone.parentNode) clone.remove();
+            dragCloneRef.current = null;
+            if (start.cardContent) {
+              start.cardContent.style.opacity = '';
+              start.cardContent.style.visibility = '';
+            }
+            start.cardWrap?.classList.remove('reorder-dragging');
+            setDraggedGameId(null);
+            setDraggedRating(null);
+            isDraggingCardRef.current = false;
+          }, 230);
+        }
+      } else {
+        if (clone?.parentNode) clone.remove();
+        dragCloneRef.current = null;
+        if (start.cardContent) {
+          start.cardContent.style.opacity = '';
+          start.cardContent.style.visibility = '';
+        }
+        start.cardWrap?.classList.remove('reorder-dragging');
+        setDraggedGameId(null);
+        setDraggedRating(null);
+        isDraggingCardRef.current = false;
+      }
+
+      dragStartRef.current = { startX: 0, startY: 0, gameId: null, rating: null, cardWrap: null, cardContent: null, initialRect: null };
+    };
+
+    window.addEventListener('pointermove', handleWindowPointerMove, { passive: true });
+    window.addEventListener('pointerup', handleWindowPointerUp);
+    window.addEventListener('pointercancel', handleWindowPointerUp);
+    window.addEventListener('blur', handleWindowPointerUp);
+  }, [gamesList, moveGameInList]);
+
+  const ratingGroupCounts = useMemo(() => {
+    const counts = {};
+    for (const g of filteredGames) {
+      const r = calcRating(g.ratings);
+      counts[r] = (counts[r] || 0) + 1;
+    }
+    return counts;
+  }, [filteredGames]);
 
   const genreClickTimerRef = useRef(null);
   const genreTapRef = useRef({ genre: null, time: 0 });
@@ -7485,22 +7923,23 @@ const App = () => {
             className="search-wrapper"
             ref={searchWrapperRef}
             style={{ flex: 1 }}
-            onFocus={() => setSearchFocused(true)}
+            onFocus={() => !isReorderMode && setSearchFocused(true)}
           >
             <input
               ref={searchInputRef}
               type="text"
               id="search"
-              placeholder={isMobile ? "Поиск по играм, студиям и многому другому..." : "Поиск по играм, жанрам, годам, оценкам или компаниям..."}
+              placeholder={isReorderMode ? "Поиск недоступен в режиме перемещения" : (isMobile ? "Поиск по играм, студиям и многому другому..." : "Поиск по играм, жанрам, годам, оценкам или компаниям...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              disabled={isReorderMode}
               aria-expanded={searchSuggestionsOpen}
               aria-controls="search-suggestions"
               style={{ width: '100%', boxSizing: 'border-box' }}
             />
-            {search && <button type="button" id="clear-search" onClick={() => { setSearch(""); setDebouncedSearch(""); }} title="Очистить поиск" aria-label="Очистить поиск">×</button>}
+            {search && !isReorderMode && <button type="button" id="clear-search" onClick={() => { setSearch(""); setDebouncedSearch(""); }} title="Очистить поиск" aria-label="Очистить поиск">×</button>}
             <AnimatePresence initial={false}>
-              {searchSuggestionsOpen && (
+              {searchSuggestionsOpen && !isReorderMode && (
                 <motion.div
                   key="search-suggestions"
                   id="search-suggestions"
@@ -7536,6 +7975,44 @@ const App = () => {
               )}
             </AnimatePresence>
           </div>
+          {canEditCatalog && (
+            <div className="reorder-btn-wrap">
+              <button
+                type="button"
+                className={`reorder-toggle-btn ${isReorderMode ? 'active' : ''}`}
+                onClick={toggleReorderMode}
+                disabled={isFilterActive}
+                title={isFilterActive ? "Сбросьте поиск и фильтры для изменения порядка" : (isReorderMode ? (isMobile ? "Применить изменения" : "Применить изменения и выйти (Esc для отмены)") : "Изменить порядок")}
+                aria-label={isReorderMode ? "Применить изменения и выйти" : "Изменить порядок"}
+                aria-pressed={isReorderMode}
+              >
+                {isReorderMode ? (
+                  <>
+                    <span className="reorder-btn-check" aria-hidden="true">✓</span>
+                    <span className="reorder-btn-text">Готово</span>
+                  </>
+                ) : (
+                  <span className="reorder-btn-icon" aria-hidden="true">⇅</span>
+                )}
+              </button>
+              {isReorderMode && (
+                <button
+                  type="button"
+                  className="reorder-cancel-btn"
+                  onClick={cancelReorderMode}
+                  title="Отменить изменения"
+                  aria-label="Отменить изменения"
+                >
+                  ✕
+                </button>
+              )}
+              {!isReorderMode && !isFilterActive && (
+                <div className="reorder-tooltip" role="tooltip" aria-hidden="true">
+                  Изменить порядок
+                </div>
+              )}
+            </div>
+          )}
           {(selectedGenres.length > 0 || excludedGenres.length > 0) && (
             <button
               type="button"
@@ -7558,22 +8035,67 @@ const App = () => {
       )}
 
       <main>
+        <AnimatePresence>
+          {canEditCatalog && isReorderMode && (
+            <motion.div
+              key="reorder-banner-container"
+              className="reorder-banner-container"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{
+                height: 'auto',
+                opacity: 1,
+                transition: {
+                  height: { duration: 0.42, ease: [0.16, 1, 0.3, 1] },
+                  opacity: { duration: 0.3, ease: "easeOut", delay: 0.08 }
+                }
+              }}
+              exit={{
+                height: 0,
+                opacity: 0,
+                transition: {
+                  height: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                  opacity: { duration: 0.2, ease: "easeIn" }
+                }
+              }}
+            >
+              <div className="reorder-banner-hint">
+                <span className="reorder-banner-text">
+                  Режим перемещения: перетаскивай карточки с одинаковой оценкой
+                  {!isMobile && <span className="reorder-esc-hint"> · Esc для отмены</span>}
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Grid / List with Framer Motion Layout */}
         <motion.section layout key={activeView} id="grid" className={activeView === 'grid' ? 'grid-view' : ''} aria-label="Каталог игр">
           <AnimatePresence mode="popLayout">
-            {filteredGames.map((game, i) => (
-              <Card
-                key={game.id}
-                game={game}
-                view={activeView}
-                onClick={handleCardClick}
-                onLongPress={handleCardLongPress}
-                selected={selectedGames.includes(game.id)}
-                compareMode={compareMode}
-                index={i}
-                sortBy={sortBy}
-              />
-            ))}
+            {filteredGames.map((game, i) => {
+              const rating = calcRating(game.ratings);
+              const groupCount = ratingGroupCounts[rating] || 0;
+              const isGroupMovable = canEditCatalog && isReorderMode && groupCount > 1;
+              const isDimmed = canEditCatalog && isReorderMode && draggedRating !== null && rating !== draggedRating;
+              const isDragging = canEditCatalog && isReorderMode && draggedGameId === game.id;
+              return (
+                <Card
+                  key={game.id}
+                  game={game}
+                  view={activeView}
+                  onClick={handleCardClick}
+                  onLongPress={handleCardLongPress}
+                  selected={selectedGames.includes(game.id)}
+                  compareMode={compareMode}
+                  index={i}
+                  sortBy={sortBy}
+                  isReorderMode={isReorderMode}
+                  isGroupMovable={isGroupMovable}
+                  isDimmed={isDimmed}
+                  isDragging={isDragging}
+                  onReorderDragStart={handleReorderDragStart}
+                />
+              );
+            })}
           </AnimatePresence>
         </motion.section>
         {filteredGames.length === 0 && (
@@ -7705,7 +8227,21 @@ const App = () => {
   );
 };
 
-const Card = memo(forwardRef(({ game, view, onClick, onLongPress, selected, compareMode = false, index, sortBy }, forwardedRef) => {
+const Card = memo(forwardRef(({
+  game,
+  view,
+  onClick,
+  onLongPress,
+  selected,
+  compareMode = false,
+  index,
+  sortBy,
+  isReorderMode = false,
+  isGroupMovable = false,
+  isDimmed = false,
+  isDragging = false,
+  onReorderDragStart
+}, forwardedRef) => {
   const cardRef = useRef(null);
   const contentRef = useRef(null);
   const longPressTimerRef = useRef(null);
@@ -7745,6 +8281,7 @@ const Card = memo(forwardRef(({ game, view, onClick, onLongPress, selected, comp
   }, [selected]);
 
   const handleMouseMove = (e) => {
+    if (isReorderMode) return;
     if (view === 'grid') return;
     if (!cardRef.current || !contentRef.current) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
@@ -7790,6 +8327,7 @@ const Card = memo(forwardRef(({ game, view, onClick, onLongPress, selected, comp
   };
 
   const startLongPress = (e) => {
+    if (isReorderMode) return;
     if (!onLongPress) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
 
@@ -7811,6 +8349,16 @@ const Card = memo(forwardRef(({ game, view, onClick, onLongPress, selected, comp
     }
   };
 
+  const handlePointerDown = (e) => {
+    if (isReorderMode) {
+      if (isGroupMovable && onReorderDragStart) {
+        onReorderDragStart(game, e);
+      }
+      return;
+    }
+    startLongPress(e);
+  };
+
   const handlePointerMove = (e) => {
     if (!longPressTimerRef.current) return;
     const dx = Math.abs(e.clientX - pointerStartRef.current.x);
@@ -7821,6 +8369,11 @@ const Card = memo(forwardRef(({ game, view, onClick, onLongPress, selected, comp
   };
 
   const handleClick = (e) => {
+    if (isReorderMode) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if (longPressTriggeredRef.current) {
       longPressTriggeredRef.current = false;
       e.preventDefault();
@@ -7840,19 +8393,22 @@ const Card = memo(forwardRef(({ game, view, onClick, onLongPress, selected, comp
     <motion.article
       layout="position"
       ref={setCardRef}
+      data-game-id={game.id}
+      data-game-rating={calcRating(game.ratings)}
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      animate={{ opacity: isDimmed ? 0.35 : 1 }}
       exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.38, ease: "easeOut" } }}
-      className={`card-wrap ${selected ? 'selected' : ''} ${isDeselecting ? 'deselecting' : ''}`}
+      className={`card-wrap ${selected ? 'selected' : ''} ${isDeselecting ? 'deselecting' : ''} ${isGroupMovable ? 'reorder-movable' : ''} ${isDimmed ? 'reorder-dimmed' : ''} ${isDragging ? 'reorder-dragging' : ''}`}
       onClick={handleClick}
-      onPointerDown={startLongPress}
-      onPointerUp={cancelLongPress}
-      onPointerCancel={cancelLongPress}
-      onPointerLeave={cancelLongPress}
-      onPointerMove={handlePointerMove}
+      onPointerDown={handlePointerDown}
+      onPointerUp={isReorderMode ? undefined : cancelLongPress}
+      onPointerCancel={isReorderMode ? undefined : cancelLongPress}
+      onPointerLeave={isReorderMode ? undefined : cancelLongPress}
+      onPointerMove={isReorderMode ? undefined : handlePointerMove}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onKeyDown={(event) => {
+        if (isReorderMode) return;
         if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
           const cards = [...document.querySelectorAll('#grid [role="button"]')];
           const currentIndex = cards.indexOf(event.currentTarget);
@@ -7877,15 +8433,15 @@ const Card = memo(forwardRef(({ game, view, onClick, onLongPress, selected, comp
           handleClick(event);
         }
       }}
-      tabIndex={index === 0 ? 0 : -1}
-      role="button"
+      tabIndex={isReorderMode ? -1 : (index === 0 ? 0 : -1)}
+      role={isReorderMode ? undefined : "button"}
       aria-pressed={compareMode ? selected : undefined}
-      aria-label={`Открыть карточку игры ${game.title}`}
-      title={`Открыть карточку игры ${game.title}`}
+      aria-label={isReorderMode ? (isGroupMovable ? `Перетащить карточку игры ${game.title}` : `Карточка игры ${game.title}`) : `Открыть карточку игры ${game.title}`}
+      title={isReorderMode ? (isGroupMovable ? `Перетащить карточку игры ${game.title}` : undefined) : `Открыть карточку игры ${game.title}`}
       transition={{
         layout: { type: "spring", stiffness: 220, damping: 28, mass: 1.3 },
-        opacity: { duration: 0.4, ease: "easeOut" },
-        scale: { duration: 0.4, ease: "easeOut" },
+        opacity: { duration: 0.3, ease: "easeOut" },
+        scale: { duration: 0.3, ease: "easeOut" },
       }}
       style={view === 'list' ? { marginBottom: 20 } : {}}
     >
