@@ -3842,7 +3842,28 @@ const drawShareCardCanvas = (stats, catalogProfile, portrait) => {
   ctx.font = '600 26px Inter, system-ui, sans-serif';
   ctx.fillText('ЛУЧШИЕ СТУДИИ', padX, studiosY);
 
-  const topStudios = (stats.allDevs || []).slice(0, 3);
+  const topStudios = (stats.topStudios && stats.topStudios.length > 0)
+    ? stats.topStudios.slice(0, 3)
+    : (() => {
+        const list = [...(stats.allDevs || [])];
+        const multi = list.filter(d => d.count > 1);
+        const single = list.filter(d => d.count <= 1);
+        const sortFn = (a, b) => {
+          const rateA = a.avgRating !== '—' ? Number(a.avgRating) : -1;
+          const rateB = b.avgRating !== '—' ? Number(b.avgRating) : -1;
+          const bestRateA = a.bestGameRating ? Number(a.bestGameRating) : -1;
+          const bestRateB = b.bestGameRating ? Number(b.bestGameRating) : -1;
+          return (
+            rateB - rateA ||
+            b.count - a.count ||
+            bestRateB - bestRateA ||
+            a.name.localeCompare(b.name)
+          );
+        };
+        multi.sort(sortFn);
+        single.sort(sortFn);
+        return [...multi, ...single].slice(0, 3);
+      })();
   if (topStudios.length === 0) {
     ctx.fillStyle = '#6e6e78';
     ctx.font = '500 28px Inter, system-ui, sans-serif';
@@ -3920,7 +3941,28 @@ const ShareCardModal = ({ isOpen, onClose, stats, catalogProfile }) => {
   const weakestCrit = validCrits.length > 1 ? validCrits[validCrits.length - 1] : null;
 
   const topGenres = (stats.genres || []).slice(0, 3);
-  const topStudios = (stats.allDevs || []).slice(0, 3);
+  const topStudios = (stats.topStudios && stats.topStudios.length > 0)
+    ? stats.topStudios.slice(0, 3)
+    : (() => {
+        const list = [...(stats.allDevs || [])];
+        const multi = list.filter(d => d.count > 1);
+        const single = list.filter(d => d.count <= 1);
+        const sortFn = (a, b) => {
+          const rateA = a.avgRating !== '—' ? Number(a.avgRating) : -1;
+          const rateB = b.avgRating !== '—' ? Number(b.avgRating) : -1;
+          const bestRateA = a.bestGameRating ? Number(a.bestGameRating) : -1;
+          const bestRateB = b.bestGameRating ? Number(b.bestGameRating) : -1;
+          return (
+            rateB - rateA ||
+            b.count - a.count ||
+            bestRateB - bestRateA ||
+            a.name.localeCompare(b.name)
+          );
+        };
+        multi.sort(sortFn);
+        single.sort(sortFn);
+        return [...multi, ...single].slice(0, 3);
+      })();
   const spanText = stats.minYear && stats.maxYear ? `${stats.minYear}–${String(stats.maxYear).slice(-2)}` : '—';
   const gameWord = stats.totalGames % 10 === 1 && stats.totalGames % 100 !== 11 ? 'игра' : (stats.totalGames % 10 >= 2 && stats.totalGames % 10 <= 4 ? 'игры' : 'игр');
 
@@ -4438,6 +4480,25 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
       };
     });
 
+    // Top studios ranked by rating (requires > 1 game first, identical to statistics page)
+    const multiGameDevs = allDevs.filter(d => d.count > 1);
+    const singleGameDevs = allDevs.filter(d => d.count <= 1);
+    const studioSortByRating = (a, b) => {
+      const rateA = a.avgRating !== '—' ? Number(a.avgRating) : -1;
+      const rateB = b.avgRating !== '—' ? Number(b.avgRating) : -1;
+      const bestRateA = a.bestGameRating ? Number(a.bestGameRating) : -1;
+      const bestRateB = b.bestGameRating ? Number(b.bestGameRating) : -1;
+      return (
+        rateB - rateA ||
+        b.count - a.count ||
+        bestRateB - bestRateA ||
+        a.name.localeCompare(b.name)
+      );
+    };
+    multiGameDevs.sort(studioSortByRating);
+    singleGameDevs.sort(studioSortByRating);
+    const topStudios = [...multiGameDevs, ...singleGameDevs].slice(0, 3);
+
     return {
       totalGames,
       avgRating,
@@ -4458,7 +4519,8 @@ const StatsPage = ({ games = [], catalogProfile = null }) => {
       avgPlaytime,
       scatterPlaytimeRating,
       criteriaStats,
-      allDevs
+      allDevs,
+      topStudios
     };
   }, [games]);
 

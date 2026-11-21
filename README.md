@@ -191,45 +191,6 @@
 
 ---
 
-## Локальный запуск и разработка
-
-### 1. Установка зависимостей
-```bash
-npm install
-```
-
-### 2. Настройка подключения к Supabase
-Проверьте конфигурацию публичного URL и `publishableKey` в файле `supabase-config.js`, а также примените SQL-миграции из папки `supabase/migrations/` в вашем проекте Supabase.
-
-Для работы CLI-импортёра справочника игр создайте локальный файл `.env` (по образцу `.env.example`):
-```env
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
-### 3. Запуск dev-сервера
-```bash
-npm run dev
-```
-
-### 4. Работа со справочником игр (`data/games.json`)
-```bash
-# Проверка валидности всех игр и жанров без записи в БД (dry-run)
-npm run import:games:dry
-
-# Импорт и синхронизация справочника игр с базой Supabase
-npm run import:games
-```
-
-### 5. Сборка для продакшена
-```bash
-npm run build
-npm run preview
-```
-Готовая оптимизированная сборка формируется в директории `dist/`.
-
----
-
 ## Автор и обратная связь
 
 Разработка и идея: Телеграм - **[@zvuxoed](https://t.me/zvuxoed)**  
