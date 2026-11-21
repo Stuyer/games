@@ -300,29 +300,26 @@ const clearLocalAuthState = () => {
 
 let activeScrollLocks = 0;
 let savedDocumentOverflow = '';
-let savedBodyOverflow = '';
 
 const useScrollLock = (locked) => {
   useEffect(() => {
     if (!locked) return undefined;
     if (activeScrollLocks === 0) {
       savedDocumentOverflow = document.documentElement.style.overflow;
-      savedBodyOverflow = document.body.style.overflow;
       document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
     }
     activeScrollLocks += 1;
     return () => {
       activeScrollLocks = Math.max(0, activeScrollLocks - 1);
       if (activeScrollLocks === 0) {
         document.documentElement.style.overflow = savedDocumentOverflow;
-        document.body.style.overflow = savedBodyOverflow;
       }
     };
   }, [locked]);
 };
 
 const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
+  useScrollLock(isOpen);
   const [tab, setTab] = useState(initialTab);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -645,15 +642,18 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
 
   return (
     <AnimatePresence>
-      {isOpen && <motion.div
-        className="library-drawer-layer"
-        key="library-drawer-layer"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        <div className="library-drawer-backdrop" onClick={onClose} aria-hidden="true" />
-        <motion.aside
+      {isOpen && (
+        <div className="library-drawer-layer" key="library-drawer-layer">
+          <motion.div
+            className="library-drawer-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28, ease: 'easeOut' }}
+            onClick={onClose}
+            aria-hidden="true"
+          />
+          <motion.aside
           className="library-drawer"
           role="dialog"
           aria-modal="true"
@@ -697,7 +697,8 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
             })}
           </div>
         </motion.aside>
-      </motion.div>}
+      </div>
+    )}
     </AnimatePresence>
   );
 };
@@ -891,15 +892,18 @@ const CommentsDrawer = ({ isOpen, onClose, profile, currentUser, games, onOpenGa
 
   return (
     <AnimatePresence>
-      {isOpen && <motion.div
-        className="library-drawer-layer"
-        key="comments-drawer-layer"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        <div className="library-drawer-backdrop" onClick={onClose} aria-hidden="true" />
-        <motion.aside
+      {isOpen && (
+        <div className="library-drawer-layer" key="comments-drawer-layer">
+          <motion.div
+            className="library-drawer-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28, ease: 'easeOut' }}
+            onClick={onClose}
+            aria-hidden="true"
+          />
+          <motion.aside
           className="comments-drawer"
           role="dialog"
           aria-modal="true"
@@ -971,7 +975,8 @@ const CommentsDrawer = ({ isOpen, onClose, profile, currentUser, games, onOpenGa
             </>}
           </div>
         </motion.aside>
-      </motion.div>}
+      </div>
+    )}
     </AnimatePresence>
   );
 };
@@ -1333,9 +1338,13 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
   if (!isOpen) return null;
 
   return (
-    <>
-      <div className="profile-backdrop" onClick={onClose} />
-      <div className="profile-popover" role="dialog" aria-modal="true" aria-label="Профиль">
+    <div
+      className="profile-popover"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Профиль"
+      onWheel={(e) => e.stopPropagation()}
+    >
         <div className="profile-header">
           <button
             type="button"
@@ -1459,7 +1468,6 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
           </>
         )}
       </div>
-    </>
   );
 };
 
@@ -1519,7 +1527,14 @@ const getSortDisplayValue = (game, sortBy = 'rating') => {
 
 let memoryGameCatalogCache = null;
 
-const filterAndSortCatalogResults = (rows, queryWords, normalizedQuery, limit = 8) => {
+const filterAndSortCatalogResults = (
+  rows,
+  queryWords,
+  normalizedQuery,
+  limit = 15,
+  libraryCatalogIds = null,
+  libraryGameTitles = null
+) => {
   if (!Array.isArray(rows) || !queryWords.length) return [];
   const matched = [];
 
@@ -1534,14 +1549,29 @@ const filterAndSortCatalogResults = (rows, queryWords, normalizedQuery, limit = 
         : titleWords[0]?.startsWith(queryWords[0])
           ? 2
           : 3;
-    matched.push({ row, rank });
+    const inLibrary = (
+      (row?.id && libraryCatalogIds?.has(row.id)) ||
+      (row?.title && libraryGameTitles?.has(normalizeSearchPart(row.title)))
+    ) ? 1 : 0;
+
+    matched.push({ row, rank, inLibrary });
   }
 
   matched.sort((a, b) => {
-    if (a.rank !== b.rank) return a.rank - b.rank;
+    // 1. Игры, которых нет в библиотеке (0) идут первыми; те, что уже есть (1) — в самом низу
+    if (a.inLibrary !== b.inLibrary) return a.inLibrary - b.inLibrary;
+
+    // 2. Точное совпадение с запросом имеет приоритет
+    const aExact = a.rank === 0 ? 0 : 1;
+    const bExact = b.rank === 0 ? 0 : 1;
+    if (aExact !== bExact) return aExact - bExact;
+
+    // 3. Сортировка по году выпуска (сначала более новые)
     const yearDiff = (Number(b.row.release_year) || 0) - (Number(a.row.release_year) || 0);
     if (yearDiff !== 0) return yearDiff;
-    return String(a.row.title || '').localeCompare(String(b.row.title || ''), 'ru');
+
+    // 4. Сортировка по названию (по алфавиту)
+    return String(a.row.title || '').localeCompare(String(b.row.title || ''), 'ru', { sensitivity: 'base' });
   });
 
   return matched.slice(0, limit).map(item => item.row);
@@ -1842,12 +1872,19 @@ const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, libr
         const normalizedTerm = normalizeSearchPart(term);
         const { data, error: rpcError } = await client.rpc('search_game_catalog', {
           p_query: term,
-          p_limit: 25
+          p_limit: 40
         });
         if (rpcError) throw rpcError;
         if (!active) return;
 
-        let filtered = filterAndSortCatalogResults(data, queryWords, normalizedTerm, 8);
+        let filtered = filterAndSortCatalogResults(
+          data,
+          queryWords,
+          normalizedTerm,
+          15,
+          libraryCatalogIds,
+          libraryGameTitles
+        );
 
         // Fallback на прямое чтение справочника, если в БД ещё не применена новая
         // миграция search_game_catalog (например, при вводе 1 символа вроде "3"
@@ -1869,7 +1906,14 @@ const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, libr
           }
           if (!active) return;
           if (memoryGameCatalogCache) {
-            filtered = filterAndSortCatalogResults(memoryGameCatalogCache, queryWords, normalizedTerm, 8);
+            filtered = filterAndSortCatalogResults(
+              memoryGameCatalogCache,
+              queryWords,
+              normalizedTerm,
+              15,
+              libraryCatalogIds,
+              libraryGameTitles
+            );
           }
         }
 
@@ -1893,7 +1937,7 @@ const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, libr
       window.clearTimeout(timer);
       setBusy(false);
     };
-  }, [query, selected]);
+  }, [query, selected, libraryCatalogIds, libraryGameTitles]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -2010,7 +2054,7 @@ const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, libr
                 type="button"
                 role="option"
                 aria-selected={index === activeIndex}
-                className={`catalog-option ${index === activeIndex ? 'active' : ''}`}
+                className={`catalog-option ${index === activeIndex ? 'active' : ''} ${isRowInLibrary ? 'is-in-library' : ''}`}
                 onMouseDown={event => event.preventDefault()}
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => choose(row)}
@@ -2105,11 +2149,8 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
   useEffect(() => {
     if (!editingRatingKey) return;
 
-    const prevBodyOverflow = document.body.style.overflow;
     const prevHtmlOverflow = document.documentElement.style.overflow;
-    document.body.classList.add('rating-editing');
     document.documentElement.classList.add('rating-editing');
-    document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
 
     let accumulatedDelta = 0;
@@ -2147,9 +2188,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
     return () => {
       document.removeEventListener('wheel', handleWindowWheel, { capture: true });
       document.removeEventListener('touchmove', handleTouchMove, { capture: true });
-      document.body.style.overflow = prevBodyOverflow;
       document.documentElement.style.overflow = prevHtmlOverflow;
-      document.body.classList.remove('rating-editing');
       document.documentElement.classList.remove('rating-editing');
     };
   }, [editingRatingKey]);
@@ -6583,9 +6622,25 @@ const App = () => {
   const [libraryDrawerOpen, setLibraryDrawerOpen] = useState(false);
   const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
   const [controlsCompact, setControlsCompact] = useState(false);
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const mobileHeaderHidden = headerHidden;
+  const setMobileHeaderHidden = setHeaderHidden;
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
   const searchInputRef = useRef(null);
   const searchWrapperRef = useRef(null);
   const ratingInfoRef = useRef(null);
+  const profileRef = useRef(null);
+  const headerRef = useRef(null);
+  const shareTimeoutRef = useRef(null);
+  const shareToastTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current);
+      if (shareToastTimeoutRef.current) clearTimeout(shareToastTimeoutRef.current);
+    };
+  }, []);
 
   const [gamesList, setGamesList] = useState(() => {
     const profileId = viewedCatalogProfile?.id || loadedSessionUserId;
@@ -6619,6 +6674,88 @@ const App = () => {
   );
   const canEditCatalog = Boolean(currentUser && viewedCatalogProfile && currentUser.id === viewedCatalogProfile.id);
   const searchSuggestionsOpen = searchFocused && !search.trim();
+
+  const copyTextToClipboard = async (text) => {
+    if (navigator?.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // fallback below
+      }
+    }
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      textArea.style.top = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return successful;
+    } catch (err) {
+      console.error('Copy fallback failed', err);
+      return false;
+    }
+  };
+
+  const handleShareLibrary = async () => {
+    const count = GAMES ? GAMES.length : 0;
+    const countStr = formatGameCount(count);
+    let title = 'Zvux Good Games';
+    let shareIntro = '';
+    const origin = window.location.origin;
+    const pathname = window.location.pathname.replace(/\/index\.html$/, '/') || '/';
+    let url = `${origin}${pathname}`;
+
+    if (viewedCatalogProfile?.username) {
+      url = `${origin}${pathname}?profile=${encodeURIComponent(viewedCatalogProfile.username)}`;
+      if (isExternalCatalog) {
+        const user = viewedCatalogProfile.display_name
+          ? `${viewedCatalogProfile.display_name} (@${viewedCatalogProfile.username})`
+          : `@${viewedCatalogProfile.username}`;
+        title = `Библиотека ${user}`;
+        shareIntro = `Игровая библиотека ${user} на Zvux Good Games (${countStr}):`;
+      } else {
+        title = 'Моя библиотека игр';
+        shareIntro = `Моя библиотека игр на Zvux Good Games (${countStr}):`;
+      }
+    } else {
+      title = 'Каталог игр Zvux Good Games';
+      shareIntro = `Каталог игр Zvux Good Games (${countStr}):`;
+    }
+
+    const fullText = `${shareIntro}\n${url}`;
+
+    if (isMobile && typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title,
+          text: shareIntro,
+          url
+        });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
+    await copyTextToClipboard(fullText);
+    if (isMobile) {
+      setShareToast(true);
+      if (shareToastTimeoutRef.current) clearTimeout(shareToastTimeoutRef.current);
+      shareToastTimeoutRef.current = setTimeout(() => setShareToast(false), 2400);
+    } else {
+      setShareCopied(true);
+      if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current);
+      shareTimeoutRef.current = setTimeout(() => setShareCopied(false), 2400);
+    }
+  };
 
   useEffect(() => {
     const client = window.siteSupabase;
@@ -6801,9 +6938,13 @@ const App = () => {
   // Scroll Listener
   useEffect(() => {
     let ticking = false;
+    let lastY = window.scrollY;
+
     const updateScrollState = () => {
       ticking = false;
       const y = window.scrollY;
+      const delta = y - lastY;
+
       setShowScrollTop(prev => {
         const next = y > 300;
         return prev === next ? prev : next;
@@ -6812,6 +6953,16 @@ const App = () => {
         const next = y > 68;
         return prev === next ? prev : next;
       });
+
+      if (y <= 20) {
+        setMobileHeaderHidden(false);
+      } else if (delta > 6 && y > 60) {
+        setMobileHeaderHidden(true);
+      } else if (delta < -6) {
+        setMobileHeaderHidden(false);
+      }
+
+      lastY = y;
     };
     const handleScroll = () => {
       if (!ticking) {
@@ -6829,15 +6980,39 @@ const App = () => {
     document.body.classList.toggle('sd-open', speedDialOpen);
   }, [speedDialOpen]);
 
-  // Закрываем компактную справку при клике вне неё.
+  // Закрываем компактную справку при клике вне неё или нажатии Escape.
   useEffect(() => {
     if (!ratingInfoOpen) return;
     const handleOutsidePointer = (event) => {
       if (!ratingInfoRef.current?.contains(event.target)) setRatingInfoOpen(false);
     };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setRatingInfoOpen(false);
+    };
     document.addEventListener('pointerdown', handleOutsidePointer);
-    return () => document.removeEventListener('pointerdown', handleOutsidePointer);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [ratingInfoOpen]);
+
+  // Закрываем поповер профиля при клике вне него или нажатии Escape.
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handleOutsidePointer = (event) => {
+      if (!profileRef.current?.contains(event.target)) setProfileOpen(false);
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setProfileOpen(false);
+    };
+    document.addEventListener('pointerdown', handleOutsidePointer);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [profileOpen]);
 
   // Scroll Lock for full-screen modals
   useScrollLock(Boolean(modalGame || compareModalOpen || rouletteOpen));
@@ -7044,6 +7219,19 @@ const App = () => {
     selectedGenres.length > 0 ||
     excludedGenres.length > 0
   );
+
+  useEffect(() => {
+    if (filteredGames.length === 0) {
+      document.documentElement.classList.add('no-scroll-empty');
+      setHeaderHidden(false);
+      window.scrollTo(0, 0);
+    } else {
+      document.documentElement.classList.remove('no-scroll-empty');
+    }
+    return () => {
+      document.documentElement.classList.remove('no-scroll-empty');
+    };
+  }, [filteredGames.length]);
 
   const cleanupActiveDragImmediate = useCallback(() => {
     if (dragCleanupTimerRef.current) {
@@ -7768,10 +7956,41 @@ const App = () => {
               <span style={{ fontSize: '1.2em' }}>{view === 'grid' ? '☰' : '⊞'}</span> {view === 'grid' ? <>Вид: список <span className="sd-hotkey">(v)</span></> : <>Вид: сетка <span className="sd-hotkey">(v)</span></>}
             </button>
           </div>}
+          {/* Поделиться (только на мобильных) */}
+          {isMobile && (
+            <div className="sd-item">
+              <button
+                type="button"
+                className="sd-label"
+                title="Поделиться библиотекой"
+                onClick={() => {
+                  setSpeedDialOpen(false);
+                  handleShareLibrary();
+                }}
+              >
+                <span>🔗</span> Поделиться
+              </button>
+            </div>
+          )}
         </div>
       </nav>
       {/* Оверлей закрывает веер */}
       <button type="button" className="speed-dial-overlay" onClick={() => setSpeedDialOpen(false)} aria-label="Закрыть меню" aria-hidden={!speedDialOpen} tabIndex={-1} />
+
+      {/* Тост копирования ссылки (мобильный) */}
+      <AnimatePresence>
+        {shareToast && (
+          <motion.div
+            className="mobile-share-toast"
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            <span>✓</span> Ссылка скопирована!
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {ratingInfoOpen && (
@@ -7787,22 +8006,19 @@ const App = () => {
         )}
       </AnimatePresence>
 
-      {/* Поповер профиля */}
-      <ProfilePopover
-        isOpen={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        user={currentUser}
-        onAvatarChange={(url) => {
-          setProfileAvatarUrl(url || '');
-          try {
-            if (url) sessionStorage.setItem('site_cached_avatar', url);
-            else sessionStorage.removeItem('site_cached_avatar');
-          } catch (_) { }
-        }}
-        onModerationCountChange={(count) => {
-          setModerationCount(count);
-        }}
-      />
+      <AnimatePresence>
+        {profileOpen && (
+          <motion.div
+            className="profile-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onClick={() => setProfileOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
 
       <LibraryDrawer
         isOpen={libraryDrawerOpen}
@@ -7833,147 +8049,341 @@ const App = () => {
         onClose={() => setAuthModalOpen(false)}
       />
 
-      {/* ═══ ПРАВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ ═══ */}
-      <nav className={`site-header-right ${controlsCompact ? 'controls-fixed' : ''}`} ref={ratingInfoRef} aria-label="Настройки каталога">
-        {isSignedIn ? (
-          <button
-            type="button"
-            className="account-icon-button"
-            aria-label={
-              profileOpen
-                ? "Закрыть профиль"
-                : isModerator && moderationCount > 0
-                  ? `Открыть профиль: в очереди ${formatSubmissionCount(moderationCount)}`
-                  : "Открыть профиль"
-            }
-            aria-expanded={profileOpen}
-            title={
-              profileOpen
-                ? "Закрыть профиль"
-                : isModerator && moderationCount > 0
-                  ? `Профиль (${formatSubmissionCount(moderationCount)} в очереди)`
-                  : "Профиль"
-            }
-            onClick={() => {
-              setProfileOpen(prev => !prev);
-              setRatingInfoOpen(false);
+      {/* ═══ ШАПКА САЙТА ═══ */}
+      <header
+        className={`site-header ${headerHidden ? 'header-hidden mobile-hidden' : 'header-visible mobile-visible'}`}
+        ref={headerRef}
+      >
+        <div className="site-header-inner">
+          {/* Бренд: Фавикон + Заголовок */}
+          <a
+            href="./"
+            className="site-header-brand"
+            aria-label="Zvux Good Games — на главную"
+            onClick={(e) => {
+              if (window.location.pathname === '/' && !window.location.search && !window.location.hash) {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
             }}
           >
-            {profileAvatarUrl
-              ? <img className="account-avatar-image" src={profileAvatarUrl} alt="" width="34" height="34" decoding="async" />
-              : <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
-            {isModerator && moderationCount > 0 && (
-              <span
-                className="moderator-queue-badge"
-                aria-label={`Заявок в очереди: ${moderationCount}`}
-              >
-                {moderationCount > 99 ? '99+' : moderationCount}
+            <span className="site-header-logo" aria-hidden="true">ZGG</span>
+            <span className="site-header-brand-text">
+              <span className="site-header-brand-title">
+                {isMobile ? (
+                  <><span>Zvux</span><span>Good Games</span></>
+                ) : (
+                  'Zvux Good Games'
+                )}
               </span>
-            )}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="signin-link"
-            title="Войти в аккаунт"
-            onClick={() => {
-              setAuthModalTab('signin');
-              setAuthModalOpen(true);
-            }}
-          >
-            <svg className="signin-link-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="3.5" />
-              <path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" />
-            </svg>
-            <span>Войти</span>
-          </button>
-        )}
-        <button
-          type="button"
-          className="rating-info-trigger"
-          aria-label={RATING_INFO.title}
-          title={RATING_INFO.title}
-          aria-expanded={ratingInfoOpen}
-          onClick={() => {
-            setRatingInfoOpen(open => !open);
-            setProfileOpen(false);
-          }}
-        >
-          ⓘ
-        </button>
-        {ratingInfoOpen && (
-          <div className="rating-info-popover" role="dialog" aria-label={RATING_INFO.title}>
-            <h2>{RATING_INFO.title}</h2>
-            <InfoFormattedText className="rating-info-text rating-info-usage-text">{RATING_INFO.text}</InfoFormattedText>
-            <InfoFormattedText className="rating-info-note">{RATING_INFO.note}</InfoFormattedText>
-          </div>
-        )}
-        <label
-          htmlFor="themeToggle"
-          className="themeToggle st-sunMoonThemeToggleBtn"
-          title={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
-        >
-          <input
-            type="checkbox"
-            id="themeToggle"
-            className="themeToggleInput"
-            tabIndex={0}
-            title={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
-            aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
-            onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            checked={theme === 'light'}
-          />
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" stroke="none">
-            <mask id="moon-mask">
-              <rect x="0" y="0" width="20" height="20" fill="white" />
-              <circle cx="11" cy="3" r="8" fill="black" />
-            </mask>
-            <circle className="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)" />
-            <g>
-              <line className="sunRay" x1="16.8" y1="10" x2="19.2" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              <line className="sunRay sunRay2" x1="13.4" y1="15.8888" x2="14.6" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              <line className="sunRay sunRay3" x1="6.6" y1="15.8888" x2="5.4" y2="17.9672" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              <line className="sunRay sunRay4" x1="3.2" y1="10" x2="0.8" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              <line className="sunRay sunRay5" x1="6.6" y1="4.211" x2="5.4" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              <line className="sunRay sunRay6" x1="13.4" y1="4.211" x2="14.6" y2="2.1326" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </g>
-          </svg>
-        </label>
-      </nav>
+              {!isMobile && (
+                <span className="site-header-subtitle">
+                  {isExternalCatalog && viewedCatalogProfile ? (
+                    <>
+                      Библиотека <span className="site-header-user">@{viewedCatalogProfile.username}</span> · {filteredGames.length !== GAMES.length ? `${formatGameCount(filteredGames.length)} (из ${GAMES.length})` : formatGameCount(GAMES.length)} · только просмотр
+                      <button
+                        type="button"
+                        className="catalog-back-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.location.href = './';
+                        }}
+                        title={isSignedIn ? 'Вернуться в мой каталог' : 'Вернуться на главную'}
+                      >
+                        {isSignedIn ? '← Мой каталог' : '← Главная'}
+                      </button>
+                    </>
+                  ) : isSignedIn && viewedCatalogProfile ? (
+                    <>
+                      Библиотека <span className="site-header-user">@{viewedCatalogProfile.username}</span> · {filteredGames.length !== GAMES.length ? `${formatGameCount(filteredGames.length)} (из ${GAMES.length})` : formatGameCount(GAMES.length)}
+                    </>
+                  ) : (
+                    'Войдите в аккаунт, чтобы открыть свой каталог'
+                  )}
+                </span>
+              )}
+            </span>
+          </a>
 
-      {/* ═══ ШАПКА ═══ */}
-      <header className="site-header">
-        <div className="site-header-left">
-          <nav className="site-header-actions" aria-label="Разделы библиотеки">
-            {canEditCatalog && <a
-              className="add-game-trigger"
+          {/* Навигация десктопа: Библиотеки пользователей, Комментарии, Статистика */}
+          {!isMobile && (
+            <nav className="site-header-nav" aria-label="Основная навигация">
+              <button
+                type="button"
+                className="site-header-pill"
+                onClick={() => {
+                  setProfileOpen(false);
+                  setRatingInfoOpen(false);
+                  setLibraryDrawerOpen(true);
+                }}
+              >
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" />
+                </svg>
+                <span>Библиотеки пользователей</span>
+              </button>
+
+              {viewedCatalogProfile && (
+                <button
+                  type="button"
+                  className="site-header-pill"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setRatingInfoOpen(false);
+                    setLibraryDrawerOpen(false);
+                    setCommentsDrawerOpen(true);
+                  }}
+                >
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  <span>Комментарии</span>
+                </button>
+              )}
+
+              {viewedCatalogProfile && (
+                <a
+                  className="site-header-pill"
+                  href={
+                    isExternalCatalog
+                      ? `stats?profile=${encodeURIComponent(viewedCatalogProfile.username)}`
+                      : 'stats'
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+                  </svg>
+                  <span>Статистика</span>
+                </a>
+              )}
+            </nav>
+          )}
+
+          {/* Распорка */}
+          <div className="site-header-spacer" />
+
+          {/* Кнопка "Добавить игру" (CTA) */}
+          {canEditCatalog && (
+            <a
+              className="site-header-cta"
               href="./add-game"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Добавить новую игру"
               title="Добавить новую игру"
             >
-              <img className="add-game-svg" src="/svg/addnew.svg" alt="Добавить новую игру" width="252" height="139" decoding="async" />
-            </a>}
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              {!isMobile && <span>Добавить игру</span>}
+            </a>
+          )}
+
+          {/* Правый блок: (i), тема, профиль */}
+          <div className="site-header-actions-right">
+            {/* Кнопка (i) */}
+            <div className="site-header-info-wrap" ref={ratingInfoRef}>
+              <button
+                type="button"
+                className="site-header-ib"
+                aria-label={RATING_INFO.title}
+                title={RATING_INFO.title}
+                aria-expanded={ratingInfoOpen}
+                onClick={() => {
+                  setRatingInfoOpen(open => !open);
+                  setProfileOpen(false);
+                }}
+              >
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 11v5M12 8h.01" />
+                </svg>
+              </button>
+              {ratingInfoOpen && (
+                <div
+                  className="rating-info-popover"
+                  role="dialog"
+                  aria-label={RATING_INFO.title}
+                  onWheel={(e) => e.stopPropagation()}
+                >
+                  <h2>{RATING_INFO.title}</h2>
+                  <InfoFormattedText className="rating-info-text rating-info-usage-text">{RATING_INFO.text}</InfoFormattedText>
+                  <InfoFormattedText className="rating-info-note">{RATING_INFO.note}</InfoFormattedText>
+                </div>
+              )}
+            </div>
+
+            {/* Поделиться библиотекой */}
+            {!isMobile && (
+              <div className="site-header-share-wrap">
+                <button
+                  type="button"
+                  className={`site-header-ib site-header-share-btn ${shareCopied ? 'copied' : ''}`}
+                  aria-label={shareCopied ? 'Ссылка скопирована' : 'Поделиться библиотекой'}
+                  title={shareCopied ? 'Ссылка скопирована' : 'Поделиться библиотекой'}
+                  onClick={handleShareLibrary}
+                >
+                  {shareCopied ? (
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                      <polyline points="16 6 12 2 8 6" />
+                      <line x1="12" y1="2" x2="12" y2="15" />
+                    </svg>
+                  )}
+                </button>
+                <AnimatePresence>
+                  {shareCopied && (
+                    <motion.div
+                      className="site-header-share-tooltip"
+                      initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 2, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      Ссылка скопирована!
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Переключатель темы */}
             <button
-              className="find-libraries-trigger"
               type="button"
-              aria-label="Смотреть библиотеки"
-              title="Смотреть библиотеки"
+              className="site-header-ib"
+              aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
+              title={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? (
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+                </svg>
+              ) : (
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="5" />
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                </svg>
+              )}
+            </button>
+
+            {/* Профиль / Вход */}
+            {isSignedIn ? (
+              <div className="site-header-profile-wrap" ref={profileRef}>
+                <button
+                  type="button"
+                  className="site-header-avatar-btn"
+                  aria-label={
+                    profileOpen
+                      ? "Закрыть профиль"
+                      : isModerator && moderationCount > 0
+                        ? `Открыть профиль: в очереди ${formatSubmissionCount(moderationCount)}`
+                        : "Открыть профиль"
+                  }
+                  aria-expanded={profileOpen}
+                  title={
+                    profileOpen
+                      ? "Закрыть профиль"
+                      : isModerator && moderationCount > 0
+                        ? `Профиль (${formatSubmissionCount(moderationCount)} в очереди)`
+                        : "Профиль"
+                  }
+                  onClick={() => {
+                    setProfileOpen(prev => !prev);
+                    setRatingInfoOpen(false);
+                  }}
+                >
+                  {profileAvatarUrl ? (
+                    <img className="site-header-avatar-img" src={profileAvatarUrl} alt="" width="36" height="36" decoding="async" />
+                  ) : (
+                    <span className="site-header-avatar-fallback">
+                      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="8" r="3.5" />
+                        <path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" />
+                      </svg>
+                    </span>
+                  )}
+                  {isModerator && moderationCount > 0 && (
+                    <span
+                      className="moderator-queue-badge"
+                      aria-label={`Заявок в очереди: ${moderationCount}`}
+                    >
+                      {moderationCount > 99 ? '99+' : moderationCount}
+                    </span>
+                  )}
+                </button>
+
+                <ProfilePopover
+                  isOpen={profileOpen}
+                  onClose={() => setProfileOpen(false)}
+                  user={currentUser}
+                  onAvatarChange={(url) => {
+                    setProfileAvatarUrl(url || '');
+                    try {
+                      if (url) sessionStorage.setItem('site_cached_avatar', url);
+                      else sessionStorage.removeItem('site_cached_avatar');
+                    } catch (_) { }
+                  }}
+                  onModerationCountChange={(count) => {
+                    setModerationCount(count);
+                  }}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="site-header-signin-btn"
+                title="Войти в аккаунт"
+                onClick={() => {
+                  setAuthModalTab('signin');
+                  setAuthModalOpen(true);
+                }}
+              >
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="8" r="3.5" />
+                  <path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" />
+                </svg>
+                {!isMobile && <span>Войти</span>}
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* ═══ МОБИЛЬНАЯ НАВИГАЦИЯ И ПОДЗАГОЛОВОК ═══ */}
+      {isMobile && (
+        <div className="mobile-header-subbar">
+          <nav className="mobile-nav-grid" aria-label="Основная навигация">
+            <button
+              type="button"
+              className="mobile-nav-pill"
               onClick={() => {
                 setProfileOpen(false);
                 setRatingInfoOpen(false);
                 setLibraryDrawerOpen(true);
               }}
             >
-              <img className="find-libraries-svg" src="/svg/lib.svg" alt="Библиотеки других" width="278" height="98" decoding="async" />
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" />
+              </svg>
+              <span>Пользователи</span>
             </button>
+
             {viewedCatalogProfile && (
               <button
-                className="comments-trigger"
                 type="button"
-                aria-label="Комментарии профиля"
-                title="Комментарии профиля"
+                className="mobile-nav-pill"
                 onClick={() => {
                   setProfileOpen(false);
                   setRatingInfoOpen(false);
@@ -7981,33 +8391,36 @@ const App = () => {
                   setCommentsDrawerOpen(true);
                 }}
               >
-                <img className="comments-svg" src="/svg/comments.svg" alt="Комментарии" width="314" height="91" decoding="async" />
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                <span>Комментарии</span>
               </button>
             )}
+
             {viewedCatalogProfile && (
               <a
-                className="stats-trigger"
+                className="mobile-nav-pill"
                 href={
                   isExternalCatalog
                     ? `stats?profile=${encodeURIComponent(viewedCatalogProfile.username)}`
                     : 'stats'
                 }
-                aria-label="Статистика библиотеки"
-                title="Статистика библиотеки"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <img className="stats-svg" src="/svg/stats.svg" alt="Статистика" width="312" height="61" decoding="async" />
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+                </svg>
+                <span>Статистика</span>
               </a>
             )}
           </nav>
-          <div className="site-header-copy">
-            <h1 className="page-title">
-              <img className="site-title-svg" src="/svg/title.svg" alt="Zvux Good Games" width="511" height="312" fetchpriority="high" />
-            </h1>
+
+          <div className="mobile-catalog-subtitle">
             {isExternalCatalog && viewedCatalogProfile ? (
-              <p className="page-subtitle">
-                Библиотека @{viewedCatalogProfile.username} · {filteredGames.length !== GAMES.length ? `${formatGameCount(filteredGames.length)} (из ${GAMES.length})` : formatGameCount(GAMES.length)} · только просмотр
+              <>
+                Библиотека <span className="site-header-user">@{viewedCatalogProfile.username}</span> · {filteredGames.length !== GAMES.length ? `${formatGameCount(filteredGames.length)} (из ${GAMES.length})` : formatGameCount(GAMES.length)} · только просмотр
                 <button
                   type="button"
                   className="catalog-back-link"
@@ -8016,23 +8429,21 @@ const App = () => {
                 >
                   {isSignedIn ? '← Мой каталог' : '← Главная'}
                 </button>
-              </p>
+              </>
             ) : isSignedIn && viewedCatalogProfile ? (
-              <p className="page-subtitle">
-                Библиотека @{viewedCatalogProfile.username} · {filteredGames.length !== GAMES.length ? `${formatGameCount(filteredGames.length)} (из ${GAMES.length})` : formatGameCount(GAMES.length)}
-              </p>
+              <>
+                Библиотека <span className="site-header-user">@{viewedCatalogProfile.username}</span> · {filteredGames.length !== GAMES.length ? `${formatGameCount(filteredGames.length)} (из ${GAMES.length})` : formatGameCount(GAMES.length)}
+              </>
             ) : (
-              <p className="page-subtitle">
-                Войдите в аккаунт, чтобы открыть свой каталог
-              </p>
+              'Войдите в аккаунт, чтобы открыть свой каталог'
             )}
           </div>
         </div>
-      </header>
+      )}
 
       {/* ═══ ПАНЕЛЬ УПРАВЛЕНИЯ ═══ */}
       {GAMES.length > 0 && (
-        <section className={`controls-bar search-only ${controlsCompact ? 'compact' : ''}`} aria-label="Поиск и сравнение">
+        <section className={`controls-bar search-only ${controlsCompact ? 'compact' : ''} ${headerHidden ? 'header-hidden mobile-header-hidden' : 'header-visible mobile-header-visible'}`} aria-label="Поиск и сравнение">
           <div
             className="search-wrapper"
             ref={searchWrapperRef}
@@ -8219,7 +8630,7 @@ const App = () => {
             className="empty-catalog-box"
             style={{
               textAlign: 'center',
-              padding: '64px 20px',
+              padding: '40px 20px',
               maxWidth: '520px',
               margin: '0 auto',
               userSelect: 'none'
@@ -8573,7 +8984,7 @@ const Card = memo(forwardRef(({
           <div className="popup">
             {Object.entries(game.ratings).filter(([k]) => k !== 'rating').map(([k, v]) => (
               <div key={k} className={k === sortBy ? 'highlight-criterion' : ''}>
-                {LABELS[k]}: {v}
+                {LABELS[k]}: <span className="card-criterion-value">{v}</span>
               </div>
             ))}
           </div>

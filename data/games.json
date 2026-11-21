@@ -1654,6 +1654,218 @@
         "Экшен",
         "QTE"
       ]
+    },
+    {
+      "id": "resident-evil-0-hd-remaster",
+      "title": "Resident Evil 0: HD Remaster",
+      "studio": "Capcom",
+      "year": 2016,
+      "genres": [
+        "Выживание",
+        "Головоломка",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "resident-evil-hd-remaster",
+      "title": "Resident Evil: HD Remaster",
+      "studio": "Capcom",
+      "year": 2015,
+      "genres": [
+        "Выживание",
+        "Головоломка",
+        "Приключение",
+        "Сюжетная",
+        "Хоррор",
+        "Шутер",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "hotline-miami",
+      "title": "Hotline Miami",
+      "studio": "Dennaton Games",
+      "year": 2012,
+      "genres": [
+        "Экшен",
+        "Инди",
+        "Шутер"
+      ]
+    },
+    {
+      "id": "the-elder-scrolls-iii-morrowind",
+      "title": "The Elder Scrolls III: Morrowind",
+      "studio": "Bethesda Game Studios",
+      "year": 2002,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "the-elder-scrolls-iv-oblivion",
+      "title": "The Elder Scrolls IV: Oblivion",
+      "studio": "Bethesda Game Studios",
+      "year": 2006,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "the-elder-scrolls-iv-oblivion-remastered",
+      "title": "The Elder Scrolls IV: Oblivion Remastered",
+      "studio": "Bethesda Game Studios",
+      "year": 2006,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "РПГ",
+        "Стелс",
+        "Сюжетная",
+        "Фэнтези",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "machinarium",
+      "title": "Machinarium",
+      "studio": "Amanita Design",
+      "year": 2009,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "Головоломка",
+        "Научная фантастика"
+      ]
+    },
+    {
+      "id": "samorost-1",
+      "title": "Samorost 1 Remastered",
+      "studio": "Amanita Design",
+      "year": 2021,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "Головоломка"
+      ]
+    },
+    {
+      "id": "samorost-2",
+      "title": "Samorost 2",
+      "studio": "Amanita Design",
+      "year": 2005,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "Головоломка"
+      ]
+    },
+    {
+      "id": "samorost-3",
+      "title": "Samorost 3",
+      "studio": "Amanita Design",
+      "year": 2016,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "Головоломка"
+      ]
+    },
+    {
+      "id": "creaks",
+      "title": "Creaks",
+      "studio": "Amanita Design",
+      "year": 2020,
+      "genres": [
+        "Инди",
+        "Приключение",
+        "Платформер",
+        "Сюжетная",
+        "Головоломка",
+        "Фентези"
+      ]
+    },
+    {
+      "id": "silent-hill",
+      "title": "Silent Hill",
+      "studio": "Team Silent",
+      "year": 1999,
+      "genres": [
+        "Хоррор",
+        "Приключение",
+        "Сюжетная",
+        "Головоломка",
+        "Выживание"
+      ]
+    },
+    {
+      "id": "silent-hill-2",
+      "title": "Silent Hill 2",
+      "studio": "Team Silent",
+      "year": 2001,
+      "genres": [
+        "Хоррор",
+        "Приключение",
+        "Сюжетная",
+        "Головоломка",
+        "Выживание"
+      ]
+    },
+    {
+      "id": "silent-hill-3",
+      "title": "Silent Hill 3",
+      "studio": "Team Silent",
+      "year": 2003,
+      "genres": [
+        "Хоррор",
+        "Приключение",
+        "Сюжетная",
+        "Головоломка",
+        "Выживание"
+      ]
+    },
+    {
+      "id": "silent-hill-f",
+      "title": "Silent Hill f",
+      "studio": "Neobards Entertainment",
+      "year": 2025,
+      "genres": [
+        "Экшен",
+        "Хоррор",
+        "Приключение",
+        "Сюжетная",
+        "Головоломка",
+        "Выживание"
+      ]
+    },
+    {
+      "id": "silent-hill-townfall",
+      "title": "Silent Hill: Townfall",
+      "studio": "Screen Burn",
+      "year": 2026,
+      "genres": [
+        "Хоррор",
+        "Приключение",
+        "Сюжетная",
+        "Головоломка",
+        "Стелс",
+        "Выживание"
+      ]
     }
   ]
 }
