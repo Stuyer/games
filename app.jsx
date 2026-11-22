@@ -23,6 +23,7 @@ import {
   EVALUATION_CRITERIA,
   getStoredEvaluationSystem,
   fetchRemoteEvaluationSystem,
+  getEvaluationStorageKey,
   hasEvaluationSystem,
   EvaluationSystemModal
 } from './evaluation-system.jsx';
@@ -102,7 +103,7 @@ const gameDataPromise = (async () => {
 
   if (requestedUsername) {
     const { data: profile, error: profileError } = await siteSupabase.from('profiles')
-      .select('id, username, display_name, avatar_path')
+      .select('id, username, display_name, avatar_path, evaluation_system')
       .eq('username', requestedUsername)
       .maybeSingle();
     if (profileError) throw profileError;
@@ -113,7 +114,7 @@ const gameDataPromise = (async () => {
 
   if (!targetProfile && user) {
     const { data: myProfile, error: myProfileError } = await siteSupabase.from('profiles')
-      .select('id, username, display_name, avatar_path')
+      .select('id, username, display_name, avatar_path, evaluation_system')
       .eq('id', user.id)
       .maybeSingle();
     if (!myProfileError && myProfile) {
@@ -123,6 +124,11 @@ const gameDataPromise = (async () => {
 
   if (targetProfile) {
     viewedCatalogProfile = targetProfile;
+    if (targetProfile.evaluation_system && typeof targetProfile.evaluation_system === 'object') {
+      try {
+        localStorage.setItem(getEvaluationStorageKey(targetProfile.id), JSON.stringify(targetProfile.evaluation_system));
+      } catch (_) { }
+    }
     const isPersonal = Boolean(user && targetProfile.id === user.id);
     if (isPersonal && urlParams.has('profile')) {
       const cleanUrl = new URL(window.location.href);
@@ -9558,9 +9564,12 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit, curre
     const isOtherProfile = Boolean(viewedCatalogProfile && currentUser && viewedCatalogProfile.id !== currentUser.id);
     const targetUserId = viewedCatalogProfile?.id || currentUser?.id;
     if (isOtherProfile) {
-      return targetUserId ? getStoredEvaluationSystem(targetUserId) : null;
+      return (viewedCatalogProfile?.evaluation_system && hasEvaluationSystem(viewedCatalogProfile.evaluation_system))
+        ? viewedCatalogProfile.evaluation_system
+        : (targetUserId ? getStoredEvaluationSystem(targetUserId) : null);
     }
     return (targetUserId ? getStoredEvaluationSystem(targetUserId) : null)
+      || viewedCatalogProfile?.evaluation_system
       || currentUser?.user_metadata?.evaluation_system
       || getStoredEvaluationSystem(null);
   });
@@ -9829,9 +9838,12 @@ const GamePage = ({ game, onBack, onOpenGame, currentUser }) => {
     const isOtherProfile = Boolean(viewedCatalogProfile && currentUser && viewedCatalogProfile.id !== currentUser.id);
     const targetUserId = viewedCatalogProfile?.id || currentUser?.id;
     if (isOtherProfile) {
-      return targetUserId ? getStoredEvaluationSystem(targetUserId) : null;
+      return (viewedCatalogProfile?.evaluation_system && hasEvaluationSystem(viewedCatalogProfile.evaluation_system))
+        ? viewedCatalogProfile.evaluation_system
+        : (targetUserId ? getStoredEvaluationSystem(targetUserId) : null);
     }
     return (targetUserId ? getStoredEvaluationSystem(targetUserId) : null)
+      || viewedCatalogProfile?.evaluation_system
       || currentUser?.user_metadata?.evaluation_system
       || getStoredEvaluationSystem(null);
   });

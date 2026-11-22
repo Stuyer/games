@@ -103,10 +103,15 @@ export const saveStoredEvaluationSystem = async (client, userId, data) => {
   // Also sync to public profiles table if evaluation_system column exists
   if (client && userId) {
     try {
-      await client.from('profiles').update({
+      const { error: profileError } = await client.from('profiles').update({
         evaluation_system: data || {}
       }).eq('id', userId);
-    } catch (_) { }
+      if (profileError) {
+        console.warn('Не удалось обновить evaluation_system в profiles:', profileError);
+      }
+    } catch (err) {
+      console.warn('Исключение при обновлении profiles:', err);
+    }
   }
 };
 
@@ -206,7 +211,8 @@ export const EvaluationSystemModal = ({ isOpen, onClose, user, onSave }) => {
         if (val) cleaned[item.key] = val;
       }
 
-      await saveStoredEvaluationSystem(window.siteSupabase, user?.id, cleaned);
+      const activeUserId = user?.id || (await window.siteSupabase?.auth?.getUser())?.data?.user?.id;
+      await saveStoredEvaluationSystem(window.siteSupabase, activeUserId, cleaned);
       setStatusMessage('Система оценивания сохранена!');
       if (onSave) onSave(cleaned);
 
