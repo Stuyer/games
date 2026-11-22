@@ -19,6 +19,13 @@ import {
   getCoverUrlSync,
   removeCoverBlobFromDB
 } from './cover-cache.js';
+import {
+  EVALUATION_CRITERIA,
+  getStoredEvaluationSystem,
+  fetchRemoteEvaluationSystem,
+  hasEvaluationSystem,
+  EvaluationSystemModal
+} from './evaluation-system.jsx';
 
 // --- DATA ---
 try {
@@ -1010,6 +1017,7 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
   const [deleteTitle, setDeleteTitle] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [evaluationModalOpen, setEvaluationModalOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(() => {
     const cached = user ? getCachedProfile(user.id) : null;
@@ -1407,19 +1415,30 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
 
         {profile && (
           <>
+            <div className="profile-section profile-evaluation-section">
+              <button
+                type="button"
+                className="profile-moderation-link profile-evaluation-link"
+                onClick={() => setEvaluationModalOpen(true)}
+              >
+                Система оценивания
+              </button>
+            </div>
+
             {profile.is_moderator ? (
               <div className="profile-section">
-                <h3>Модерация заявок</h3>
-                <p style={{ margin: '0 0 10px', fontSize: '0.82rem', opacity: 0.68 }}>
-                  Ожидающих заявок: {moderationCount}
-                </p>
                 <button
                   type="button"
                   className="profile-moderation-link"
+                  style={{ marginBottom: '0.625rem', marginTop: '0' }}
                   onClick={() => { window.location.href = './moderation'; }}
                 >
                   Открыть список заявок
                 </button>
+                <h3>Модерация заявок</h3>
+                <p style={{ margin: '0 0 10px', fontSize: '0.82rem', opacity: 0.68 }}>
+                  Ожидающих заявок: {moderationCount}
+                </p>
               </div>
             ) : (
               <div className="profile-section">
@@ -1467,6 +1486,12 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
             </div>
           </>
         )}
+
+        <EvaluationSystemModal
+          isOpen={evaluationModalOpen}
+          onClose={() => setEvaluationModalOpen(false)}
+          user={user}
+        />
       </div>
   );
 };
@@ -2125,6 +2150,10 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [statusError, setStatusError] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [evaluationSystem, setEvaluationSystem] = useState(() => getStoredEvaluationSystem(null));
+  const [evaluationOpen, setEvaluationOpen] = useState(false);
+  const [evalModalOpen, setEvalModalOpen] = useState(false);
   const [moderatorMode, setModeratorMode] = useState(null);
   const [userLibraryGames, setUserLibraryGames] = useState([]);
   const previewUrlRef = useRef('');
@@ -2278,9 +2307,12 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
   }, [busy, compressing]);
 
   useEffect(() => {
-    window.siteSupabase.auth.getSession().then(async ({ data }) => {
-      const user = data.session && data.session.user;
+    window.siteSupabase?.auth?.getSession().then(async ({ data }) => {
+      const user = data?.session?.user;
       if (!user) return;
+      setCurrentUser(user);
+      const sys = getStoredEvaluationSystem(user.id) || user.user_metadata?.evaluation_system || null;
+      if (sys) setEvaluationSystem(sys);
       const [profileRes, libraryRes] = await Promise.all([
         window.siteSupabase.from('profiles').select('is_moderator').eq('id', user.id).maybeSingle(),
         window.siteSupabase.from('games').select('id, catalog_id, title').eq('owner_id', user.id)
@@ -2290,6 +2322,14 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
         setUserLibraryGames(libraryRes.data);
       }
     }).catch(() => setModeratorMode(false));
+  }, []);
+
+  useEffect(() => {
+    const handleEvalUpdate = (e) => {
+      if (e.detail) setEvaluationSystem(e.detail);
+    };
+    window.addEventListener('site:evaluation_system_updated', handleEvalUpdate);
+    return () => window.removeEventListener('site:evaluation_system_updated', handleEvalUpdate);
   }, []);
 
   useEffect(() => () => {
@@ -2586,21 +2626,83 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
         </div>
 
         <div className="add-game-editor-grid">
-          <label className="add-game-review-block">
-            <div className="add-game-review-header">
-              <span className="add-game-section-label">Обзор</span>
-              <span className={`add-game-review-counter ${(fields.review || '').length >= 310 ? 'at-limit' : ''}`} aria-live="polite">
-                {(fields.review || '').length} / 310
-              </span>
+          <div className="add-game-review-column">
+            <div className="add-game-evaluation-toggle-wrap">
+              <button
+                type="button"
+                className={`add-game-evaluation-toggle-btn ${evaluationOpen ? 'is-open' : ''}`}
+                onClick={() => setEvaluationOpen(prev => !prev)}
+                aria-expanded={evaluationOpen}
+              >
+                <span className="add-game-evaluation-toggle-title">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  Моя система оценивания
+                </span>
+                <span className="add-game-evaluation-toggle-chevron" aria-hidden="true">
+                  {evaluationOpen ? '▲' : '▼'}
+                </span>
+              </button>
+
+              {evaluationOpen && (
+                <div className="add-game-evaluation-panel" role="region" aria-label="Моя система оценивания">
+                  {hasEvaluationSystem(evaluationSystem) ? (
+                    <>
+                      <div className="add-game-evaluation-list">
+                        {EVALUATION_CRITERIA.filter(c => Boolean(evaluationSystem[c.key]?.trim())).map(c => (
+                          <div key={c.key} className="add-game-evaluation-item">
+                            <span className="add-game-evaluation-item-name">{c.label}:</span>
+                            <span className="add-game-evaluation-item-desc">{evaluationSystem[c.key]}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="add-game-evaluation-panel-actions">
+                        <button
+                          type="button"
+                          className="add-game-evaluation-edit-btn"
+                          onClick={() => setEvalModalOpen(true)}
+                        >
+                          ✎ Настроить систему оценивания
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="add-game-evaluation-empty">
+                      <p>Система оценивания пока не заполнена.</p>
+                      <button
+                        type="button"
+                        className="add-game-evaluation-edit-btn"
+                        onClick={() => setEvalModalOpen(true)}
+                      >
+                        + Описать систему оценивания
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <textarea
-              maxLength={310}
-              value={fields.review}
-              onChange={event => setValue('review', event.target.value)}
-              onBlur={event => setValue('review', event.target.value.trim())}
-              placeholder="Ваш обзор игры"
-            />
-          </label>
+
+            <label className="add-game-review-block">
+              <div className="add-game-review-header">
+                <span className="add-game-section-label">Обзор</span>
+                <span className={`add-game-review-counter ${(fields.review || '').length >= 310 ? 'at-limit' : ''}`} aria-live="polite">
+                  {(fields.review || '').length} / 310
+                </span>
+              </div>
+              <textarea
+                maxLength={310}
+                value={fields.review}
+                onChange={event => setValue('review', event.target.value)}
+                onBlur={event => setValue('review', event.target.value.trim())}
+                placeholder="Ваш обзор игры"
+              />
+            </label>
+          </div>
 
           <div className="add-game-ratings-block">
             <span className="add-game-section-label">Оценки</span>
@@ -2823,6 +2925,14 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
           </button>
         </div>
       </form>
+      <EvaluationSystemModal
+        isOpen={evalModalOpen}
+        onClose={() => setEvalModalOpen(false)}
+        user={currentUser}
+        onSave={(updated) => {
+          setEvaluationSystem(updated);
+        }}
+      />
     </section>
   );
 };
@@ -7938,7 +8048,7 @@ const App = () => {
   };
 
   if (gamePage && isMobile) {
-    return <GamePage key={gamePage.id} game={gamePage} onBack={closeGamePage} onOpenGame={navigateToGame} />;
+    return <GamePage key={gamePage.id} game={gamePage} onBack={closeGamePage} onOpenGame={navigateToGame} currentUser={currentUser} />;
   }
 
   return (
@@ -8798,6 +8908,7 @@ const App = () => {
           onNavigate={setModalGame}
           canEdit={isSignedIn && canEditCatalog}
           onEdit={openGameEditor}
+          currentUser={currentUser}
         />}
         {compareModalOpen && <CompareModal
           selectedGameIds={selectedGames}
@@ -9108,9 +9219,62 @@ const getSimilarGames = (game, games, limit = 5) => {
     .slice(0, limit);
 };
 
-const SimilarGamesPanel = ({ game, games, onSelect, className = '', role = 'dialog' }) => {
+const SimilarGamesList = ({ game, games, onSelect }) => {
   const similarGames = useMemo(() => getSimilarGames(game, games), [game, games]);
 
+  return (
+    <div className="similar-games-list">
+      {similarGames.length > 0 ? similarGames.map(({ game: similarGame, sharedGenres }) => (
+        <button
+          key={similarGame.id}
+          className="similar-game-item"
+          type="button"
+          onClick={() => onSelect(similarGame)}
+          title={`Открыть ${similarGame.title}`}
+        >
+          <span
+            className="similar-game-thumb"
+            style={{ backgroundImage: `url("${similarGame.image}")` }}
+            aria-hidden="true"
+          />
+          <span className="similar-game-copy">
+            <span className="similar-game-title">{similarGame.title}</span>
+            <span className="similar-game-meta">
+              {sharedGenres.length} {sharedGenres.length === 1 ? 'общий жанр' : 'общих жанра'} · {sharedGenres.join(' · ')}
+            </span>
+          </span>
+          <span className="similar-game-arrow" aria-hidden="true">→</span>
+        </button>
+      )) : (
+        <div className="similar-games-empty">В текущем списке нет другой игры с общим жанром.</div>
+      )}
+    </div>
+  );
+};
+
+const ModalEvaluationList = ({ evaluationSystem }) => {
+  const hasSystem = hasEvaluationSystem(evaluationSystem);
+  const activeCriteria = EVALUATION_CRITERIA.filter(c => Boolean(evaluationSystem?.[c.key]?.trim()));
+
+  return (
+    <div className="modal-evaluation-list">
+      {hasSystem && activeCriteria.length > 0 ? (
+        activeCriteria.map(crit => (
+          <div key={crit.key} className="modal-evaluation-item">
+            <span className="modal-evaluation-item-name">{crit.label}</span>
+            <p className="modal-evaluation-item-text">{evaluationSystem[crit.key]}</p>
+          </div>
+        ))
+      ) : (
+        <div className="similar-games-empty" style={{ padding: '1.5rem 0.5rem', textAlign: 'center' }}>
+          Система оценивания пока не настроена.
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SimilarGamesPanel = ({ game, games, onSelect, className = '', role = 'dialog' }) => {
   return (
     <motion.div
       className={`similar-games-panel ${className}`.trim()}
@@ -9124,37 +9288,45 @@ const SimilarGamesPanel = ({ game, games, onSelect, className = '', role = 'dial
       <div className="similar-games-panel-header">
         <div className="similar-games-panel-title">Похожие игры по жанру</div>
       </div>
-      <div className="similar-games-list">
-        {similarGames.length > 0 ? similarGames.map(({ game: similarGame, sharedGenres }) => (
-          <button
-            key={similarGame.id}
-            className="similar-game-item"
-            type="button"
-            onClick={() => onSelect(similarGame)}
-            title={`Открыть ${similarGame.title}`}
-          >
-            <span
-              className="similar-game-thumb"
-              style={{ backgroundImage: `url("${similarGame.image}")` }}
-              aria-hidden="true"
-            />
-            <span className="similar-game-copy">
-              <span className="similar-game-title">{similarGame.title}</span>
-              <span className="similar-game-meta">
-                {sharedGenres.length} {sharedGenres.length === 1 ? 'общий жанр' : 'общих жанра'} · {sharedGenres.join(' · ')}
-              </span>
-            </span>
-            <span className="similar-game-arrow" aria-hidden="true">→</span>
-          </button>
-        )) : (
-          <div className="similar-games-empty">В текущем списке нет другой игры с общим жанром.</div>
-        )}
-      </div>
+      <SimilarGamesList game={game} games={games} onSelect={onSelect} />
     </motion.div>
   );
 };
 
-const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, setChartMode, similarOpen, similarLayoutOpen, similarToggleBusy, onToggleSimilar, onSimilarSelect, onSimilarExitComplete }, ref) => {
+const ModalEvaluationPanel = ({ evaluationSystem, className = '', role = 'dialog' }) => {
+  return (
+    <motion.div
+      className={`similar-games-panel modal-evaluation-panel ${className}`.trim()}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18, ease: 'easeOut' }}
+      role={role}
+      aria-label="Система оценивания"
+    >
+      <div className="similar-games-panel-header">
+        <div className="similar-games-panel-title">Система оценивания</div>
+      </div>
+      <ModalEvaluationList evaluationSystem={evaluationSystem} />
+    </motion.div>
+  );
+};
+
+const GameModalSlide = React.forwardRef(({
+  game,
+  games,
+  slideDir,
+  chartMode,
+  setChartMode,
+  centerPanel,
+  centerLayoutOpen,
+  toggleBusy,
+  onToggleSimilar,
+  onToggleEvaluation,
+  onSimilarSelect,
+  onCenterExitComplete,
+  evaluationSystem
+}, ref) => {
   const chartRef = useRef(null);
   const chartInstanceRef = useRef(null);
 
@@ -9236,7 +9408,7 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
       }}
     >
       {/* Верхний ряд: критерии слева + инфо справа */}
-      <div className={`modal-body ${similarLayoutOpen ? 'has-similar-games' : ''}`}>
+      <div className={`modal-body ${centerLayoutOpen ? 'has-similar-games' : ''}`}>
         {/* Левая: критерии */}
         <div className="modal-left">
           <div className={`criteria ${chartMode ? 'chart-mode' : ''}`}>
@@ -9252,19 +9424,62 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
                 </div>
               </div>
             </div>
-            <button className="toggle-chart-btn" disabled={similarOpen || similarLayoutOpen} onClick={() => setChartMode(!chartMode)} title={chartMode ? "Показать текст" : "Показать график"}>
+            <button className="toggle-chart-btn" disabled={Boolean(centerPanel) || centerLayoutOpen} onClick={() => setChartMode(!chartMode)} title={chartMode ? "Показать текст" : "Показать график"}>
               {chartMode ? "📝" : "🕸️"}
             </button>
           </div>
         </div>
 
-        <AnimatePresence initial={false} onExitComplete={onSimilarExitComplete}>
-          {similarOpen && (
-            <SimilarGamesPanel
-              game={game}
-              games={games}
-              onSelect={onSimilarSelect}
-            />
+        <AnimatePresence initial={false} onExitComplete={onCenterExitComplete}>
+          {centerPanel && (
+            <motion.div
+              key="game-modal-center-panel"
+              className={`similar-games-panel ${centerPanel === 'evaluation' ? 'modal-evaluation-panel' : ''}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              role="dialog"
+              aria-label={centerPanel === 'similar' ? `Похожие игры для ${game.title}` : 'Система оценивания'}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {centerPanel === 'similar' ? (
+                  <motion.div
+                    key="content-similar"
+                    className="modal-center-content"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.12, ease: 'easeOut' }}
+                  >
+                    <div className="similar-games-panel-header">
+                      <div className="similar-games-panel-title">Похожие игры по жанру</div>
+                    </div>
+                    <SimilarGamesList
+                      game={game}
+                      games={games}
+                      onSelect={onSimilarSelect}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="content-evaluation"
+                    className="modal-center-content"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.12, ease: 'easeOut' }}
+                  >
+                    <div className="similar-games-panel-header">
+                      <div className="similar-games-panel-title">Система оценивания</div>
+                    </div>
+                    <ModalEvaluationList
+                      evaluationSystem={evaluationSystem}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -9298,15 +9513,28 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
               <span className="modal-info-val">{game.playtime || 'Не указано'}</span>
             </div>
           </div>
-          <button
-            className="similar-games-toggle"
-            type="button"
-            onClick={onToggleSimilar}
-            disabled={similarToggleBusy}
-            aria-expanded={similarOpen}
-          >
-            {similarOpen ? 'Скрыть' : 'Похожие игры по жанру'}
-          </button>
+          <div className="modal-right-actions">
+            <button
+              className={`similar-games-toggle ${centerPanel === 'similar' ? 'is-active' : ''}`}
+              type="button"
+              onClick={onToggleSimilar}
+              disabled={toggleBusy}
+              aria-expanded={centerPanel === 'similar'}
+              title="Похожие игры по жанру"
+            >
+              {centerPanel === 'similar' ? 'Скрыть' : 'Похожие игры'}
+            </button>
+            <button
+              className={`similar-games-toggle modal-evaluation-toggle ${centerPanel === 'evaluation' ? 'is-active' : ''}`}
+              type="button"
+              onClick={onToggleEvaluation}
+              disabled={toggleBusy}
+              aria-expanded={centerPanel === 'evaluation'}
+              title="Система оценивания"
+            >
+              {centerPanel === 'evaluation' ? 'Скрыть' : 'Система оценивания'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -9317,15 +9545,63 @@ const GameModalSlide = React.forwardRef(({ game, games, slideDir, chartMode, set
   );
 });
 
-const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => {
+const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit, currentUser }) => {
   const [slideDir, setSlideDir] = useState(0);
   const [displayGame, setDisplayGame] = useState(game);
   const [chartMode, setChartMode] = useState(false);
-  const [similarOpen, setSimilarOpen] = useState(false);
-  const [similarLayoutOpen, setSimilarLayoutOpen] = useState(false);
-  const [similarToggleBusy, setSimilarToggleBusy] = useState(false);
-  const similarToggleBusyRef = useRef(false);
-  const similarToggleTimerRef = useRef(null);
+  const [centerPanel, setCenterPanel] = useState(null);
+  const [centerLayoutOpen, setCenterLayoutOpen] = useState(false);
+  const [toggleBusy, setToggleBusy] = useState(false);
+  const toggleBusyRef = useRef(false);
+  const toggleTimerRef = useRef(null);
+  const [evaluationSystem, setEvaluationSystem] = useState(() => {
+    const isOtherProfile = Boolean(viewedCatalogProfile && currentUser && viewedCatalogProfile.id !== currentUser.id);
+    const targetUserId = viewedCatalogProfile?.id || currentUser?.id;
+    if (isOtherProfile) {
+      return targetUserId ? getStoredEvaluationSystem(targetUserId) : null;
+    }
+    return (targetUserId ? getStoredEvaluationSystem(targetUserId) : null)
+      || currentUser?.user_metadata?.evaluation_system
+      || getStoredEvaluationSystem(null);
+  });
+
+  useEffect(() => {
+    window.siteSupabase?.auth?.getSession().then(async ({ data }) => {
+      const user = data?.session?.user;
+      if (user) {
+        const isOtherProfile = Boolean(viewedCatalogProfile && viewedCatalogProfile.id !== user.id);
+        if (isOtherProfile) {
+          const localSys = getStoredEvaluationSystem(viewedCatalogProfile.id);
+          if (localSys) {
+            setEvaluationSystem(localSys);
+          } else {
+            const remoteSys = await fetchRemoteEvaluationSystem(window.siteSupabase, viewedCatalogProfile.id);
+            if (remoteSys) setEvaluationSystem(remoteSys);
+          }
+        } else {
+          const sys = getStoredEvaluationSystem(user.id) || user.user_metadata?.evaluation_system || null;
+          if (sys) setEvaluationSystem(sys);
+        }
+      } else if (viewedCatalogProfile?.id) {
+        const localSys = getStoredEvaluationSystem(viewedCatalogProfile.id);
+        if (localSys) {
+          setEvaluationSystem(localSys);
+        } else {
+          const remoteSys = await fetchRemoteEvaluationSystem(window.siteSupabase, viewedCatalogProfile.id);
+          if (remoteSys) setEvaluationSystem(remoteSys);
+        }
+      }
+    }).catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    const handleEvalUpdate = (e) => {
+      if (e.detail) setEvaluationSystem(e.detail);
+    };
+    window.addEventListener('site:evaluation_system_updated', handleEvalUpdate);
+    return () => window.removeEventListener('site:evaluation_system_updated', handleEvalUpdate);
+  }, []);
+
   const currentIndexRef = useRef(allGames ? allGames.findIndex(g => g.id === game.id) : 0);
   const dialogRef = useRef(null);
 
@@ -9366,14 +9642,14 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => 
   }, []);
 
   useEffect(() => () => {
-    if (similarToggleTimerRef.current) clearTimeout(similarToggleTimerRef.current);
+    if (toggleTimerRef.current) clearTimeout(toggleTimerRef.current);
   }, []);
 
   // Sync displayGame when game prop changes (from outside, e.g. roulette)
   useEffect(() => {
     setDisplayGame(game);
-    setSimilarOpen(false);
-    setSimilarLayoutOpen(false);
+    setCenterPanel(null);
+    setCenterLayoutOpen(false);
     currentIndexRef.current = allGames ? allGames.findIndex(g => g.id === game.id) : 0;
   }, [game]);
 
@@ -9388,30 +9664,50 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => 
     const nextGame = allGames[nextIndex];
     setSlideDir(dir);
     setDisplayGame(nextGame);
-    setSimilarOpen(false);
-    setSimilarLayoutOpen(false);
+    setCenterPanel(null);
+    setCenterLayoutOpen(false);
     if (onNavigate) onNavigate(nextGame);
   };
   navigateRef.current = navigate;
 
   const toggleSimilar = () => {
-    if (similarToggleBusyRef.current) return;
+    if (toggleBusyRef.current) return;
 
-    similarToggleBusyRef.current = true;
-    setSimilarToggleBusy(true);
-    similarToggleTimerRef.current = setTimeout(() => {
-      similarToggleBusyRef.current = false;
-      similarToggleTimerRef.current = null;
-      setSimilarToggleBusy(false);
+    toggleBusyRef.current = true;
+    setToggleBusy(true);
+    toggleTimerRef.current = setTimeout(() => {
+      toggleBusyRef.current = false;
+      toggleTimerRef.current = null;
+      setToggleBusy(false);
     }, 240);
 
-    if (similarOpen) {
-      setSimilarOpen(false);
+    if (centerPanel === 'similar') {
+      setCenterPanel(null);
       return;
     }
     if (chartMode) setChartMode(false);
-    setSimilarLayoutOpen(true);
-    setSimilarOpen(true);
+    setCenterLayoutOpen(true);
+    setCenterPanel('similar');
+  };
+
+  const toggleEvaluation = () => {
+    if (toggleBusyRef.current) return;
+
+    toggleBusyRef.current = true;
+    setToggleBusy(true);
+    toggleTimerRef.current = setTimeout(() => {
+      toggleBusyRef.current = false;
+      toggleTimerRef.current = null;
+      setToggleBusy(false);
+    }, 240);
+
+    if (centerPanel === 'evaluation') {
+      setCenterPanel(null);
+      return;
+    }
+    if (chartMode) setChartMode(false);
+    setCenterLayoutOpen(true);
+    setCenterPanel('evaluation');
   };
 
   const openSimilarGame = (nextGame) => {
@@ -9419,9 +9715,15 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => 
     if (nextIndex >= 0) currentIndexRef.current = nextIndex;
     setSlideDir(1);
     setDisplayGame(nextGame);
-    setSimilarOpen(false);
-    setSimilarLayoutOpen(false);
+    setCenterPanel(null);
+    setCenterLayoutOpen(false);
     if (onNavigate) onNavigate(nextGame);
+  };
+
+  const onCenterExitComplete = () => {
+    if (!centerPanel) {
+      setCenterLayoutOpen(false);
+    }
   };
 
   // Keyboard navigation — подписка один раз, navigate берётся из ref
@@ -9497,12 +9799,14 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => 
               slideDir={slideDir}
               chartMode={chartMode}
               setChartMode={setChartMode}
-              similarOpen={similarOpen}
-              similarLayoutOpen={similarLayoutOpen}
-              similarToggleBusy={similarToggleBusy}
+              centerPanel={centerPanel}
+              centerLayoutOpen={centerLayoutOpen}
+              toggleBusy={toggleBusy}
               onToggleSimilar={toggleSimilar}
+              onToggleEvaluation={toggleEvaluation}
               onSimilarSelect={openSimilarGame}
-              onSimilarExitComplete={() => setSimilarLayoutOpen(false)}
+              onCenterExitComplete={onCenterExitComplete}
+              evaluationSystem={evaluationSystem}
             />
           </AnimatePresence>
         </div>
@@ -9515,14 +9819,54 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit }) => 
   );
 };
 
-const GamePage = ({ game, onBack, onOpenGame }) => {
+const GamePage = ({ game, onBack, onOpenGame, currentUser }) => {
   const [chartMode, setChartMode] = useState(false);
-  const [similarOpen, setSimilarOpen] = useState(false);
+  const [centerPanel, setCenterPanel] = useState(null);
   const chartRef = useRef(null);
   const chartInstanceRef = useRef(null);
 
+  const [evaluationSystem, setEvaluationSystem] = useState(() => {
+    const isOtherProfile = Boolean(viewedCatalogProfile && currentUser && viewedCatalogProfile.id !== currentUser.id);
+    const targetUserId = viewedCatalogProfile?.id || currentUser?.id;
+    if (isOtherProfile) {
+      return targetUserId ? getStoredEvaluationSystem(targetUserId) : null;
+    }
+    return (targetUserId ? getStoredEvaluationSystem(targetUserId) : null)
+      || currentUser?.user_metadata?.evaluation_system
+      || getStoredEvaluationSystem(null);
+  });
+
   useEffect(() => {
-    setSimilarOpen(false);
+    window.siteSupabase?.auth?.getSession().then(async ({ data }) => {
+      const user = data?.session?.user;
+      if (user) {
+        const isOtherProfile = Boolean(viewedCatalogProfile && viewedCatalogProfile.id !== user.id);
+        if (isOtherProfile) {
+          const localSys = getStoredEvaluationSystem(viewedCatalogProfile.id);
+          if (localSys) {
+            setEvaluationSystem(localSys);
+          } else {
+            const remoteSys = await fetchRemoteEvaluationSystem(window.siteSupabase, viewedCatalogProfile.id);
+            if (remoteSys) setEvaluationSystem(remoteSys);
+          }
+        } else {
+          const sys = getStoredEvaluationSystem(user.id) || user.user_metadata?.evaluation_system || null;
+          if (sys) setEvaluationSystem(sys);
+        }
+      } else if (viewedCatalogProfile?.id) {
+        const localSys = getStoredEvaluationSystem(viewedCatalogProfile.id);
+        if (localSys) {
+          setEvaluationSystem(localSys);
+        } else {
+          const remoteSys = await fetchRemoteEvaluationSystem(window.siteSupabase, viewedCatalogProfile.id);
+          if (remoteSys) setEvaluationSystem(remoteSys);
+        }
+      }
+    }).catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    setCenterPanel(null);
   }, [game.id]);
 
   useEffect(() => {
@@ -9629,25 +9973,42 @@ const GamePage = ({ game, onBack, onOpenGame }) => {
       <section className="game-page-section">
         <h2 className="game-page-section-title">Описание</h2>
         <div className="game-page-review">{REVIEWS[game.id] || 'Автор пока не оставил отзыв.'}</div>
-        <button
-          className="game-page-similar-toggle"
-          type="button"
-          onClick={() => setSimilarOpen(open => !open)}
-          aria-expanded={similarOpen}
-        >
-          {similarOpen ? 'Скрыть' : 'Похожие игры по жанру'}
-        </button>
+        <div className="game-page-actions">
+          <button
+            className={`game-page-similar-toggle ${centerPanel === 'similar' ? 'is-active' : ''}`}
+            type="button"
+            onClick={() => setCenterPanel(p => p === 'similar' ? null : 'similar')}
+            aria-expanded={centerPanel === 'similar'}
+          >
+            {centerPanel === 'similar' ? 'Скрыть' : 'Похожие игры'}
+          </button>
+          <button
+            className={`game-page-similar-toggle ${centerPanel === 'evaluation' ? 'is-active' : ''}`}
+            type="button"
+            onClick={() => setCenterPanel(p => p === 'evaluation' ? null : 'evaluation')}
+            aria-expanded={centerPanel === 'evaluation'}
+          >
+            {centerPanel === 'evaluation' ? 'Скрыть' : 'Система оценивания'}
+          </button>
+        </div>
         <AnimatePresence initial={false}>
-          {similarOpen && (
+          {centerPanel === 'similar' && (
             <SimilarGamesPanel
               game={game}
               games={GAMES}
               className="game-page-similar-panel"
               role="region"
               onSelect={(nextGame) => {
-                setSimilarOpen(false);
+                setCenterPanel(null);
                 if (onOpenGame) onOpenGame(nextGame);
               }}
+            />
+          )}
+          {centerPanel === 'evaluation' && (
+            <ModalEvaluationPanel
+              evaluationSystem={evaluationSystem}
+              className="game-page-similar-panel"
+              role="region"
             />
           )}
         </AnimatePresence>
