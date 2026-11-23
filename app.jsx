@@ -59,6 +59,22 @@ const gameDataPromise = (async () => {
   const initialUrlParams = new URLSearchParams(window.location.search);
   const tokenHash = initialUrlParams.get('token_hash');
   const otpType = initialUrlParams.get('type') || 'signup';
+  const isRecoveryFlow = otpType === 'recovery' ||
+    initialUrlParams.get('type') === 'recovery' ||
+    (typeof window !== 'undefined' && window.location.hash && window.location.hash.includes('type=recovery'));
+  if (isRecoveryFlow) {
+    try { sessionStorage.setItem('site_password_recovery', '1'); } catch (_) { }
+  }
+  if (typeof window !== 'undefined' && window.location.hash && (window.location.hash.includes('error=') || window.location.hash.includes('error_code='))) {
+    try {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const errorDesc = hashParams.get('error_description');
+      const errorCode = hashParams.get('error_code');
+      if (errorCode === 'otp_expired' || /expired/i.test(errorDesc || '')) {
+        sessionStorage.setItem('site_auth_banner_message', 'Срок действия ссылки восстановления истёк. Запросите сброс пароля заново.');
+      }
+    } catch (_) { }
+  }
   if (tokenHash) {
     try {
       const cleanUrl = new URL(window.location.href);
@@ -336,15 +352,33 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
   const [tab, setTab] = useState(initialTab);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [messageError, setMessageError] = useState(false);
 
+  const handleClose = () => {
+    try { sessionStorage.removeItem('site_password_recovery'); } catch (_) { }
+    onClose();
+  };
+
   useEffect(() => {
     if (isOpen) {
       setTab(initialTab);
+      setNewPassword('');
+      setConfirmPassword('');
+      try {
+        const bannerMsg = sessionStorage.getItem('site_auth_banner_message');
+        if (bannerMsg) {
+          setMessage(bannerMsg);
+          setMessageError(true);
+          sessionStorage.removeItem('site_auth_banner_message');
+          return;
+        }
+      } catch (_) { }
       setMessage('');
       setMessageError(false);
     }
@@ -353,7 +387,7 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -364,8 +398,13 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
     if (/invalid login credentials/i.test(text)) return 'Неверная почта или пароль.';
     if (/username|profiles_username_format|duplicate key/i.test(text)) return 'Этот логин уже занят или имеет неверный формат.';
     if (/already registered|User already registered/i.test(text)) return 'Пользователь с такой почтой уже зарегистрирован.';
-    if (/email rate limit/i.test(text)) return 'Слишком много писем подтверждения. Попробуйте позже.';
+    if (/email rate limit|rate limit|too many requests/i.test(text)) return 'Слишком много запросов. Подождите минуту перед повторной попыткой.';
     if (/password should be at least/i.test(text)) return 'Пароль должен содержать минимум 8 символов.';
+    if (/user not found/i.test(text)) return 'Пользователь с такой почтой не найден.';
+    if (/same as the old password|different from the old/i.test(text)) return 'Новый пароль должен отличаться от старого.';
+    if (/session expired|jwt expired|token.*expired|invalid.*token/i.test(text)) {
+      return 'Срок действия ссылки восстановления истёк. Запросите сброс заново.';
+    }
     if (/fetch|network|supabase|rpc|postgres|schema|relation|table|violates/i.test(text)) {
       return 'Не удалось выполнить запрос. Попробуйте позже.';
     }
@@ -380,6 +419,64 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
     if (!client) {
       setMessage('Сервис временно недоступен.');
       setMessageError(true);
+      return;
+    }
+
+    if (tab === 'recovery') {
+      const cleanEmail = email.trim();
+      if (!cleanEmail) {
+        setMessage('Введите адрес электронной почты.');
+        setMessageError(true);
+        return;
+      }
+      setBusy(true);
+      try {
+        const redirectTo = window.location.origin + '/';
+        const { error } = await client.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo
+        });
+        if (error) throw error;
+        setMessage('Ссылка для сброса пароля отправлена на почту. Проверьте ваш ящик (включая папку «Спам»).');
+        setMessageError(false);
+      } catch (err) {
+        console.error('Password reset error:', err);
+        setMessage(normalizeAuthError(err));
+        setMessageError(true);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
+    if (tab === 'reset-password') {
+      if (!newPassword || newPassword.length < 8) {
+        setMessage('Пароль должен содержать минимум 8 символов.');
+        setMessageError(true);
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setMessage('Пароли не совпадают.');
+        setMessageError(true);
+        return;
+      }
+      setBusy(true);
+      try {
+        const { data, error } = await client.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+        try { sessionStorage.removeItem('site_password_recovery'); } catch (_) { }
+        setMessage('Пароль успешно обновлён!');
+        setMessageError(false);
+        setTimeout(() => {
+          handleClose();
+          if (onSuccess) onSuccess(data?.user);
+        }, 1400);
+      } catch (err) {
+        console.error('Password update error:', err);
+        setMessage(normalizeAuthError(err));
+        setMessageError(true);
+      } finally {
+        setBusy(false);
+      }
       return;
     }
 
@@ -425,7 +522,7 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
           setMessageError(false);
           setTab('signin');
         } else {
-          onClose();
+          handleClose();
           if (onSuccess) onSuccess(data.user);
         }
       } else {
@@ -434,7 +531,7 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
           password
         });
         if (error) throw error;
-        onClose();
+        handleClose();
         if (onSuccess) onSuccess(data.user);
       }
     } catch (err) {
@@ -450,33 +547,108 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
 
   return (
     <>
-      <div className="auth-modal-backdrop" onClick={onClose} aria-hidden="true" />
+      <div className="auth-modal-backdrop" onClick={handleClose} aria-hidden="true" />
       <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
         <div className="auth-modal-top">
-          <div className="auth-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'signin'}
-              className={`auth-tab-btn ${tab === 'signin' ? 'active' : ''}`}
-              onClick={() => { setTab('signin'); setMessage(''); }}
-            >
-              Войти
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'signup'}
-              className={`auth-tab-btn ${tab === 'signup' ? 'active' : ''}`}
-              onClick={() => { setTab('signup'); setMessage(''); }}
-            >
-              Регистрация
-            </button>
-          </div>
-          <button type="button" className="auth-close-btn" onClick={onClose} aria-label="Закрыть">×</button>
+          {tab === 'recovery' ? (
+            <>
+              <button
+                type="button"
+                className="auth-back-btn"
+                onClick={() => { setTab('signin'); setMessage(''); setMessageError(false); }}
+                title="Назад ко входу"
+              >
+                ← Войти
+              </button>
+              <h2 id="auth-modal-title" className="auth-modal-title">Сброс пароля</h2>
+            </>
+          ) : tab === 'reset-password' ? (
+            <h2 id="auth-modal-title" className="auth-modal-title">Новый пароль</h2>
+          ) : (
+            <div className="auth-tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'signin'}
+                className={`auth-tab-btn ${tab === 'signin' ? 'active' : ''}`}
+                onClick={() => { setTab('signin'); setMessage(''); }}
+              >
+                Войти
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'signup'}
+                className={`auth-tab-btn ${tab === 'signup' ? 'active' : ''}`}
+                onClick={() => { setTab('signup'); setMessage(''); }}
+              >
+                Регистрация
+              </button>
+            </div>
+          )}
+          <button type="button" className="auth-close-btn" onClick={handleClose} aria-label="Закрыть">×</button>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
+          {tab === 'recovery' && (
+            <>
+              <p className="auth-instructions">
+                Введите почту, привязанную к аккаунту. Мы отправим ссылку для восстановления пароля.
+              </p>
+              <div className="auth-field">
+                <label htmlFor="auth-email">Электронная почта *</label>
+                <input
+                  id="auth-email"
+                  type="email"
+                  required
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  disabled={busy}
+                  autoFocus
+                />
+              </div>
+            </>
+          )}
+
+          {tab === 'reset-password' && (
+            <>
+              <p className="auth-instructions">
+                Придумайте новый надёжный пароль для вашего аккаунта (не менее 8 символов).
+              </p>
+              <div className="auth-field">
+                <label htmlFor="auth-new-password">Новый пароль *</label>
+                <input
+                  id="auth-new-password"
+                  type="password"
+                  required
+                  minLength={8}
+                  placeholder="Минимум 8 символов"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  disabled={busy}
+                  autoFocus
+                />
+              </div>
+              <div className="auth-field">
+                <label htmlFor="auth-confirm-password">Повторите новый пароль *</label>
+                <input
+                  id="auth-confirm-password"
+                  type="password"
+                  required
+                  minLength={8}
+                  placeholder="Повторите новый пароль"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  disabled={busy}
+                />
+              </div>
+            </>
+          )}
+
           {tab === 'signup' && (
             <>
               <div className="auth-field">
@@ -512,34 +684,49 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
             </>
           )}
 
-          <div className="auth-field">
-            <label htmlFor="auth-email">Электронная почта *</label>
-            <input
-              id="auth-email"
-              type="email"
-              required
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              disabled={busy}
-            />
-          </div>
+          {(tab === 'signin' || tab === 'signup') && (
+            <div className="auth-field">
+              <label htmlFor="auth-email">Электронная почта *</label>
+              <input
+                id="auth-email"
+                type="email"
+                required
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                disabled={busy}
+              />
+            </div>
+          )}
 
-          <div className="auth-field">
-            <label htmlFor="auth-password">Пароль *</label>
-            <input
-              id="auth-password"
-              type="password"
-              required
-              minLength={8}
-              placeholder={tab === 'signup' ? 'Минимум 8 символов' : 'Ваш пароль'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
-              disabled={busy}
-            />
-          </div>
+          {(tab === 'signin' || tab === 'signup') && (
+            <div className="auth-field">
+              <div className="auth-field-label-row">
+                <label htmlFor="auth-password">Пароль *</label>
+                {tab === 'signin' && (
+                  <button
+                    type="button"
+                    className="auth-forgot-btn"
+                    onClick={() => { setTab('recovery'); setMessage(''); setMessageError(false); }}
+                  >
+                    Забыли пароль?
+                  </button>
+                )}
+              </div>
+              <input
+                id="auth-password"
+                type="password"
+                required
+                minLength={8}
+                placeholder={tab === 'signup' ? 'Минимум 8 символов' : 'Ваш пароль'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
+                disabled={busy}
+              />
+            </div>
+          )}
 
           {message && (
             <div className={`auth-message ${messageError ? 'error' : ''}`} role="status">
@@ -548,8 +735,26 @@ const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
           )}
 
           <button type="submit" className="auth-submit-btn" disabled={busy}>
-            {busy ? 'Подождите…' : (tab === 'signup' ? 'Создать аккаунт' : 'Войти')}
+            {busy
+              ? 'Подождите…'
+              : tab === 'signup'
+                ? 'Создать аккаунт'
+                : tab === 'recovery'
+                  ? 'Отправить ссылку для сброса'
+                  : tab === 'reset-password'
+                    ? 'Сохранить новый пароль'
+                    : 'Войти'}
           </button>
+
+          {tab === 'recovery' && (
+            <button
+              type="button"
+              className="auth-link-btn"
+              onClick={() => { setTab('signin'); setMessage(''); setMessageError(false); }}
+            >
+              Вспомнили пароль? Войти
+            </button>
+          )}
         </form>
       </div>
     </>
@@ -1008,7 +1213,7 @@ const formatRegistrationDate = (rawDate) => {
   }
 };
 
-const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCountChange }) => {
+const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCountChange, onOpenPasswordReset }) => {
   const [profile, setProfile] = useState(() => (user ? getCachedProfile(user.id) : null));
   const [submissions, setSubmissions] = useState(() => {
     const cached = user ? getCachedProfile(user.id) : null;
@@ -1470,7 +1675,19 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
             </div>
 
             <div className="profile-actions">
-              <button onClick={handleSignOut}>Выйти</button>
+              {onOpenPasswordReset && (
+                <button
+                  type="button"
+                  className="profile-change-pwd-btn"
+                  onClick={() => {
+                    onClose();
+                    onOpenPasswordReset();
+                  }}
+                >
+                  Сменить пароль
+                </button>
+              )}
+              <button type="button" onClick={handleSignOut}>Выйти</button>
             </div>
 
             {message && (
@@ -2945,8 +3162,12 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
 
 const AddGamePage = ({ game = null, submission = null }) => {
   const [isSignedIn, setIsSignedIn] = useState(null);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalTab, setAuthModalTab] = useState('signin');
+  const [authModalOpen, setAuthModalOpen] = useState(() => {
+    try { return sessionStorage.getItem('site_password_recovery') === '1'; } catch (_) { return false; }
+  });
+  const [authModalTab, setAuthModalTab] = useState(() => {
+    try { return sessionStorage.getItem('site_password_recovery') === '1' ? 'reset-password' : 'signin'; } catch (_) { return 'signin'; }
+  });
   const [resultMessage, setResultMessage] = useState('');
   const [submissionState, setSubmissionState] = useState(submission);
   const [submissionLoading, setSubmissionLoading] = useState(() => Boolean(
@@ -3017,7 +3238,12 @@ const AddGamePage = ({ game = null, submission = null }) => {
     }).catch(() => {
       if (active) setIsSignedIn(false);
     });
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        try { sessionStorage.setItem('site_password_recovery', '1'); } catch (_) { }
+        setAuthModalTab('reset-password');
+        setAuthModalOpen(true);
+      }
       if (active) setIsSignedIn(Boolean(session?.user));
     });
     return () => {
@@ -3057,7 +3283,10 @@ const AddGamePage = ({ game = null, submission = null }) => {
       <AuthModal
         isOpen={authModalOpen}
         initialTab={authModalTab}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setAuthModalTab('signin');
+        }}
         onSuccess={() => setIsSignedIn(true)}
       />
     </main>
@@ -6749,8 +6978,12 @@ const App = () => {
     return false;
   });
   const [moderationCount, setModerationCount] = useState(0);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalTab, setAuthModalTab] = useState('signin');
+  const [authModalOpen, setAuthModalOpen] = useState(() => {
+    try { return sessionStorage.getItem('site_password_recovery') === '1'; } catch (_) { return false; }
+  });
+  const [authModalTab, setAuthModalTab] = useState(() => {
+    try { return sessionStorage.getItem('site_password_recovery') === '1' ? 'reset-password' : 'signin'; } catch (_) { return 'signin'; }
+  });
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
   const [gamePage, setGamePage] = useState(() => {
     if (!window.matchMedia('(max-width: 640px)').matches) return null;
@@ -6955,7 +7188,12 @@ const App = () => {
       setIsSignedIn(Boolean(userId));
       setCurrentUser(user);
     }).catch(() => { });
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        try { sessionStorage.setItem('site_password_recovery', '1'); } catch (_) { }
+        setAuthModalTab('reset-password');
+        setAuthModalOpen(true);
+      }
       const user = session?.user || null;
       const userId = user ? user.id : null;
       if (triggerReloadIfUserChanged(userId)) return;
@@ -8224,7 +8462,10 @@ const App = () => {
       <AuthModal
         isOpen={authModalOpen}
         initialTab={authModalTab}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setAuthModalTab('signin');
+        }}
       />
 
       {/* ═══ ШАПКА САЙТА ═══ */}
@@ -8504,6 +8745,10 @@ const App = () => {
                   isOpen={profileOpen}
                   onClose={() => setProfileOpen(false)}
                   user={currentUser}
+                  onOpenPasswordReset={() => {
+                    setAuthModalTab('reset-password');
+                    setAuthModalOpen(true);
+                  }}
                   onAvatarChange={(url) => {
                     setProfileAvatarUrl(url || '');
                     try {
