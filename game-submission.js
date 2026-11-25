@@ -70,7 +70,7 @@
     let coverCleanupWarning = '';
     if (cover) {
       const contentType = cover.type || 'image/webp';
-      const imageOwnerId = existingGame?.id || existingSubmission?.id || submissionId;
+      const imageOwnerId = existingGame?.id || existingSubmission?.game_id || existingSubmission?.id || submissionId;
       uploadedPath = user.id + '/games/' + imageOwnerId + '/' + submissionId + '.' + getCoverExtension(contentType);
       const { error: uploadError } = await supabase.storage.from('game-covers').upload(uploadedPath, cover, {
         contentType, cacheControl: '31536000', upsert: false
@@ -119,6 +119,7 @@
     try {
       let result;
       if (existingSubmission) {
+        const expectedStatus = existingSubmission.status === 'rejected' ? 'rejected' : 'pending';
         result = await supabase.from('game_submissions')
           .update({
             catalog_id: game.catalog_id,
@@ -130,15 +131,24 @@
             ratings: game.ratings,
             review: game.review,
             playtime_hours: game.playtime_hours,
+            background_position_list_x: game.background_position_list_x,
+            background_position_list_y: game.background_position_list_y,
+            background_scale_list: game.background_scale_list,
+            background_position_grid_x: game.background_position_grid_x,
+            background_position_grid_y: game.background_position_grid_y,
+            background_scale_grid: game.background_scale_grid,
             status: 'pending',
             moderator_note: null,
             moderated_by: null,
             moderated_at: null
           })
           .eq('id', existingSubmission.id)
-          .eq('status', 'rejected')
+          .eq('status', expectedStatus)
           .select('id')
           .single();
+        if (result.error?.code === 'PGRST116') {
+          throw new Error('Заявка уже проверена модератором или удалена. Обновите страницу заявок.');
+        }
       } else if (existingGame && profile.is_moderator) {
         result = await supabase.from('games')
           .update({
@@ -180,8 +190,24 @@
       if (result.error) throw result.error;
 
       // При прямом редактировании модератора старая обложка больше не нужна.
-      // Для обычного пользователя это делает moderation.js только после одобрения заявки.
-      if ((existingGame && profile.is_moderator || existingSubmission) && uploadedPath && previousImagePath && previousImagePath !== uploadedPath) {
+      // Для заявки удаляем старую обложку только если она не используется опубликованной игрой в каталоге.
+      let shouldRemovePreviousCover = Boolean(
+        ((existingGame && profile.is_moderator) || existingSubmission) &&
+        uploadedPath &&
+        previousImagePath &&
+        previousImagePath !== uploadedPath
+      );
+      if (shouldRemovePreviousCover && existingSubmission?.game_id) {
+        const { data: liveGame } = await supabase
+          .from('games')
+          .select('image_path')
+          .eq('id', existingSubmission.game_id)
+          .maybeSingle();
+        if (liveGame?.image_path === previousImagePath) {
+          shouldRemovePreviousCover = false;
+        }
+      }
+      if (shouldRemovePreviousCover) {
         const { error: removeError } = await supabase.storage.from('game-covers').remove([previousImagePath]);
         if (removeError) {
           coverCleanupWarning = removeError.message || 'Storage не разрешил удалить старую обложку.';
@@ -195,7 +221,8 @@
     return {
       isModerator: Boolean(profile.is_moderator),
       isEdit: Boolean(existingGame || existingSubmission),
-      isResubmission: Boolean(existingSubmission),
+      isResubmission: Boolean(existingSubmission && existingSubmission.status === 'rejected'),
+      isPendingEdit: Boolean(existingSubmission && existingSubmission.status === 'pending'),
       coverCleanupWarning
     };
   }

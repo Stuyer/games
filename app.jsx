@@ -25,6 +25,7 @@ import {
   fetchRemoteEvaluationSystem,
   getEvaluationStorageKey,
   hasEvaluationSystem,
+  useScrollLock,
   EvaluationSystemModal
 } from './evaluation-system.jsx';
 
@@ -325,26 +326,6 @@ const clearLocalAuthState = () => {
   }
   memoryProfileCache.clear();
   memoryLibrariesCache = null;
-};
-
-let activeScrollLocks = 0;
-let savedDocumentOverflow = '';
-
-const useScrollLock = (locked) => {
-  useEffect(() => {
-    if (!locked) return undefined;
-    if (activeScrollLocks === 0) {
-      savedDocumentOverflow = document.documentElement.style.overflow;
-      document.documentElement.style.overflow = 'hidden';
-    }
-    activeScrollLocks += 1;
-    return () => {
-      activeScrollLocks = Math.max(0, activeScrollLocks - 1);
-      if (activeScrollLocks === 0) {
-        document.documentElement.style.overflow = savedDocumentOverflow;
-      }
-    };
-  }, [locked]);
 };
 
 const AuthModal = ({ isOpen, initialTab = 'signin', onClose, onSuccess }) => {
@@ -2520,7 +2501,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
   const isFormValid = Boolean(catalogId) && isTitleValid && isDeveloperValid && isYearValid && isPlaytimeValid && hasCover && areAllRatingsSet;
 
   const navigateBack = () => {
-    if (!busy && !compressing) window.location.assign('./');
+    if (!busy && !compressing) window.location.assign(submission ? './submissions' : './');
   };
 
   useEffect(() => {
@@ -2705,21 +2686,23 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
     }
   };
 
+  const excludedLibraryGameId = submission ? submission.game_id : game?.id;
+
   const libraryCatalogIds = useMemo(() => {
     const set = new Set();
     userLibraryGames.forEach(item => {
-      if (item.catalog_id && (!isEdit || item.id !== game?.id)) set.add(item.catalog_id);
+      if (item.catalog_id && (!excludedLibraryGameId || item.id !== excludedLibraryGameId)) set.add(item.catalog_id);
     });
     return set;
-  }, [userLibraryGames, isEdit, game?.id]);
+  }, [userLibraryGames, excludedLibraryGameId]);
 
   const libraryGameTitles = useMemo(() => {
     const set = new Set();
     userLibraryGames.forEach(item => {
-      if (item.title && (!isEdit || item.id !== game?.id)) set.add(normalizeSearchPart(item.title));
+      if (item.title && (!excludedLibraryGameId || item.id !== excludedLibraryGameId)) set.add(normalizeSearchPart(item.title));
     });
     return set;
-  }, [userLibraryGames, isEdit, game?.id]);
+  }, [userLibraryGames, excludedLibraryGameId]);
 
   const currentPreviewDisplay = cardDisplay[previewView];
   const previewGame = {
@@ -2772,7 +2755,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
                 <GameCatalogSearch
                   selected={catalogGame}
                   initialQuery={catalogInitialQuery}
-                  disabled={Boolean(isEdit && catalogId)}
+                  disabled={Boolean((submission ? submission.game_id : isEdit) && catalogId)}
                   libraryCatalogIds={libraryCatalogIds}
                   libraryGameTitles={libraryGameTitles}
                   onSelect={selectCatalogGame}
@@ -3141,7 +3124,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
               : compressing
                 ? 'Сжимаю обложку…'
                 : isEdit
-                  ? (moderatorMode ? 'Сохранить изменения' : 'Отправить изменения на проверку')
+                  ? (moderatorMode || submission?.status === 'pending' ? 'Сохранить изменения' : 'Отправить изменения на проверку')
                   : moderatorMode
                     ? 'Добавить в каталог'
                     : 'Отправить на проверку'}
@@ -3185,16 +3168,20 @@ const AddGamePage = ({ game = null, submission = null }) => {
         const user = authData.session?.user;
         if (!user) throw new Error('Войдите в аккаунт, чтобы изменить заявку.');
         const { data: baseRow, error } = await client.from('game_submissions')
-          .select('id, user_id, catalog_id, title, developer, release_year, genres, image_path, ratings, review, playtime_hours, status')
+          .select('id, user_id, game_id, catalog_id, title, developer, release_year, genres, image_path, ratings, review, playtime_hours, status')
           .eq('id', submissionId).eq('user_id', user.id).maybeSingle();
         if (error) throw error;
         let row = baseRow;
-        if (!row || row.status !== 'rejected') throw new Error('Изменять можно только отклонённые заявки.');
+        if (!row || (row.status !== 'pending' && row.status !== 'rejected')) {
+          throw new Error('Изменять можно только заявки на проверке или отклонённые заявки.');
+        }
         const displayResult = await client.from('game_submissions')
           .select('background_position_list_x, background_position_list_y, background_scale_list, background_position_grid_x, background_position_grid_y, background_scale_grid')
           .eq('id', submissionId).maybeSingle();
         if (!displayResult.error && displayResult.data) row = { ...row, ...displayResult.data };
-        const signed = await client.storage.from('game-covers').createSignedUrls([row.image_path], 600);
+        const signed = row.image_path
+          ? await client.storage.from('game-covers').createSignedUrls([row.image_path], 600)
+          : { error: null, data: [] };
         if (!active) return;
         setSubmissionState({
           ...row,
@@ -3255,15 +3242,26 @@ const AddGamePage = ({ game = null, submission = null }) => {
   const handleComplete = result => {
     const message = result.isModerator
       ? (result.isEdit ? 'Изменения сохранены в каталоге.' : 'Игра добавлена в каталог.')
-      : (result.isResubmission ? 'Изменённая заявка снова отправлена модератору.' : result.isEdit ? 'Заявка на изменение отправлена модератору.' : 'Заявка отправлена модератору на проверку.');
+      : (result.isPendingEdit
+        ? 'Изменения в заявке сохранены.'
+        : result.isResubmission
+          ? 'Изменённая заявка снова отправлена модератору.'
+          : result.isEdit
+            ? 'Заявка на изменение отправлена модератору.'
+            : 'Заявка отправлена модератору на проверку.');
     setResultMessage(result.coverCleanupWarning ? `${message} Внимание: ${result.coverCleanupWarning}` : message);
-    window.setTimeout(() => window.location.assign(result.isResubmission ? './submissions' : './'), result.isModerator ? 1200 : 1800);
+    window.setTimeout(() => window.location.assign((result.isResubmission || result.isPendingEdit) ? './submissions' : './'), result.isModerator ? 1200 : 1800);
   };
+
+  const activeSubmissionStatus = submissionState?.status || submission?.status;
+  const isEditingSubmission = Boolean(submission || submissionState);
 
   return (
     <main className="add-game-page">
       <div className="add-game-page-header">
-        <a className="add-game-back-link" href="./">← Вернуться в каталог</a>
+        <a className="add-game-back-link" href={isEditingSubmission ? './submissions' : './'}>
+          {isEditingSubmission ? '← Вернуться к заявкам' : '← Вернуться в каталог'}
+        </a>
         <h1 id="add-game-title">{submissionState?.game || game ? 'Изменить игру' : 'Новая игра'}</h1>
       </div>
       <div className="add-game-page-auth-row">
@@ -3273,7 +3271,13 @@ const AddGamePage = ({ game = null, submission = null }) => {
             <button type="button" className="btn" onClick={() => { setAuthModalTab('signin'); setAuthModalOpen(true); }}>Войти</button>
           </>
         ) : (
-          <span>{submission || submissionState ? 'После повторной отправки заявка снова попадёт на проверку.' : 'Карточка сохранится в вашей библиотеке после отправки.'}</span>
+          <span>
+            {isEditingSubmission
+              ? (activeSubmissionStatus === 'pending'
+                ? 'Вы можете обновить заявку, пока она ещё не проверена модерацией.'
+                : 'После повторной отправки заявка снова попадёт на проверку.')
+              : 'Карточка сохранится в вашей библиотеке после отправки.'}
+          </span>
         )}
       </div>
       {resultMessage && <p className="add-game-page-result add-game-status" role="status">{resultMessage}</p>}
@@ -3537,7 +3541,7 @@ const UserSubmissionsPage = () => {
       {
         key: 'pending',
         title: 'На проверке',
-        subtitle: 'Ожидают решения модератора',
+        subtitle: 'Ожидают решения модератора — при необходимости их можно изменить',
         emptyText: 'Нет заявок на проверке',
         items: pending,
         canClearAll: false
@@ -3660,9 +3664,12 @@ const UserSubmissionsPage = () => {
           )}
 
           <div className="user-submission-actions">
-            {row.status === 'rejected' && (
-              <a className="btn primary" href={`./add-game?submission=${encodeURIComponent(row.id)}`}>
-                Изменить и отправить снова
+            {(row.status === 'pending' || row.status === 'rejected') && (
+              <a
+                className={`btn ${row.status === 'rejected' ? 'primary' : 'edit'}`}
+                href={`./add-game?submission=${encodeURIComponent(row.id)}`}
+              >
+                {row.status === 'rejected' ? 'Изменить и отправить снова' : 'Редактировать'}
               </a>
             )}
             <button

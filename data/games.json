@@ -824,7 +824,7 @@
     {
       "id": "far-cry-3",
       "title": "Far Cry 3",
-      "studio": "Ubisoft Montreal",
+      "studio": "Ubisoft",
       "year": 2012,
       "genres": [
         "Открытый мир",
@@ -1168,7 +1168,7 @@
     {
       "id": "assassins-creed-ii",
       "title": "Assassin's Creed II",
-      "studio": "Ubisoft Montreal",
+      "studio": "Ubisoft",
       "year": 2009,
       "genres": [
         "Открытый мир",
@@ -1181,7 +1181,7 @@
     {
       "id": "assassins-creed-iv-black-flag",
       "title": "Assassin's Creed IV: Black Flag",
-      "studio": "Ubisoft Montreal",
+      "studio": "Ubisoft",
       "year": 2013,
       "genres": [
         "Открытый мир",
@@ -1194,7 +1194,7 @@
     {
       "id": "assassins-creed-odyssey",
       "title": "Assassin's Creed Odyssey",
-      "studio": "Ubisoft Quebec",
+      "studio": "Ubisoft",
       "year": 2018,
       "genres": [
         "Открытый мир",
@@ -1208,7 +1208,7 @@
     {
       "id": "assassins-creed-valhalla",
       "title": "Assassin's Creed Valhalla",
-      "studio": "Ubisoft Montreal",
+      "studio": "Ubisoft",
       "year": 2020,
       "genres": [
         "Открытый мир",
@@ -1222,7 +1222,7 @@
     {
       "id": "assassins-creed-shadows",
       "title": "Assassin's Creed Shadows",
-      "studio": "Ubisoft Quebec",
+      "studio": "Ubisoft",
       "year": 2025,
       "genres": [
         "Открытый мир",
@@ -1328,7 +1328,7 @@
     {
       "id": "max-payne-3",
       "title": "Max Payne 3",
-      "studio": "Rockstar Studios",
+      "studio": "Rockstar Games",
       "year": 2012,
       "genres": [
         "Приключение",
@@ -1865,6 +1865,84 @@
         "Головоломка",
         "Стелс",
         "Выживание"
+      ]
+    },
+    {
+      "id": "stardew-valley",
+      "title": "Stardew Valley",
+      "studio": "ConcernedApe",
+      "year": 2016,
+      "genres": [
+        "РПГ",
+        "Инди",
+        "Приключение",
+        "Кооператив",
+        "Фэнтези"
+      ]
+    },
+    {
+      "id": "zelda-ocarina-of-time",
+      "title": "The Legend of Zelda: Ocarina of Time",
+      "studio": "Nintendo",
+      "year": 1998,
+      "genres": [
+        "Экшен",
+        "Приключение",
+        "Сюжетная",
+        "Головоломка",
+        "Фэнтези"
+      ]
+    },
+    {
+      "id": "zelda-ocarina-of-time-remake",
+      "title": "The Legend of Zelda: Ocarina of Time Remake",
+      "studio": "Nintendo",
+      "year": 2026,
+      "genres": [
+        "Экшен",
+        "Приключение",
+        "Сюжетная",
+        "Головоломка",
+        "Фэнтези"
+      ]
+    },
+    {
+      "id": "poppy-playtime",
+      "title": "Poppy Playtime",
+      "studio": "Mob Entertainment",
+      "year": 2021,
+      "genres": [
+        "Инди",
+        "Хоррор",
+        "Приключение",
+        "Сюжетная",
+        "Головоломка"
+      ]
+    },
+    {
+      "id": "assassins-creed-iv-black-flag-resynced",
+      "title": "Assassin's Creed IV: Black Flag Resynced",
+      "studio": "Ubisoft",
+      "year": 2026,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
+      ]
+    },
+    {
+      "id": "assassins-creed-unity",
+      "title": "Assassin's Creed Unity",
+      "studio": "Ubisoft",
+      "year": 2014,
+      "genres": [
+        "Открытый мир",
+        "Приключение",
+        "Стелс",
+        "Сюжетная",
+        "Экшен"
       ]
     }
   ]

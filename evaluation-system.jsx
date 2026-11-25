@@ -139,7 +139,28 @@ export const hasEvaluationSystem = (system) => {
   return Object.values(system).some(v => typeof v === 'string' && v.trim().length > 0);
 };
 
+let activeScrollLocks = 0;
+let savedDocumentOverflow = '';
+
+export const useScrollLock = (locked) => {
+  useEffect(() => {
+    if (!locked) return undefined;
+    if (activeScrollLocks === 0) {
+      savedDocumentOverflow = document.documentElement.style.overflow;
+      document.documentElement.style.overflow = 'hidden';
+    }
+    activeScrollLocks += 1;
+    return () => {
+      activeScrollLocks = Math.max(0, activeScrollLocks - 1);
+      if (activeScrollLocks === 0) {
+        document.documentElement.style.overflow = savedDocumentOverflow;
+      }
+    };
+  }, [locked]);
+};
+
 export const EvaluationSystemModal = ({ isOpen, onClose, user, onSave }) => {
+  useScrollLock(isOpen);
   const [criteriaValues, setCriteriaValues] = useState({});
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -151,10 +172,6 @@ export const EvaluationSystemModal = ({ isOpen, onClose, user, onSave }) => {
     setStatusMessage('');
     setStatusError(false);
 
-    // Lock body scroll while modal is open
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
     // Initial load from local storage or user metadata
     const stored = getStoredEvaluationSystem(user?.id);
     if (stored) {
@@ -164,10 +181,6 @@ export const EvaluationSystemModal = ({ isOpen, onClose, user, onSave }) => {
     } else {
       setCriteriaValues({});
     }
-
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
   }, [isOpen, user]);
 
   useEffect(() => {
