@@ -671,6 +671,23 @@ body.dark .mobile-share-toast span {
   transform: none;
 }
 
+.library-person.is-self {
+  border-color: color-mix(in srgb, var(--primary-color) 42%, transparent);
+  background: color-mix(in srgb, var(--primary-color) 8%, var(--pill-bg));
+}
+
+.library-person-self-badge {
+  display: inline-block;
+  margin-left: 0.375rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-color) 18%, transparent);
+  color: var(--primary-color);
+  font-size: 0.66rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
 .library-person-avatar {
   width: 2.625rem;
   height: 2.625rem;
@@ -719,67 +736,71 @@ body.dark .mobile-share-toast span {
 }
 
 /* 0: Новичок */
-.library-person-title.tier-0 {
-  color: #64748b;
+.tier-0 {
+  --tier-color: #64748b;
 }
-body.dark .library-person-title.tier-0 {
-  color: #94a3b8;
+body.dark .tier-0 {
+  --tier-color: #94a3b8;
 }
 
 /* 1-4: NPC */
-.library-person-title.tier-1 {
-  color: #78716c;
+.tier-1 {
+  --tier-color: #78716c;
 }
-body.dark .library-person-title.tier-1 {
-  color: #a8a29e;
+body.dark .tier-1 {
+  --tier-color: #a8a29e;
 }
 
 /* 5-14: Диванный эксперт */
-.library-person-title.tier-2 {
-  color: #16a34a;
+.tier-2 {
+  --tier-color: #16a34a;
 }
-body.dark .library-person-title.tier-2 {
-  color: #4ade80;
+body.dark .tier-2 {
+  --tier-color: #4ade80;
 }
 
 /* 15-29: Бывалый игрок */
-.library-person-title.tier-3 {
-  color: #0284c7;
+.tier-3 {
+  --tier-color: #0284c7;
 }
-body.dark .library-person-title.tier-3 {
-  color: #38bdf8;
+body.dark .tier-3 {
+  --tier-color: #38bdf8;
 }
 
 /* 30-49: Опытный геймер */
-.library-person-title.tier-4 {
-  color: #4f46e5;
+.tier-4 {
+  --tier-color: #4f46e5;
 }
-body.dark .library-person-title.tier-4 {
-  color: #818cf8;
+body.dark .tier-4 {
+  --tier-color: #818cf8;
 }
 
 /* 50-99: Почти задрот */
-.library-person-title.tier-5 {
-  color: #9333ea;
+.tier-5 {
+  --tier-color: #9333ea;
 }
-body.dark .library-person-title.tier-5 {
-  color: #c084fc;
+body.dark .tier-5 {
+  --tier-color: #c084fc;
 }
 
 /* 100-150: Ветеран геймдева */
-.library-person-title.tier-6 {
-  color: #d97706;
+.tier-6 {
+  --tier-color: #d97706;
 }
-body.dark .library-person-title.tier-6 {
-  color: #fbbf24;
+body.dark .tier-6 {
+  --tier-color: #fbbf24;
 }
 
 /* 151+: Щупал траву в 2012-м */
-.library-person-title.tier-7 {
-  color: #e11d48;
+.tier-7 {
+  --tier-color: #e11d48;
 }
-body.dark .library-person-title.tier-7 {
-  color: #fb7185;
+body.dark .tier-7 {
+  --tier-color: #fb7185;
+}
+
+.library-person-title {
+  color: var(--tier-color);
 }
 
 .library-person-count {
@@ -1031,6 +1052,25 @@ body.dark .library-person-title.tier-7 {
   margin-bottom: 0.875rem;
   color: var(--muted-text);
   font-size: .86rem;
+}
+
+.add-game-page-auth-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  width: 100%;
+}
+
+.add-game-rank-hint {
+  font-size: 0.8rem;
+  color: var(--muted-text);
+}
+
+.add-game-rank-hint strong {
+  color: var(--tier-color, var(--text));
+  font-weight: 600;
 }
 
 .add-game-page-auth-row .btn {
@@ -2001,6 +2041,8 @@ body.dark .library-person-title.tier-7 {
   touch-action: pan-y;
   isolation: isolate;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--modal-scrollbar-thumb) transparent;
   box-sizing: border-box;
   padding: 1.125rem;
   border: 1px solid var(--surface-border);
@@ -2085,6 +2127,8 @@ body.dark .library-person-title.tier-7 {
   touch-action: pan-y;
   isolation: isolate;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--modal-scrollbar-thumb) transparent;
   box-sizing: border-box;
   padding: 1.25rem;
   border: 1px solid var(--surface-border);
@@ -2281,6 +2325,121 @@ body.dark .library-person-title.tier-7 {
 
 .profile-section {
   margin-top: 1.125rem;
+}
+
+.profile-rank-card {
+  margin-top: 0.9rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.75rem;
+  background: var(--pill-bg);
+  overflow: hidden;
+}
+
+.profile-rank-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.16s;
+}
+
+.profile-rank-toggle:hover {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.profile-rank-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.profile-rank-top .library-person-title {
+  margin-top: 0;
+  font-size: 0.84rem;
+}
+
+.profile-rank-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--muted-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-rank-chevron {
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.profile-rank-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  overflow: hidden;
+}
+
+.profile-rank-bar-fill {
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  background: var(--tier-color, var(--primary-color));
+  transition: width 0.35s ease;
+}
+
+.profile-rank-caption {
+  font-size: 0.74rem;
+  color: var(--muted-text);
+  line-height: 1.3;
+}
+
+.profile-rank-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem 0.625rem;
+  border-top: 1px solid var(--surface-border);
+  background: color-mix(in srgb, var(--solid-surface) 60%, transparent);
+}
+
+.profile-rank-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.18rem 0.4rem;
+  border-radius: 0.4rem;
+  font-size: 0.76rem;
+  opacity: 0.55;
+}
+
+.profile-rank-step.is-unlocked {
+  opacity: 0.88;
+}
+
+.profile-rank-step.is-current {
+  opacity: 1;
+  background: color-mix(in srgb, var(--tier-color, var(--primary-color)) 12%, transparent);
+}
+
+.profile-rank-step .library-person-title {
+  margin-top: 0;
+}
+
+.profile-rank-step-range {
+  font-size: 0.71rem;
+  color: var(--muted-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .profile-section h3 {
@@ -9611,6 +9770,10 @@ body.is-reorder-mode .card-wrap .genres-popup {
   margin-top: 0.75rem;
 }
 
+.profile-evaluation-section + .profile-section {
+  margin-top: 0.5rem;
+}
+
 .profile-evaluation-link {
   display: flex;
   align-items: center;
@@ -9911,20 +10074,23 @@ body.is-reorder-mode .card-wrap .genres-popup {
 
 .evaluation-modal-body::-webkit-scrollbar,
 .evaluation-modal-backdrop::-webkit-scrollbar,
-.add-game-evaluation-list::-webkit-scrollbar {
+.add-game-evaluation-list::-webkit-scrollbar,
+.profile-popover::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 .evaluation-modal-body::-webkit-scrollbar-track,
 .evaluation-modal-backdrop::-webkit-scrollbar-track,
-.add-game-evaluation-list::-webkit-scrollbar-track {
+.add-game-evaluation-list::-webkit-scrollbar-track,
+.profile-popover::-webkit-scrollbar-track {
   background: transparent;
 }
 
 .evaluation-modal-body::-webkit-scrollbar-thumb,
 .evaluation-modal-backdrop::-webkit-scrollbar-thumb,
-.add-game-evaluation-list::-webkit-scrollbar-thumb {
+.add-game-evaluation-list::-webkit-scrollbar-thumb,
+.profile-popover::-webkit-scrollbar-thumb {
   background: var(--modal-scrollbar-thumb);
   border-radius: 9999px;
   transition: background 0.2s;
@@ -9932,7 +10098,8 @@ body.is-reorder-mode .card-wrap .genres-popup {
 
 .evaluation-modal-body::-webkit-scrollbar-thumb:hover,
 .evaluation-modal-backdrop::-webkit-scrollbar-thumb:hover,
-.add-game-evaluation-list::-webkit-scrollbar-thumb:hover {
+.add-game-evaluation-list::-webkit-scrollbar-thumb:hover,
+.profile-popover::-webkit-scrollbar-thumb:hover {
   background: var(--modal-scrollbar-thumb-hover);
 }
 

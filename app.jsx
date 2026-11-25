@@ -758,7 +758,30 @@ const getUserLibraryTitle = (count) => {
   return USER_LIBRARY_TITLES.find(item => num >= item.min) || USER_LIBRARY_TITLES[USER_LIBRARY_TITLES.length - 1];
 };
 
-const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
+const ASCENDING_LIBRARY_TITLES = [...USER_LIBRARY_TITLES].reverse();
+
+const getUserLibraryTitleProgress = (count) => {
+  const num = Math.max(0, Math.floor(Number(count) || 0));
+  const currentIndex = USER_LIBRARY_TITLES.findIndex(item => num >= item.min);
+  const resolvedIndex = currentIndex >= 0 ? currentIndex : USER_LIBRARY_TITLES.length - 1;
+  const current = USER_LIBRARY_TITLES[resolvedIndex];
+  const next = resolvedIndex > 0 ? USER_LIBRARY_TITLES[resolvedIndex - 1] : null;
+  const remaining = next ? Math.max(0, next.min - num) : 0;
+  const span = next ? Math.max(1, next.min - current.min) : 1;
+  const percent = next ? Math.min(100, Math.max(0, Math.round(((num - current.min) / span) * 100))) : 100;
+  return { count: num, current, next, remaining, percent };
+};
+
+const formatRankRange = (index) => {
+  const item = ASCENDING_LIBRARY_TITLES[index];
+  const next = ASCENDING_LIBRARY_TITLES[index + 1];
+  if (!item) return '';
+  if (!next) return `${item.min}+`;
+  if (item.min === next.min - 1) return `${item.min}`;
+  return `${item.min}–${next.min - 1}`;
+};
+
+const LibraryDrawer = ({ isOpen, onClose, onSelectProfile, currentUserId = null }) => {
   const [libraries, setLibraries] = useState(() => memoryLibrariesCache || []);
   const [loading, setLoading] = useState(() => !memoryLibrariesCache || memoryLibrariesCache.length === 0);
   const [error, setError] = useState('');
@@ -872,10 +895,11 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
             {!loading && !error && libraries.length === 0 && <p className="library-drawer-message">Пока нет публичных библиотек.</p>}
             {!loading && !error && libraries.map(item => {
               const userTitle = getUserLibraryTitle(item.game_count);
+              const isSelf = Boolean(currentUserId && item.profile_id === currentUserId);
               return (
                 <button
                   type="button"
-                  className="library-person"
+                  className={`library-person ${isSelf ? 'is-self' : ''}`}
                   key={item.profile_id}
                   onClick={() => onSelectProfile(item.username)}
                   aria-label={`Открыть библиотеку ${item.display_name || item.username} (${userTitle.label}), ${formatGameCount(item.game_count)}`}
@@ -886,7 +910,10 @@ const LibraryDrawer = ({ isOpen, onClose, onSelectProfile }) => {
                       : <svg aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.3-5.2 7-5.2s6.3 1.8 7 5.2" /></svg>}
                   </span>
                   <span className="library-person-name">
-                    <strong>{item.display_name || item.username}</strong>
+                    <strong>
+                      {item.display_name || item.username}
+                      {isSelf && <span className="library-person-self-badge">вы</span>}
+                    </strong>
                     <small>@{item.username}</small>
                     <span className={`library-person-title tier-${userTitle.tier}`}>[{userTitle.label}]</span>
                   </span>
@@ -1194,7 +1221,7 @@ const formatRegistrationDate = (rawDate) => {
   }
 };
 
-const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCountChange, onOpenPasswordReset }) => {
+const ProfilePopover = ({ isOpen, onClose, user, ownGameCount = null, onAvatarChange, onModerationCountChange, onOpenPasswordReset }) => {
   const [profile, setProfile] = useState(() => (user ? getCachedProfile(user.id) : null));
   const [submissions, setSubmissions] = useState(() => {
     const cached = user ? getCachedProfile(user.id) : null;
@@ -1204,6 +1231,12 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
     const cached = user ? getCachedProfile(user.id) : null;
     return cached?.moderationCount || 0;
   });
+  const [gameCount, setGameCount] = useState(() => {
+    if (typeof ownGameCount === 'number') return ownGameCount;
+    const cached = user ? getCachedProfile(user.id) : null;
+    return typeof cached?.gameCount === 'number' ? cached.gameCount : null;
+  });
+  const [rankLadderOpen, setRankLadderOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messageError, setMessageError] = useState(false);
   const [deleteTitle, setDeleteTitle] = useState('');
@@ -1221,8 +1254,15 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
   const nameInputRef = useRef(null);
 
   useEffect(() => {
+    if (typeof ownGameCount === 'number') {
+      setGameCount(ownGameCount);
+    }
+  }, [ownGameCount]);
+
+  useEffect(() => {
     if (!isOpen || !user) {
       setIsEditingName(false);
+      setRankLadderOpen(false);
       return;
     }
     setIsEditingName(false);
@@ -1233,6 +1273,9 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
       if (cached.avatarUrl) onAvatarChange(cached.avatarUrl);
       if (Array.isArray(cached.submissions)) setSubmissions(cached.submissions);
       if (typeof cached.moderationCount === 'number') setModerationCount(cached.moderationCount);
+      if (typeof ownGameCount !== 'number' && typeof cached.gameCount === 'number') {
+        setGameCount(cached.gameCount);
+      }
     }
     const version = Date.now();
     renderVersionRef.current = version;
@@ -1276,7 +1319,27 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
       }
       if (version !== renderVersionRef.current) return;
       const createdAt = profileData?.created_at || user?.created_at || null;
-      const updatedProfile = { ...profileData, avatarUrl, created_at: createdAt };
+      let resolvedGameCount = typeof ownGameCount === 'number' ? ownGameCount : null;
+      if (resolvedGameCount === null) {
+        try {
+          const { count, error: countError } = await client
+            .from('games')
+            .select('id', { count: 'exact', head: true })
+            .eq('owner_id', user.id);
+          if (!countError && typeof count === 'number') {
+            resolvedGameCount = count;
+          }
+        } catch (_) { }
+      }
+      if (version !== renderVersionRef.current) return;
+      if (typeof resolvedGameCount === 'number') setGameCount(resolvedGameCount);
+
+      const updatedProfile = {
+        ...profileData,
+        avatarUrl,
+        created_at: createdAt,
+        ...(typeof resolvedGameCount === 'number' ? { gameCount: resolvedGameCount } : {})
+      };
       setCachedProfile(user.id, updatedProfile);
       setProfile(updatedProfile);
       onAvatarChange(avatarUrl);
@@ -1607,6 +1670,57 @@ const ProfilePopover = ({ isOpen, onClose, user, onAvatarChange, onModerationCou
 
         {profile && (
           <>
+            {typeof gameCount === 'number' && (() => {
+              const rank = getUserLibraryTitleProgress(gameCount);
+              return (
+                <div className={`profile-section profile-rank-card tier-${rank.current.tier}`}>
+                  <button
+                    type="button"
+                    className="profile-rank-toggle"
+                    onClick={() => setRankLadderOpen(prev => !prev)}
+                    aria-expanded={rankLadderOpen}
+                    title="Показать шкалу рангов"
+                  >
+                    <div className="profile-rank-top">
+                      <span className={`library-person-title tier-${rank.current.tier}`}>
+                        {rank.current.label}
+                      </span>
+                      <span className="profile-rank-count">
+                        {formatGameCount(rank.count)}
+                        <span className="profile-rank-chevron" aria-hidden="true">{rankLadderOpen ? '▴' : '▾'}</span>
+                      </span>
+                    </div>
+                    <div className="profile-rank-bar" aria-hidden="true">
+                      <div className="profile-rank-bar-fill" style={{ width: `${rank.percent}%` }} />
+                    </div>
+                    <div className="profile-rank-caption">
+                      {rank.next
+                        ? `Ещё ${formatGameCount(rank.remaining)} до «${rank.next.label}»`
+                        : 'Максимальный ранг достигнут'}
+                    </div>
+                  </button>
+
+                  {rankLadderOpen && (
+                    <div className="profile-rank-ladder" role="region" aria-label="Шкала рангов">
+                      {ASCENDING_LIBRARY_TITLES.map((item, idx) => {
+                        const isCurrent = item.tier === rank.current.tier;
+                        const isUnlocked = rank.count >= item.min;
+                        return (
+                          <div
+                            key={item.tier}
+                            className={`profile-rank-step ${isCurrent ? 'is-current' : ''} ${isUnlocked ? 'is-unlocked' : ''}`}
+                          >
+                            <span className={`library-person-title tier-${item.tier}`}>{item.label}</span>
+                            <span className="profile-rank-step-range">{formatRankRange(idx)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             <div className="profile-section profile-evaluation-section">
               <button
                 type="button"
@@ -2311,7 +2425,7 @@ const GameCatalogSearch = ({ selected, initialQuery = '', disabled = false, libr
   );
 };
 
-const AddGameForm = ({ game = null, submission = null, onComplete }) => {
+const AddGameForm = ({ game = null, submission = null, onComplete, onLibraryCountChange }) => {
   const isEdit = Boolean(game);
   const initialReleaseYear = Number(game?.releaseYear || game?.year || '');
   const initialCatalogGame = game?.catalogId
@@ -2524,6 +2638,7 @@ const AddGameForm = ({ game = null, submission = null, onComplete }) => {
       setModeratorMode(Boolean(profileRes.data && profileRes.data.is_moderator));
       if (!libraryRes.error && Array.isArray(libraryRes.data)) {
         setUserLibraryGames(libraryRes.data);
+        onLibraryCountChange?.(libraryRes.data.length);
       }
     }).catch(() => setModeratorMode(false));
   }, []);
@@ -3156,6 +3271,7 @@ const AddGamePage = ({ game = null, submission = null }) => {
   const [submissionLoading, setSubmissionLoading] = useState(() => Boolean(
     submission || new URLSearchParams(window.location.search).get('submission')
   ));
+  const [libraryCount, setLibraryCount] = useState(null);
 
   useEffect(() => {
     const submissionId = new URLSearchParams(window.location.search).get('submission');
@@ -3255,6 +3371,9 @@ const AddGamePage = ({ game = null, submission = null }) => {
 
   const activeSubmissionStatus = submissionState?.status || submission?.status;
   const isEditingSubmission = Boolean(submission || submissionState);
+  const rankHint = !isEditingSubmission && !game && typeof libraryCount === 'number'
+    ? getUserLibraryTitleProgress(libraryCount)
+    : null;
 
   return (
     <main className="add-game-page">
@@ -3271,18 +3390,33 @@ const AddGamePage = ({ game = null, submission = null }) => {
             <button type="button" className="btn" onClick={() => { setAuthModalTab('signin'); setAuthModalOpen(true); }}>Войти</button>
           </>
         ) : (
-          <span>
-            {isEditingSubmission
-              ? (activeSubmissionStatus === 'pending'
-                ? 'Вы можете обновить заявку, пока она ещё не проверена модерацией.'
-                : 'После повторной отправки заявка снова попадёт на проверку.')
-              : 'Карточка сохранится в вашей библиотеке после отправки.'}
-          </span>
+          <div className="add-game-page-auth-text">
+            <span>
+              {isEditingSubmission
+                ? (activeSubmissionStatus === 'pending'
+                  ? 'Вы можете обновить заявку, пока она ещё не проверена модерацией.'
+                  : 'После повторной отправки заявка снова попадёт на проверку.')
+                : 'Карточка сохранится в вашей библиотеке после отправки.'}
+            </span>
+            {rankHint && (
+              <span className="add-game-rank-hint">
+                Ваш ранг: <strong className={`tier-${rankHint.current.tier}`}>{rankHint.current.label}</strong>
+                {rankHint.next
+                  ? ` · ещё ${formatGameCount(rankHint.remaining)} до «${rankHint.next.label}»`
+                  : ' · максимальный ранг'}
+              </span>
+            )}
+          </div>
         )}
       </div>
       {resultMessage && <p className="add-game-page-result add-game-status" role="status">{resultMessage}</p>}
       {submissionLoading ? <p className="add-game-status" role="status">Загружаю заявку…</p> : (
-        <AddGameForm game={submissionState?.game || game} submission={submissionState} onComplete={handleComplete} />
+        <AddGameForm
+          game={submissionState?.game || game}
+          submission={submissionState}
+          onComplete={handleComplete}
+          onLibraryCountChange={setLibraryCount}
+        />
       )}
       <AuthModal
         isOpen={authModalOpen}
@@ -8446,6 +8580,7 @@ const App = () => {
       <LibraryDrawer
         isOpen={libraryDrawerOpen}
         onClose={() => setLibraryDrawerOpen(false)}
+        currentUserId={currentUser?.id || null}
         onSelectProfile={(username) => {
           window.location.href = `./?profile=${encodeURIComponent(username)}`;
         }}
@@ -8752,6 +8887,7 @@ const App = () => {
                   isOpen={profileOpen}
                   onClose={() => setProfileOpen(false)}
                   user={currentUser}
+                  ownGameCount={!isExternalCatalog && isSignedIn ? GAMES.length : null}
                   onOpenPasswordReset={() => {
                     setAuthModalTab('reset-password');
                     setAuthModalOpen(true);
