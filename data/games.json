@@ -1944,6 +1944,48 @@
         "Сюжетная",
         "Экшен"
       ]
+    },
+    {
+      "id": "dark-souls-remastered",
+      "title": "Dark Souls Remastered",
+      "studio": "FromSoftware",
+      "year": 2018,
+      "genres": [
+        "РПГ",
+        "Экшен",
+        "Приключение",
+        "Кооператив",
+        "Фэнтези",
+        "Соулс-лайк"
+      ]
+    },
+    {
+      "id": "dark-souls-ii",
+      "title": "Dark Souls II",
+      "studio": "FromSoftware",
+      "year": 2014,
+      "genres": [
+        "РПГ",
+        "Экшен",
+        "Приключение",
+        "Кооператив",
+        "Фэнтези",
+        "Соулс-лайк"
+      ]
+    },
+    {
+      "id": "dark-souls-iii",
+      "title": "Dark Souls III",
+      "studio": "FromSoftware",
+      "year": 2016,
+      "genres": [
+        "РПГ",
+        "Экшен",
+        "Приключение",
+        "Кооператив",
+        "Фэнтези",
+        "Соулс-лайк"
+      ]
     }
   ]
 }

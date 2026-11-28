@@ -9298,6 +9298,7 @@ const App = () => {
         {modalGame && <GameModal
           game={modalGame}
           allGames={modalGame && !filteredGames.some(game => game.id === modalGame.id) ? [modalGame, ...filteredGames] : filteredGames}
+          catalogGames={gamesList}
           onClose={() => setModalGame(null)}
           onNavigate={setModalGame}
           canEdit={isSignedIn && canEditCatalog}
@@ -9939,7 +9940,7 @@ const GameModalSlide = React.forwardRef(({
   );
 });
 
-const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit, currentUser }) => {
+const GameModal = ({ game, allGames, catalogGames, onClose, onNavigate, canEdit, onEdit, currentUser }) => {
   const [slideDir, setSlideDir] = useState(0);
   const [displayGame, setDisplayGame] = useState(game);
   const [chartMode, setChartMode] = useState(false);
@@ -10192,7 +10193,7 @@ const GameModal = ({ game, allGames, onClose, onNavigate, canEdit, onEdit, curre
             <GameModalSlide
               key={displayGame.id}
               game={displayGame}
-              games={allGames}
+              games={catalogGames || allGames}
               slideDir={slideDir}
               chartMode={chartMode}
               setChartMode={setChartMode}
